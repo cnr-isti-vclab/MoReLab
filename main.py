@@ -85,23 +85,21 @@ class Window(QMainWindow):
             with open (project_path) as myfile:
                 data=json.load(myfile)
                 
-                
-            # Load first column
             
-            self.widget.movie_paths = data["movies"]
-            for i, p in enumerate(self.widget.movie_paths):
-                if p == data["selected_movie"]:
-                    btn = QPushButton(p.split('/')[-1])
-                    self.widget.movie_buttons.append(btn)
-                else:
-                    bt = QPushButton(p.split('/')[-1])
-                    self.widget.movie_buttons.append(bt)                    
-                
-            self.create_layout()
-            self.widget.select_movie(btn)
-            
-            # Load central column
             if data["key_frames"]:
+                # Load first column
+                self.widget.movie_paths = data["movies"]
+                for i, p in enumerate(self.widget.movie_paths):
+                    if p == data["selected_movie"]:
+                        btn = QPushButton(p.split('/')[-1])
+                        self.widget.movie_buttons.append(btn)
+                    else:
+                        bt = QPushButton(p.split('/')[-1])
+                        self.widget.movie_buttons.append(bt)                    
+                    
+                self.create_layout()
+                self.widget.select_movie(btn)
+                
                 self.widget.kf_extracted_bool = True
                 self.widget.extracted_frames = []
                 file_names = sorted(glob.glob(self.widget.out_dir+'/*'))
@@ -114,6 +112,15 @@ class Window(QMainWindow):
                 # Display thumbnail image
                 idx = data["displayIndex"]                 
                 self.widget.displayThumbnail(idx, self.widget.extracted_frames[idx])
+            
+            else:
+                self.widget.movie_paths = data["movies"]
+                for i, p in enumerate(self.widget.movie_paths):
+                    bt = QPushButton(p.split('/')[-1])
+                    self.widget.movie_buttons.append(bt)                    
+                    
+                self.create_layout()
+                
 
         
     def save_project(self):
