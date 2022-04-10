@@ -5,7 +5,7 @@ Created on Mon Mar 28 17:25:39 2022
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from util.util import Video, convert_cv_qt
+from util.util import Video, convert_cv_qt, PhotoViewer
 import json, os
 import cv2
 
@@ -33,14 +33,13 @@ class Widget(QWidget):
         self.out_dir = 'extracted_images'
         self.kf_extracted_bool = False
         self.selected_thumbnail_index = 0
+        self.viewer = PhotoViewer(self)
         self.thumbnail_height = 64
         self.thumbnail_width = 104
         
-        self.displayImage_height = 300
-        self.displayImage_width = 400
         
         self.create_wdg1()
-        self.create_wdg3()
+        # self.create_wdg3()
         self.create_wdg4()
         self.create_buttons()
         self.create_scroll_area()
@@ -126,9 +125,9 @@ class Widget(QWidget):
         text_label_of_thumbnail.setStyleSheet("background-color:blue;")
         
         # print("Selected image index : "+str(index))
-        
-        p = convert_cv_qt(self.extracted_frames[index], self.displayImage_width , self.displayImage_height )
-        self.wdg3.setPixmap(p)
+        p = convert_cv_qt(img_file, img_file.shape[1] , img_file.shape[0] )
+        self.viewer.setPhoto(p)
+        # self.wdg3.setPixmap(self.viewer.setPhoto(p))
 
         
 
@@ -143,10 +142,10 @@ class Widget(QWidget):
             bt.setStyleSheet("color: black; border: none;")
         btn.setStyleSheet("color: blue; border: 1px solid blue;")
         name = btn.text()
-        
         for p in self.movie_paths:
             if p.split('/')[-1] == name:
                 self.selected_movie_path = p
+                
         
         v = Video(self.selected_movie_path)
         self.summary_wdg.setText(v.video_summary())
@@ -155,6 +154,7 @@ class Widget(QWidget):
         if self.kf_extracted_bool:
             data = {
                 "movies" : self.movie_paths,
+                "selected_movie" : self.selected_movie_path, 
                 "key_frames" : self.kf_extracted_bool,
                 "displayIndex": self.selected_thumbnail_index
                 }

@@ -36,7 +36,7 @@ class Window(QMainWindow):
         
         self.vboxLayout2 = QVBoxLayout()
         self.vboxLayout2.addWidget(self.widget.scroll_area, 1)
-        self.vboxLayout2.addWidget(self.widget.wdg3, 4)
+        self.vboxLayout2.addWidget(self.widget.viewer , 4)
         
         self.hboxLayout = QHBoxLayout()
         self.hboxLayout.addLayout(self.vboxLayout3)
@@ -87,18 +87,20 @@ class Window(QMainWindow):
                 
                 
             # Load first column
-                
+            
             self.widget.movie_paths = data["movies"]
             for i, p in enumerate(self.widget.movie_paths):
-                btn_name = p.split('/')[-1]
-                btn = QPushButton(btn_name)
-                btn.setStyleSheet("border: none;")
-                self.widget.movie_buttons.append(btn)
+                if p == data["selected_movie"]:
+                    btn = QPushButton(p.split('/')[-1])
+                    self.widget.movie_buttons.append(btn)
+                else:
+                    bt = QPushButton(p.split('/')[-1])
+                    self.widget.movie_buttons.append(bt)                    
                 
             self.create_layout()
-    
+            self.widget.select_movie(btn)
+            
             # Load central column
-                
             if data["key_frames"]:
                 self.widget.kf_extracted_bool = True
                 self.widget.extracted_frames = []
