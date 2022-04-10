@@ -37,11 +37,12 @@ class Video:
     def video_summary(self):
         self.fps = round(self.cap.get(cv2.CAP_PROP_FPS))
         self.n_frames = int(self.cap.get(cv2. CAP_PROP_FRAME_COUNT))
+        self.duration = int(self.n_frames/self.fps)
         success, frame_cv = self.cap.read()
         if success:
             self.height, self.width, _ = frame_cv.shape
-        txt = "Video Summary: \n\nFPS: "+str(self.fps)+"\nNumber of Frames: " \
-        +str(self.n_frames)+"\nResolution: "+str(self.width)+" X "+str(self.height)
+        txt = "Video Summary: \n\nFPS: "+str(self.fps)+"\nNumber of Frames: "+str(self.n_frames)+ \
+            "\nLength: "+str(self.duration) +" sec.\nResolution: "+str(self.width)+" X "+str(self.height)
         return txt
     
     

@@ -59,14 +59,17 @@ class Window(QMainWindow):
         op_project = QAction("&Open Project", self)
         fileMenu.addAction(op_project)
         op_project.triggered.connect(self.open_project)
+        op_project.setShortcut("ctrl+o")
         
         sv_project = QAction("&Save Project", self)
         fileMenu.addAction(sv_project)
         sv_project.triggered.connect(self.save_project)
+        sv_project.setShortcut("ctrl+s")
         
         op_movie = QAction("&Open Movie", self)
         fileMenu.addAction(op_movie)
         op_movie.triggered.connect(self.open_movie)
+        op_movie.setShortcut("ctrl+shift+o")
         
         
     def open_project(self):
@@ -93,8 +96,7 @@ class Window(QMainWindow):
                 self.widget.movie_buttons.append(btn)
                 
             self.create_layout()
-            
-            
+    
             # Load central column
                 
             if data["key_frames"]:
@@ -110,10 +112,7 @@ class Window(QMainWindow):
                 # Display thumbnail image
                 idx = data["displayIndex"]                 
                 self.widget.displayThumbnail(idx, self.widget.extracted_frames[idx])
-                
 
-        
-        
         
     def save_project(self):
         file_types = "json (*.json)"
@@ -134,9 +133,7 @@ class Window(QMainWindow):
             with open(name_project, "w") as outfile:
                 outfile.write(json_object)
                 
-            
-        
-    
+
         
     def open_movie(self):
         if len(self.widget.movie_buttons) > 0:
