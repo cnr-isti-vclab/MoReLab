@@ -1,6 +1,5 @@
 # Files and folders to be ignored.
 __pycache__/
-extracted_images/
 util/__pycache__/
 .DS_Store
 *.pyc
