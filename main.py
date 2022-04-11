@@ -87,36 +87,40 @@ class Window(QMainWindow):
                 
             
             if data["key_frames"]:
-                # Load first column
-                self.widget.movie_paths = data["movies"]
-                for i, p in enumerate(self.widget.movie_paths):
-                    if p == data["selected_movie"]:
-                        btn = QPushButton(p.split('/')[-1])
-                        self.widget.movie_buttons.append(btn)
-                    else:
-                        bt = QPushButton(p.split('/')[-1])
-                        self.widget.movie_buttons.append(bt)                    
+                if not os.path.exists(self.widget.out_dir):
+                    print("Please create a directory of extracted images and place atleast 5 images in it.")
+                else:
+                    # Load first column
+                    self.widget.movie_paths = data["movies"]
+                    for i, p in enumerate(self.widget.movie_paths):
+                        if p == data["selected_movie"]:
+                            btn = QPushButton(p.split('/')[-1])
+                            self.widget.movie_buttons.append(btn)
+                        else:
+                            bt = QPushButton(p.split('/')[-1])
+                            self.widget.movie_buttons.append(bt)                    
+                        
+                    self.create_layout()
+                    self.widget.select_movie(btn)
                     
-                self.create_layout()
-                self.widget.select_movie(btn)
-                
-                self.widget.kf_extracted_bool = True
-                self.widget.extracted_frames = []
-                file_names = sorted(glob.glob(self.widget.out_dir+'/*'))
-                if len(file_names) > 0:
-                    for p in file_names:
-                        self.widget.extracted_frames.append(cv2.imread(p))
-                    
-                    self.widget.populate_scrollbar()
-                    
-                # Display thumbnail image
-                idx = data["displayIndex"]                 
-                self.widget.displayThumbnail(idx, self.widget.extracted_frames[idx])
+                    self.widget.kf_extracted_bool = True
+                    self.widget.extracted_frames = []
+                    file_names = sorted(glob.glob(self.widget.out_dir+'/*'))
+                    if len(file_names) > 0:
+                        for p in file_names:
+                            self.widget.extracted_frames.append(cv2.imread(p))
+                        
+                        self.widget.populate_scrollbar()
+                        
+                    # Display thumbnail image
+                    idx = data["displayIndex"]                 
+                    self.widget.displayThumbnail(idx, self.widget.extracted_frames[idx])
             
             else:
                 self.widget.movie_paths = data["movies"]
                 for i, p in enumerate(self.widget.movie_paths):
                     bt = QPushButton(p.split('/')[-1])
+                    bt.setStyleSheet("color: black; border: none;")
                     self.widget.movie_buttons.append(bt)                    
                     
                 self.create_layout()
