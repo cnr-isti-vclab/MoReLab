@@ -1,9 +1,9 @@
 {
     "movies": [
-        "/Users/arslan/Documents/GitHub/MoReLab/sample_movies/movie_01.asf",
-        "/Users/arslan/Documents/GitHub/MoReLab/sample_movies/movie_02.asf"
+        "./sample_movies/movie_01.asf",
+        "./sample_movies/movie_02.asf"
     ],
-    "selected_movie": "/Users/arslan/Documents/GitHub/MoReLab/sample_movies/movie_02.asf",
+    "selected_movie": "./sample_movies/movie_02.asf",
     "key_frames": true,
     "displayIndex": 3
 }
