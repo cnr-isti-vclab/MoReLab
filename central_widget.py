@@ -139,7 +139,7 @@ class Widget(QWidget):
                 
                 
     def add_movie(self, movie_path, btn):
-        btn.setStyleSheet("color: blue; border: 1px solid blue;")
+        # btn.setStyleSheet("color: blue; border: 1px solid blue;")
         self.movie_buttons.append(btn)
         self.movie_paths.append(movie_path)
         v = Video(movie_path)

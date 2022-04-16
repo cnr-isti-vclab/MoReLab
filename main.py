@@ -83,7 +83,10 @@ class Window(QMainWindow):
         if response[0] != '':
             project_path = response[0]
             self.widget.load_data(project_path)
-            self.create_layout()            
+            self.create_layout() 
+            
+            display_msg = "Opened "+project_path.split('/')[-1]
+            self.statusBar.showMessage(display_msg, 2000)
         
     def save_project(self):
         file_types = "json (*.json)"
@@ -131,12 +134,13 @@ class Window(QMainWindow):
                                 
                 btn = QPushButton(movie_name)
                 self.widget.add_movie(movie_path, btn)
+                self.widget.select_movie(movie_path)
                 
                 if len(self.widget.movie_buttons) == 1:
                     self.create_layout()
                 else:
                     self.vboxLayout1.addWidget(btn, 1)
-                    self.widget.select_movie(movie_path)
+                    
                     btn.clicked.connect(self.make_calluser(movie_path))        
 
         
