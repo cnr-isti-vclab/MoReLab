@@ -17,23 +17,21 @@ class Video:
         self.video_path = video_path
         self.output_imgs_dir = 'extracted_images'
         self.cap = cv2.VideoCapture(self.video_path)
-        self.images = []
+        self.key_frames = []
+        self.key_frame_indices = []
+        self.summary = ""
 
     def extract_frames_regularly(self):
-        if not os.path.exists(self.output_imgs_dir):
-            os.makedirs(self.output_imgs_dir)
         count = 0
         success = True
         while success:
+            success, frame_cv = self.cap.read()
+            if not success:
+                break
             if count % 10 == 0:
-                success, frame_cv = self.cap.read()
-                if not success:
-                    break
-                self.images.append(frame_cv)
-                # out_img_path = os.path.join(self.output_imgs_dir, str(count).zfill(5)+'.png')
-                # cv2.imwrite(out_img_path, frame_cv)
+                self.key_frames.append(frame_cv)
+                self.key_frame_indices.append(str(count).zfill(6))
             count = count + 1
-        return self.images
     
     def video_summary(self):
         self.fps = round(self.cap.get(cv2.CAP_PROP_FPS))
@@ -42,9 +40,10 @@ class Video:
         success, frame_cv = self.cap.read()
         if success:
             self.height, self.width, _ = frame_cv.shape
-        txt = "Video Summary: \n\nFPS: "+str(self.fps)+"\nNumber of Frames: "+str(self.n_frames)+ \
+        self.summary = "Video Summary: \n\nFPS: "+str(self.fps)+"\nNumber of Frames: "+str(self.n_frames)+ \
             "\nLength: "+str(self.duration) +" sec.\nResolution: "+str(self.width)+" X "+str(self.height)
-        return txt
+        return self.summary
+    
     
     
 def convert_cv_qt(cv_img, width, height):

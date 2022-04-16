@@ -26,7 +26,7 @@ class Window(QMainWindow):
         self.vboxLayout3 = QVBoxLayout()
         for i,btn in enumerate(self.widget.movie_buttons):
             self.vboxLayout1.addWidget(btn, 1)
-            btn.clicked.connect(self.make_calluser(btn))
+            btn.clicked.connect(self.make_calluser(self.widget.movie_paths[i]))
             
         
         v1 = SliderFrame(self.vboxLayout1)
@@ -82,50 +82,8 @@ class Window(QMainWindow):
         )
         if response[0] != '':
             project_path = response[0]
-            with open (project_path) as myfile:
-                data=json.load(myfile)
-                
-            
-            if data["key_frames"]:
-                if not os.path.exists(self.widget.out_dir):
-                    print("Please create a directory of extracted images and place atleast 5 images in it.")
-                else:
-                    # Load first column
-                    self.widget.movie_paths = data["movies"]
-                    for i, p in enumerate(self.widget.movie_paths):
-                        if p == data["selected_movie"]:
-                            btn = QPushButton(p.split('/')[-1])
-                            self.widget.movie_buttons.append(btn)
-                        else:
-                            bt = QPushButton(p.split('/')[-1])
-                            self.widget.movie_buttons.append(bt)                    
-                        
-                    self.create_layout()
-                    self.widget.select_movie(btn)
-                    
-                    self.widget.kf_extracted_bool = True
-                    self.widget.extracted_frames = []
-                    file_names = sorted(glob.glob(self.widget.out_dir+'/*'))
-                    if len(file_names) > 0:
-                        for p in file_names:
-                            self.widget.extracted_frames.append(cv2.imread(p))
-                        
-                        self.widget.populate_scrollbar()
-                        
-                    # Display thumbnail image
-                    idx = data["displayIndex"]                 
-                    self.widget.displayThumbnail(idx, self.widget.extracted_frames[idx])
-            
-            else:
-                self.widget.movie_paths = data["movies"]
-                for i, p in enumerate(self.widget.movie_paths):
-                    bt = QPushButton(p.split('/')[-1])
-                    bt.setStyleSheet("color: black; border: none;")
-                    self.widget.movie_buttons.append(bt)                    
-                    
-                self.create_layout()
-                
-
+            self.widget.load_data(project_path)
+            self.create_layout()            
         
     def save_project(self):
         file_types = "json (*.json)"
@@ -141,6 +99,8 @@ class Window(QMainWindow):
             display_msg = "Saving "+name_project.split('/')[-1]
             self.statusBar.showMessage(display_msg, 2000)
             
+            self.widget.save_directory(name_project)
+            
             data = self.widget.get_data()
             json_object = json.dumps(data, indent = 4)
             with open(name_project, "w") as outfile:
@@ -149,9 +109,6 @@ class Window(QMainWindow):
 
         
     def open_movie(self):
-        if len(self.widget.movie_buttons) > 0:
-            for bt in self.widget.movie_buttons:
-                bt.setStyleSheet("color: black; border: none;")
         file_types = "ASF (*.asf);;MP4 (*.mp4)"
         response = QFileDialog.getOpenFileName(
            parent = self,
@@ -160,25 +117,27 @@ class Window(QMainWindow):
            filter = file_types
         )
         if response[0] != '':
-            movie_name = response[0].split('/')[-1]
-            btn = QPushButton(movie_name)
-            self.widget.movie_buttons.append(btn)
-            self.widget.movie_paths.append(response[0])
-            self.widget.selected_movie_path = response[0]
-            btn.setStyleSheet("color: blue; border: 1px solid blue;")
-            
-            v = Video(response[0])
-            self.widget.summary_wdg.setText(v.video_summary())
-            
-            if len(self.widget.movie_buttons) == 1:
-                self.create_layout()
+            movie_path = os.path.relpath(response[0], os.getcwd())
+            if movie_path in self.widget.movie_paths:
+                msgBox = QMessageBox()
+                msgBox.setText("This movie has already been loaded.")
+                msgBox.setWindowTitle("Open movie")
+                msgBox.setStandardButtons(QMessageBox.Ok)                 
+                returnValue = msgBox.exec()
             else:
-                self.vboxLayout1.addWidget(btn, 1)
-                btn.clicked.connect(self.make_calluser(btn))
-                        
-            display_msg = "Opened "+movie_name      
-            self.statusBar.showMessage(display_msg, 2000)
-        
+                movie_name = movie_path.split('/')[-1]
+                display_msg = "Opened "+movie_name      
+                self.statusBar.showMessage(display_msg, 2000)
+                                
+                btn = QPushButton(movie_name)
+                self.widget.add_movie(movie_path, btn)
+                
+                if len(self.widget.movie_buttons) == 1:
+                    self.create_layout()
+                else:
+                    self.vboxLayout1.addWidget(btn, 1)
+                    self.widget.select_movie(movie_path)
+                    btn.clicked.connect(self.make_calluser(movie_path))        
 
         
     def create_statusbar(self):
@@ -186,16 +145,22 @@ class Window(QMainWindow):
         self.setStatusBar(self.statusBar)
         
     def extract(self):
-        display_msg = "Extracting key-frames"
-        self.statusBar.showMessage(display_msg, 2000)
-        self.widget.extract_frames()
-        
-        
-    def make_calluser(self, btn):
-        def calluser():
-            display_msg = "Selected "+btn.text()
+        b = True
+        if len(self.widget.movie_caps[self.widget.selected_movie_idx].key_frames) >0:
+            b = self.widget.show_dialogue()
+        if b:
+            display_msg = "Extracting key-frames"           
             self.statusBar.showMessage(display_msg, 2000)
-            self.widget.select_movie(btn)
+            self.widget.extract_frames()
+            
+        
+        
+    def make_calluser(self, movie_path):
+        def calluser():
+            movie_name = movie_path.split('/')[-1]
+            display_msg = "Selected "+movie_name
+            self.statusBar.showMessage(display_msg, 2000)
+            self.widget.select_movie(movie_path)
         return calluser
 
 

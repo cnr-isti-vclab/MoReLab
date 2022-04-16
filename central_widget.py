@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from util.util import Video, convert_cv_qt, PhotoViewer
-import json, os
+import json, os, glob
 import cv2
 
 
@@ -30,9 +30,9 @@ class Widget(QWidget):
         self.selected_movie_path = ""
         self.movie_buttons = []
         self.movie_paths = []
-        self.out_dir = 'extracted_images'
-        self.kf_extracted_bool = False
-        self.selected_thumbnail_index = 0
+        self.selected_thumbnail_index = -1
+        self.selected_movie_idx = -1
+        self.movie_caps = []
         self.viewer = PhotoViewer(self)
         self.thumbnail_height = 64
         self.thumbnail_width = 104
@@ -67,25 +67,17 @@ class Widget(QWidget):
     
     def extract_frames(self):
         if self.selected_movie_path != "":
-            self.kf_extracted_bool = True
-            v = Video(self.selected_movie_path)
-            self.extracted_frames = v.extract_frames_regularly()
-            
-            if not os.path.exists(self.out_dir):
-                os.mkdir(self.out_dir)
-            
-            for i, img in enumerate(self.extracted_frames):
-                out_path = os.path.join(self.out_dir, str(i).zfill(6)+'.png')
-                cv2.imwrite(out_path, img)
+            v = self.movie_caps[self.selected_movie_idx]
+            v.extract_frames_regularly()
             
             self.populate_scrollbar()
             
             
     def populate_scrollbar(self):
-        self.widget = QWidget()                 
+        widget = QWidget()                 
         self.grid_layout = QHBoxLayout()
         row_in_grid_layout = 0
-        for i, img in enumerate(self.extracted_frames):
+        for i, img in enumerate(self.movie_caps[self.selected_movie_idx].key_frames):
             img_label = QLabel("")
             img_label.setAlignment(Qt.AlignCenter)
             text_label = QLabel("")
@@ -95,23 +87,23 @@ class Widget(QWidget):
             img_label.setPixmap(pixmap_scaled)
 
             img_label.mousePressEvent = lambda e, index=row_in_grid_layout, file_img=img: \
-                self.on_thumbnail_click(e, index, file_img)
+                self.on_thumbnail_click(e, index)
             
             thumbnail = QBoxLayout(QBoxLayout.TopToBottom)
             thumbnail.addWidget(img_label)
             thumbnail.addWidget(text_label)
             self.grid_layout.addLayout(thumbnail)
             row_in_grid_layout += 1
-        self.widget.setLayout(self.grid_layout)
+        widget.setLayout(self.grid_layout)
         
-        self.scroll_area.setWidget(self.widget)
+        self.scroll_area.setWidget(widget)
             
             
-    def on_thumbnail_click(self, event, index, img_file):
-        self.displayThumbnail(index, img_file)
+    def on_thumbnail_click(self, event, index):
+        self.displayThumbnail(index)
     
         
-    def displayThumbnail(self, index, img_file):
+    def displayThumbnail(self, index):
         self.selected_thumbnail_index = index
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
@@ -123,6 +115,8 @@ class Widget(QWidget):
         text_label_of_thumbnail = self.grid_layout.itemAt(index)\
             .itemAt(1).widget()
         text_label_of_thumbnail.setStyleSheet("background-color:blue;")
+        
+        img_file = self.movie_caps[self.selected_movie_idx].key_frames[self.selected_thumbnail_index]
         
         # print("Selected image index : "+str(index))
         p = convert_cv_qt(img_file, img_file.shape[1] , img_file.shape[0] )
@@ -136,31 +130,107 @@ class Widget(QWidget):
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll_area.setWidgetResizable(True)
-    
-    def select_movie(self, btn):
-        for bt in self.movie_buttons:
-            bt.setStyleSheet("color: black; border: none;")
-        btn.setStyleSheet("color: blue; border: 1px solid blue;")
-        name = btn.text()
-        for p in self.movie_paths:
-            if p.split('/')[-1] == name:
-                self.selected_movie_path = p
-                
         
-        v = Video(self.selected_movie_path)
+
+    def deselect_movies(self):
+        if len(self.movie_buttons) > 0:
+            for bt in self.movie_buttons:
+                bt.setStyleSheet("color: black; border: none;")
+                
+                
+    def add_movie(self, movie_path, btn):
+        btn.setStyleSheet("color: blue; border: 1px solid blue;")
+        self.movie_buttons.append(btn)
+        self.movie_paths.append(movie_path)
+        v = Video(movie_path)
+        self.movie_caps.append(v)
         self.summary_wdg.setText(v.video_summary())
+
+                
+    
+    def select_movie(self, movie_path):
+        self.deselect_movies()
+        for i,p in enumerate(self.movie_paths):
+            if p == movie_path:
+                self.selected_movie_path = p
+                self.selected_movie_idx = i
+                
+                
+        self.movie_buttons[self.selected_movie_idx].setStyleSheet("color: blue; border: 1px solid blue;")
+        v = self.movie_caps[self.selected_movie_idx]
+        self.summary_wdg.setText(v.video_summary())
+        if len(v.key_frames) >0:
+            self.populate_scrollbar()
+        else:
+            self.scroll_area.setWidget(QLabel(""))
+        self.viewer.setPhoto()
+        
+        
+    def show_dialogue(self):
+        msgBox = QMessageBox()
+        msgBox.setText("Are you sure you want to extract key-frames again ?")
+        msgBox.setWindowTitle("Key-frame extraction")
+        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        # msgBox.buttonClicked.connect(msgButtonClick)
+         
+        returnValue = msgBox.exec()
+        b = False
+        if returnValue == QMessageBox.Yes:
+           b = True
+
+        return b
+
+    def save_directory(self, name_project):
+        out_dir = os.path.join(name_project.split('.')[0], 'extracted_frames')
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        for i, p in enumerate(self.movie_paths):
+            video_folder = p.split('/')[-1].split('.')[0]
+            video_folder_path = os.path.join(out_dir, video_folder)
+            if not os.path.exists(video_folder_path):
+                os.makedirs(video_folder_path)
+            for j, img in enumerate(self.movie_caps[i].key_frames):
+                img_path = os.path.join(video_folder_path, self.movie_caps[i].key_frame_indices[j] +'.png')
+                cv2.imwrite(img_path, img)
         
     def get_data(self):
-        if self.kf_extracted_bool:
-            data = {
-                "movies" : self.movie_paths,
-                "selected_movie" : self.selected_movie_path, 
-                "key_frames" : self.kf_extracted_bool,
-                "displayIndex": self.selected_thumbnail_index
-                }
-        else:
-            data = {
-                "movies" : self.movie_paths,
-                "key_frames" : self.kf_extracted_bool
-                }
+        data = {
+            "movies" : self.movie_paths,
+            "selected_movie" : self.selected_movie_path, 
+            "displayIndex": self.selected_thumbnail_index
+            }
         return data
+    
+    def load_data(self, project_path):
+        with open (project_path) as myfile:
+            data=json.load(myfile)
+            
+        self.movie_paths = data["movies"]
+        self.selected_movie_path = data["selected_movie"]
+        self.selected_thumbnail_index = data["displayIndex"]
+        
+        a = os.path.join(project_path.split('.')[0], 'extracted_frames')
+        movie_dirs = os.listdir(a)
+ 
+        for i,p in enumerate(self.movie_paths):
+            movie_name = p.split('/')[-1]
+            btn = QPushButton(movie_name)
+            self.movie_buttons.append(btn)
+            v = Video(p)
+            self.movie_caps.append(v)
+            self.summary_wdg.setText(v.video_summary())
+            
+            for j,mv in enumerate(movie_dirs):
+                if movie_name.split('.')[0] == mv:
+                    movie_dirr = os.path.join(a, mv)
+                    img_names = sorted(glob.glob(movie_dirr+'/*.png'))
+                    v.key_frames = [cv2.imread(x) for x in img_names]
+            
+        self.select_movie(self.selected_movie_path)
+        self.populate_scrollbar()
+        if self.selected_thumbnail_index != -1:
+            self.displayThumbnail(self.selected_thumbnail_index)
+    
+    
+    
+        
