@@ -1,9 +1,0 @@
-{
-    "movies": [
-        "./sample_movies/movie_01.asf",
-        "./sample_movies/movie_02.asf"
-    ],
-    "selected_movie": "./sample_movies/movie_02.asf",
-    "key_frames": true,
-    "displayIndex": 3
-}
