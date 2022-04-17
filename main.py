@@ -88,6 +88,7 @@ class Window(QMainWindow):
         
     def new_project(self):
         self.setCentralWidget(QWidget())
+        self.widget = Widget()
         
     def exit_project(self):
         self.close()
