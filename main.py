@@ -16,9 +16,7 @@ class Window(QMainWindow):
         self.widget = Widget()
         self.create_menu()
         self.create_statusbar()
-        
-        # self.create_layout()
-        
+        # self.create_toolbar()        
 
     def create_layout(self):
         self.widget.btn_kf.clicked.connect(self.extract)
@@ -26,8 +24,7 @@ class Window(QMainWindow):
         self.vboxLayout3 = QVBoxLayout()
         for i,btn in enumerate(self.widget.movie_buttons):
             self.vboxLayout1.addWidget(btn, 1)
-            btn.clicked.connect(self.make_calluser(self.widget.movie_paths[i]))
-            
+            btn.clicked.connect(self.make_calluser(self.widget.movie_paths[i]))   
         
         v1 = SliderFrame(self.vboxLayout1)
         self.vboxLayout3.addWidget(v1, 1)
@@ -45,16 +42,29 @@ class Window(QMainWindow):
         
         self.widget.setLayout(self.hboxLayout)
         self.setCentralWidget(self.widget)
-            
+        
+        
+    def create_toolbar(self):
+        toolbar = QToolBar("&Tool", self)
+        self.addToolBar(toolbar)
+        
+        n_tool = QAction(QIcon("new.webp"),"&New tool",self)
+        toolbar.addAction(n_tool)
+        n_tool.triggered.connect(self.new_tool)
+        
+    def new_tool(self):
+        print("Testing tool bar")
+        
         
     def create_menu(self):
         menuBar = self.menuBar()
         fileMenu = QMenu("&File", self)
         menuBar.addMenu(fileMenu)
-        editMenu = QMenu("&Edit", self)
-        menuBar.addMenu(editMenu)
-        editMenu = QMenu("&Help", self)
-        menuBar.addMenu(editMenu)
+
+        new_p = QAction("&New Project", self)
+        fileMenu.addAction(new_p)
+        new_p.triggered.connect(self.new_project)
+        new_p.setShortcut("ctrl+n")
 
         op_project = QAction("&Open Project", self)
         fileMenu.addAction(op_project)
@@ -71,7 +81,17 @@ class Window(QMainWindow):
         op_movie.triggered.connect(self.open_movie)
         op_movie.setShortcut("ctrl+shift+o")
         
+        exit_p = QAction("&Exit Project", self)
+        fileMenu.addAction(exit_p)
+        exit_p.triggered.connect(self.exit_project)
+        exit_p.setShortcut("Esc")
         
+    def new_project(self):
+        self.setCentralWidget(QWidget())
+        
+    def exit_project(self):
+        self.close()
+    
     def open_project(self):
         file_types = "json (*.json)"
         response = QFileDialog.getOpenFileName(
