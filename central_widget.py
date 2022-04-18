@@ -187,11 +187,12 @@ class Widget(QWidget):
         for i, p in enumerate(self.movie_paths):
             video_folder = p.split('/')[-1].split('.')[0]
             video_folder_path = os.path.join(out_dir, video_folder)
-            if not os.path.exists(video_folder_path):
-                os.makedirs(video_folder_path)
-            for j, img in enumerate(self.movie_caps[i].key_frames):
-                img_path = os.path.join(video_folder_path, self.movie_caps[i].key_frame_indices[j] +'.png')
-                cv2.imwrite(img_path, img)
+            if len(self.movie_caps[i].key_frames) > 0:
+                if not os.path.exists(video_folder_path):
+                    os.makedirs(video_folder_path)
+                for j, img in enumerate(self.movie_caps[i].key_frames):
+                    img_path = os.path.join(video_folder_path, self.movie_caps[i].key_frame_indices[j] +'.png')
+                    cv2.imwrite(img_path, img)
         
     def get_data(self):
         data = {
@@ -230,7 +231,3 @@ class Widget(QWidget):
         self.populate_scrollbar()
         if self.selected_thumbnail_index != -1:
             self.displayThumbnail(self.selected_thumbnail_index)
-    
-    
-    
-        

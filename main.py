@@ -16,7 +16,8 @@ class Window(QMainWindow):
         self.widget = Widget()
         self.create_menu()
         self.create_statusbar()
-        # self.create_toolbar()        
+        self.create_toolbar() 
+               
 
     def create_layout(self):
         self.widget.btn_kf.clicked.connect(self.extract)
@@ -45,15 +46,14 @@ class Window(QMainWindow):
         
         
     def create_toolbar(self):
-        toolbar = QToolBar("&Tool", self)
+        toolbar = QToolBar("&ToolBar", self)
         self.addToolBar(toolbar)
         
-        n_tool = QAction(QIcon("new.webp"),"&New tool",self)
-        toolbar.addAction(n_tool)
-        n_tool.triggered.connect(self.new_tool)
-        
-    def new_tool(self):
-        print("Testing tool bar")
+        toolbar.addAction(self.new_pr)
+        toolbar.addAction(self.open_pr)
+        toolbar.addAction(self.save_pr)
+        toolbar.addAction(self.open_mov)
+        toolbar.addAction(self.exit_pr)
         
         
     def create_menu(self):
@@ -61,30 +61,30 @@ class Window(QMainWindow):
         fileMenu = QMenu("&File", self)
         menuBar.addMenu(fileMenu)
 
-        new_p = QAction("&New Project", self)
-        fileMenu.addAction(new_p)
-        new_p.triggered.connect(self.new_project)
-        new_p.setShortcut("ctrl+n")
+        self.new_pr = QAction(QIcon("./icons/new_project.png"),"&New Project",self)
+        fileMenu.addAction(self.new_pr)
+        self.new_pr.triggered.connect(self.new_project)
+        self.new_pr.setShortcut("ctrl+n")
 
-        op_project = QAction("&Open Project", self)
-        fileMenu.addAction(op_project)
-        op_project.triggered.connect(self.open_project)
-        op_project.setShortcut("ctrl+o")
+        self.open_pr = QAction(QIcon("./icons/open_project.png"),"&Open Project",self)
+        fileMenu.addAction(self.open_pr)
+        self.open_pr.triggered.connect(self.open_project)
+        self.open_pr.setShortcut("ctrl+o")
         
-        sv_project = QAction("&Save Project", self)
-        fileMenu.addAction(sv_project)
-        sv_project.triggered.connect(self.save_project)
-        sv_project.setShortcut("ctrl+s")
+        self.save_pr = QAction(QIcon("./icons/save_project.png"),"&Save Project",self)
+        fileMenu.addAction(self.save_pr)
+        self.save_pr.triggered.connect(self.save_project)
+        self.save_pr.setShortcut("ctrl+s")
         
-        op_movie = QAction("&Open Movie", self)
-        fileMenu.addAction(op_movie)
-        op_movie.triggered.connect(self.open_movie)
-        op_movie.setShortcut("ctrl+shift+o")
+        self.open_mov = QAction(QIcon("./icons/open_movie.png"),"&Open Movie",self)
+        fileMenu.addAction(self.open_mov)
+        self.open_mov.triggered.connect(self.open_movie)
+        self.open_mov.setShortcut("ctrl+shift+o")
         
-        exit_p = QAction("&Exit Project", self)
-        fileMenu.addAction(exit_p)
-        exit_p.triggered.connect(self.exit_project)
-        exit_p.setShortcut("Esc")
+        self.exit_pr = QAction(QIcon("./icons/exit_project.png"),"&Exit Project",self)
+        fileMenu.addAction(self.exit_pr)
+        self.exit_pr.triggered.connect(self.exit_project)
+        self.exit_pr.setShortcut("Esc")
         
     def new_project(self):
         self.setCentralWidget(QWidget())
