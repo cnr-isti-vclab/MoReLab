@@ -15,7 +15,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Video:
     def __init__(self, video_path):
         self.video_path = video_path
-        self.output_imgs_dir = 'extracted_images'
         self.cap = cv2.VideoCapture(self.video_path)
         self.key_frames = []
         self.key_frame_indices = []

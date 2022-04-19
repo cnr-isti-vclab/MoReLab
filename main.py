@@ -76,7 +76,7 @@ class Window(QMainWindow):
         self.save_pr.triggered.connect(self.save_project)
         self.save_pr.setShortcut("ctrl+s")
         
-        self.open_mov = QAction(QIcon("./icons/open_movie.png"),"&Open Movie",self)
+        self.open_mov = QAction(QIcon("./icons/open_movie.png"),"&Import Movie",self)
         fileMenu.addAction(self.open_mov)
         self.open_mov.triggered.connect(self.open_movie)
         self.open_mov.setShortcut("ctrl+shift+o")
@@ -133,7 +133,8 @@ class Window(QMainWindow):
 
         
     def open_movie(self):
-        file_types = "ASF (*.asf);;MP4 (*.mp4)"
+        # file_types = "Video files (*.asf *.mp4 *.mov)"
+        file_types = "Supported Video files (*.asf *.mp4 *.mov);; MP4 (*.mp4);; ASF (*.asf);; MOV(*.mov)"
         response = QFileDialog.getOpenFileName(
            parent = self,
            caption = 'Select movie file.',
