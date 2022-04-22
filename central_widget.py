@@ -5,7 +5,9 @@ Created on Mon Mar 28 17:25:39 2022
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from util.util import Video, convert_cv_qt, PhotoViewer
+from util.video import Video
+from util.photoviewer import PhotoViewer
+from util.kf_dialogue import KF_dialogue
 import json, os, glob
 import cv2
 
@@ -19,7 +21,6 @@ class SliderFrame(QFrame):
         self.layout = QVBoxLayout()
         self.layout.addLayout(myslider)
         self.layout.setContentsMargins(0, 0, 0, 0)
-    
         self.setLayout(self.layout)
 
 
@@ -36,13 +37,13 @@ class Widget(QWidget):
         self.viewer = PhotoViewer(self)
         self.thumbnail_height = 64
         self.thumbnail_width = 104
+        self.kf_method = ""
         
         
         self.create_wdg1()
-        # self.create_wdg3()
         self.create_wdg4()
-        self.create_buttons()
         self.create_scroll_area()
+
         
         
     def create_wdg1(self):
@@ -50,40 +51,40 @@ class Widget(QWidget):
         self.summary_wdg.setStyleSheet("border: 1px solid gray;")
         self.summary_wdg.setAlignment(Qt.AlignmentFlag.AlignLeft)
         
-    def create_buttons(self):
         self.btn_kf = QPushButton("Extract Key-frames")
-                   
+        self.btn_kf.clicked.connect(self.extract)
 
-    def create_wdg3(self):
-        self.wdg3 = QLabel("Image Window", self)
-        self.wdg3.setStyleSheet("border: 1px solid gray;")
-        self.wdg3.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def create_wdg4(self):
         self.wdg4 = QLabel('Object \n Window ', self)
         self.wdg4.setStyleSheet("border: 1px solid gray;")
         self.wdg4.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-    
-    def extract_frames(self):
-        if self.selected_movie_path != "":
-            v = self.movie_caps[self.selected_movie_idx]
-            v.extract_frames_regularly()
             
-            self.populate_scrollbar()
+    def find_kfs(self):
+        if self.kf_method == "Regular":
+            kfs = self.movie_caps[self.selected_movie_idx].key_frames_regular
+
+        elif self.kf_method == "Network":
+            kfs = self.movie_caps[self.selected_movie_idx].key_frames_network
+
+        else:
+            kfs = []
+            
+        return kfs
             
             
     def populate_scrollbar(self):
         widget = QWidget()                 
         self.grid_layout = QHBoxLayout()
         row_in_grid_layout = 0
-        for i, img in enumerate(self.movie_caps[self.selected_movie_idx].key_frames):
+        kfs = self.find_kfs()
+        for i, img in enumerate(kfs):
             img_label = QLabel("")
             img_label.setAlignment(Qt.AlignCenter)
             text_label = QLabel("")
             text_label.setAlignment(Qt.AlignCenter)
             # text_label.setText(str(i))
-            pixmap_scaled = convert_cv_qt(img, self.thumbnail_width, self.thumbnail_height)
+            pixmap_scaled = self.viewer.convert_cv_qt(img, self.thumbnail_width, self.thumbnail_height)
             img_label.setPixmap(pixmap_scaled)
 
             img_label.mousePressEvent = lambda e, index=row_in_grid_layout, file_img=img: \
@@ -95,7 +96,6 @@ class Widget(QWidget):
             self.grid_layout.addLayout(thumbnail)
             row_in_grid_layout += 1
         widget.setLayout(self.grid_layout)
-        
         self.scroll_area.setWidget(widget)
             
             
@@ -116,10 +116,15 @@ class Widget(QWidget):
             .itemAt(1).widget()
         text_label_of_thumbnail.setStyleSheet("background-color:blue;")
         
-        img_file = self.movie_caps[self.selected_movie_idx].key_frames[self.selected_thumbnail_index]
+        if self.kf_method == "Regular":    
+            img_file = self.movie_caps[self.selected_movie_idx].key_frames_regular[self.selected_thumbnail_index]
+        elif self.kf_method == "Network":
+            img_file = self.movie_caps[self.selected_movie_idx].key_frames_network[self.selected_thumbnail_index]
+        else:
+            img_file = np.zeros(shape=(400, 400))
         
         # print("Selected image index : "+str(index))
-        p = convert_cv_qt(img_file, img_file.shape[1] , img_file.shape[0] )
+        p = self.viewer.convert_cv_qt(img_file, img_file.shape[1] , img_file.shape[0] )
         self.viewer.setPhoto(p)
         # self.wdg3.setPixmap(self.viewer.setPhoto(p))
 
@@ -146,23 +151,33 @@ class Widget(QWidget):
         self.movie_caps.append(v)
         self.summary_wdg.setText(v.video_summary())
 
+    def switch_kf_method(self):
+        kfs_regular = self.movie_caps[self.selected_movie_idx].key_frames_regular
+        kfs_network = self.movie_caps[self.selected_movie_idx].key_frames_network
+        if len(kfs_regular) > 0 and len(kfs_network) > 0:
+            return
+        elif len(kfs_regular) == 0 and len(kfs_network) == 0:
+            return 
+        elif len(kfs_regular) > 0 and len(kfs_network) == 0:
+            self.kf_method = "Regular"
+        elif len(kfs_regular) == 0 and len(kfs_network) > 0:
+            self.kf_method = "Network"
+            
                 
     
     def select_movie(self, movie_path):
         self.deselect_movies()
+        
         for i,p in enumerate(self.movie_paths):
             if p == movie_path:
                 self.selected_movie_path = p
                 self.selected_movie_idx = i
                 
-                
+        self.switch_kf_method()        
         self.movie_buttons[self.selected_movie_idx].setStyleSheet("color: blue; border: 1px solid blue;")
         v = self.movie_caps[self.selected_movie_idx]
         self.summary_wdg.setText(v.video_summary())
-        if len(v.key_frames) >0:
-            self.populate_scrollbar()
-        else:
-            self.scroll_area.setWidget(QLabel(""))
+        self.populate_scrollbar()
         self.viewer.setPhoto()
         
         
@@ -179,6 +194,9 @@ class Widget(QWidget):
            b = True
 
         return b
+    
+
+            
 
     def save_directory(self, name_project):
         out_dir = os.path.join(name_project.split('.')[0], 'extracted_frames')
@@ -187,17 +205,29 @@ class Widget(QWidget):
         for i, p in enumerate(self.movie_paths):
             video_folder = p.split('/')[-1].split('.')[0]
             video_folder_path = os.path.join(out_dir, video_folder)
-            if len(self.movie_caps[i].key_frames) > 0:
-                if not os.path.exists(video_folder_path):
-                    os.makedirs(video_folder_path)
-                for j, img in enumerate(self.movie_caps[i].key_frames):
-                    img_path = os.path.join(video_folder_path, self.movie_caps[i].key_frame_indices[j] +'.png')
+            
+            if len(self.movie_caps[i].key_frames_regular) > 0:
+                path_regular = os.path.join(video_folder_path , 'Regular')
+                if not os.path.exists(path_regular):
+                    os.makedirs(path_regular)
+                    
+                for j, img in enumerate(self.movie_caps[i].key_frames_regular):
+                    img_path = os.path.join(path_regular, self.movie_caps[i].key_frame_indices_regular[j] +'.png')
+                    cv2.imwrite(img_path, img)
+                    
+            if len(self.movie_caps[i].key_frames_network) > 0:
+                path_network = os.path.join(video_folder_path , 'Network')
+                if not os.path.exists(path_network):
+                    os.makedirs(path_network)
+                for j, img in enumerate(self.movie_caps[i].key_frames_network):
+                    img_path = os.path.join(path_network, self.movie_caps[i].key_frame_indices_network[j] +'.png')
                     cv2.imwrite(img_path, img)
         
     def get_data(self):
         data = {
             "movies" : self.movie_paths,
-            "selected_movie" : self.selected_movie_path, 
+            "selected_movie" : self.selected_movie_path,
+            "selected_kf_method" : self.kf_method,
             "displayIndex": self.selected_thumbnail_index
             }
         return data
@@ -208,10 +238,12 @@ class Widget(QWidget):
             
         self.movie_paths = data["movies"]
         self.selected_movie_path = data["selected_movie"]
+        self.kf_method = data["selected_kf_method"]
         self.selected_thumbnail_index = data["displayIndex"]
         
         a = os.path.join(project_path.split('.')[0], 'extracted_frames')
         movie_dirs = os.listdir(a)
+    
  
         for i,p in enumerate(self.movie_paths):
             movie_name = p.split('/')[-1]
@@ -224,10 +256,45 @@ class Widget(QWidget):
             for j,mv in enumerate(movie_dirs):
                 if movie_name.split('.')[0] == mv:
                     movie_dirr = os.path.join(a, mv)
-                    img_names = sorted(glob.glob(movie_dirr+'/*.png'))
-                    v.key_frames = [cv2.imread(x) for x in img_names]
+                    
+                    img_names_regular = sorted(glob.glob(movie_dirr+'/Regular/*.png'))
+                    v.key_frames_regular = [cv2.imread(x) for x in img_names_regular]
+                    
+                    img_names_network = sorted(glob.glob(movie_dirr+'/Network/*.png'))
+                    v.key_frames_network = [cv2.imread(x) for x in img_names_network]
             
         self.select_movie(self.selected_movie_path)
-        self.populate_scrollbar()
+        
         if self.selected_thumbnail_index != -1:
             self.displayThumbnail(self.selected_thumbnail_index)
+            
+    
+            
+    def extract(self):
+        b = True
+        dlg = KF_dialogue()
+        if dlg.exec():
+            self.kf_method = dlg.kf_met
+
+            kfs = self.find_kfs()
+            if len(kfs) >0:
+                b = self.show_dialogue()
+            if b:
+                
+                v = Video(self.selected_movie_path)
+                v1 = self.movie_caps[self.selected_movie_idx]
+                
+                if self.kf_method == "Regular":
+                    rate_str = dlg.e1.text()
+                    sampling_rate = int(rate_str)
+                    v1.key_frames_regular, v1.key_frame_indices_regular = v.extract_frames_regularly(sampling_rate)
+                elif self.kf_method == "Network":
+                    v1.key_frames_network, v1.key_frame_indices_network = v.cleanSequence()
+        else:
+            self.kf_method = dlg.kf_met
+            
+        self.populate_scrollbar()
+
+            
+
+                

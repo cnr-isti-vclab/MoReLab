@@ -3,9 +3,8 @@ from PyQt5.QtCore import *
 from central_widget import Widget, SliderFrame
 from PyQt5.QtGui import *
 import sys, os, sip, json, glob, cv2
-from util.util import Video
-
-# from datetime import datetime
+from util.video import Video
+import pyqtgraph as pg
 
 
 
@@ -13,14 +12,14 @@ class Window(QMainWindow):
     def __init__(self):
         super(QMainWindow, self).__init__()
         self.setWindowTitle('MoReLab' )
+        self.showMaximized()
         self.widget = Widget()
         self.create_menu()
         self.create_statusbar()
         self.create_toolbar() 
-               
+
 
     def create_layout(self):
-        self.widget.btn_kf.clicked.connect(self.extract)
         self.vboxLayout1 = QVBoxLayout()
         self.vboxLayout3 = QVBoxLayout()
         for i,btn in enumerate(self.widget.movie_buttons):
@@ -47,31 +46,47 @@ class Window(QMainWindow):
         
     def create_toolbar(self):
         toolbar = QToolBar("&ToolBar", self)
-        self.addToolBar(toolbar)
-        
+        self.addToolBar( Qt.TopToolBarArea , toolbar )
         toolbar.addAction(self.new_pr)
         toolbar.addAction(self.open_pr)
         toolbar.addAction(self.save_pr)
         toolbar.addAction(self.open_mov)
         toolbar.addAction(self.exit_pr)
         
+        self.addToolBarBreak(Qt.TopToolBarArea) 
+
+        left_spacer = QWidget()
+        left_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        right_spacer = QWidget()
+        right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        
+        # self.project_name_label = QLabel(os.path.join(os.getcwd(), "Untitled.json"))
+        self.project_name_label = QLabel("untitled.json")
+        
+        toolbar2 = QToolBar()
+        self.addToolBar( Qt.TopToolBarArea , toolbar2)
+        toolbar2.addWidget(left_spacer)
+        toolbar2.addWidget(self.project_name_label)
+        toolbar2.addWidget(right_spacer)  
+               
         
     def create_menu(self):
         menuBar = self.menuBar()
         fileMenu = QMenu("&File", self)
         menuBar.addMenu(fileMenu)
-
-        self.new_pr = QAction(QIcon("./icons/new_project.png"),"&New Project",self)
+        
+        self.new_pr = QAction(QIcon("./icons/new_project.png"),"&New",self)
         fileMenu.addAction(self.new_pr)
         self.new_pr.triggered.connect(self.new_project)
         self.new_pr.setShortcut("ctrl+n")
 
-        self.open_pr = QAction(QIcon("./icons/open_project.png"),"&Open Project",self)
+        self.open_pr = QAction(QIcon("./icons/open_project.png"),"&Open",self)
         fileMenu.addAction(self.open_pr)
         self.open_pr.triggered.connect(self.open_project)
         self.open_pr.setShortcut("ctrl+o")
         
-        self.save_pr = QAction(QIcon("./icons/save_project.png"),"&Save Project",self)
+        self.save_pr = QAction(QIcon("./icons/save_project.png"),"&Save",self)
         fileMenu.addAction(self.save_pr)
         self.save_pr.triggered.connect(self.save_project)
         self.save_pr.setShortcut("ctrl+s")
@@ -81,14 +96,29 @@ class Window(QMainWindow):
         self.open_mov.triggered.connect(self.open_movie)
         self.open_mov.setShortcut("ctrl+shift+o")
         
-        self.exit_pr = QAction(QIcon("./icons/exit_project.png"),"&Exit Project",self)
+        self.exit_pr = QAction(QIcon("./icons/exit_project.png"),"&Exit",self)
         fileMenu.addAction(self.exit_pr)
         self.exit_pr.triggered.connect(self.exit_project)
         self.exit_pr.setShortcut("Esc")
         
+    
+    def ask_save_dialogue(self):
+        msgBox = QMessageBox()
+        msgBox.setText("Do you want to save your current project ?")
+        msgBox.setWindowTitle("Save project")
+        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        # msgBox.buttonClicked.connect(msgButtonClick)
+         
+        returnValue = msgBox.exec()
+        if returnValue == QMessageBox.Yes:
+           self.save_project()
+
+        
     def new_project(self):
+        self.ask_save_dialogue()
         self.setCentralWidget(QWidget())
         self.widget = Widget()
+        self.project_name_label.setText("untitled.json")
         
     def exit_project(self):
         self.close()
@@ -110,16 +140,17 @@ class Window(QMainWindow):
             self.statusBar.showMessage(display_msg, 2000)
         
     def save_project(self):
-        file_types = "json (*.json)"
-        response = QFileDialog.getSaveFileName(
-            parent = self,
-            caption = 'Save project.',
-            directory = os.getcwd(),
-            filter = file_types
-        )
-        if response[0] != '':
-            name_project = response[0]
-            
+        if self.project_name_label.text() == 'untitled.json':
+            file_types = "json (*.json)"
+            self.save_response = QFileDialog.getSaveFileName(
+                parent = self,
+                caption = 'Save project.',
+                directory = os.getcwd(),
+                filter = file_types
+            )
+        if self.save_response[0] != '':
+            name_project = self.save_response[0]
+            self.project_name_label.setText(name_project.split('/')[-1])
             display_msg = "Saving "+name_project.split('/')[-1]
             self.statusBar.showMessage(display_msg, 2000)
             
@@ -162,24 +193,13 @@ class Window(QMainWindow):
                     self.create_layout()
                 else:
                     self.vboxLayout1.addWidget(btn, 1)
-                    
                     btn.clicked.connect(self.make_calluser(movie_path))        
 
         
     def create_statusbar(self):
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
-        
-    def extract(self):
-        b = True
-        if len(self.widget.movie_caps[self.widget.selected_movie_idx].key_frames) >0:
-            b = self.widget.show_dialogue()
-        if b:
-            display_msg = "Extracting key-frames"           
-            self.statusBar.showMessage(display_msg, 2000)
-            self.widget.extract_frames()
-            
-        
+    
         
     def make_calluser(self, movie_path):
         def calluser():
