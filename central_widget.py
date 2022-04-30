@@ -1,7 +1,3 @@
-"""
-Created on Mon Mar 28 17:25:39 2022
-@author: arslan
-"""
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -10,6 +6,8 @@ from util.photoviewer import PhotoViewer
 from util.kf_dialogue import KF_dialogue
 import json, os, glob
 import cv2
+import numpy as np
+
 
 
 class SliderFrame(QFrame):
@@ -39,9 +37,8 @@ class Widget(QWidget):
         self.thumbnail_width = 104
         self.kf_method = ""
         
-        
         self.create_wdg1()
-        self.create_wdg4()
+        # self.create_wdg4()
         self.create_scroll_area()
 
         
@@ -63,10 +60,8 @@ class Widget(QWidget):
     def find_kfs(self):
         if self.kf_method == "Regular":
             kfs = self.movie_caps[self.selected_movie_idx].key_frames_regular
-
         elif self.kf_method == "Network":
             kfs = self.movie_caps[self.selected_movie_idx].key_frames_network
-
         else:
             kfs = []
             
@@ -105,6 +100,10 @@ class Widget(QWidget):
         
     def displayThumbnail(self, index):
         self.selected_thumbnail_index = index
+        if self.viewer.obj.cross_hair:
+            self.viewer.obj.hide_features(True)
+        else:
+            self.viewer.obj.hide_features(False)
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)
@@ -124,6 +123,7 @@ class Widget(QWidget):
             img_file = np.zeros(shape=(400, 400))
         
         # print("Selected image index : "+str(index))
+        
         p = self.viewer.convert_cv_qt(img_file, img_file.shape[1] , img_file.shape[0] )
         self.viewer.setPhoto(p)
         # self.wdg3.setPixmap(self.viewer.setPhoto(p))
@@ -167,6 +167,7 @@ class Widget(QWidget):
     
     def select_movie(self, movie_path):
         self.deselect_movies()
+        self.viewer.obj.hide_features(False)
         
         for i,p in enumerate(self.movie_paths):
             if p == movie_path:
@@ -287,9 +288,12 @@ class Widget(QWidget):
                 if self.kf_method == "Regular":
                     rate_str = dlg.e1.text()
                     sampling_rate = int(rate_str)
-                    v1.key_frames_regular, v1.key_frame_indices_regular = v.extract_frames_regularly(sampling_rate)
+                    v1.key_frames_regular, v1.key_frame_indices_regular, v1.features_regular, v1.feature_labels_regular, v1.n_objects_kf_regular = v.extract_frames_regularly(sampling_rate)
+
+
                 elif self.kf_method == "Network":
-                    v1.key_frames_network, v1.key_frame_indices_network = v.cleanSequence()
+                    v1.key_frames_network, v1.key_frame_indices_network, v1.features_network, v1.feature_labels_network, v1.n_objects_kf_network = v.cleanSequence()
+
         else:
             self.kf_method = dlg.kf_met
             

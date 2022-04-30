@@ -12,9 +12,13 @@ class Video:
         self.key_frame_indices_regular = []
         self.key_frames_network = []
         self.key_frame_indices_network = []
+        self.n_objects_kf_regular = np.array([])
+        self.features_regular = []
+        self.feature_labels_regular = []
         
-        self.key_frames = []
-        self.key_frame_indices = []
+        self.n_objects_kf_network = np.array([])
+        self.features_network = []
+        self.feature_labels_network = []
         
         self.summary = ""
 
@@ -44,10 +48,21 @@ class Video:
                 kfs.append(frame_cv)
                 idxs.append(str(count).zfill(6))
             count = count + 1
-            
+   
+        self.init_features_regular(len(kfs))
         self.cap.release()
+
+        return kfs, idxs, self.features_regular, self.feature_labels_regular, self.n_objects_kf_regular
+    
+    def init_features_regular(self, n):
+        self.n_objects_kf_regular = np.zeros(shape=(n, 1), dtype=int)
         
-        return kfs, idxs
+        for i in range(n):
+            self.features_regular.append([])
+            
+        for i in range(n):
+            self.feature_labels_regular.append([])            
+    
             
     def fromVideoFrameToNP(self, frame):
         frame = frame.astype(dtype = np.float32)
@@ -160,10 +175,24 @@ class Video:
                     kfs.append(img_cv)
                     # print("First frame")
                     # print('Frame ' + str(j_old) + ' is kept')
+        
+        self.init_features_network(len(kfs))
         self.cap.release()
         
-        return kfs, idxs
+        return kfs, idxs, self.features_network, self.feature_labels_network, self.n_objects_kf_network
     
+    
+    
+    def init_features_network(self, n):
+        self.n_objects_kf_network = np.zeros(shape=(n, 1), dtype=int)
+        
+        for i in range(n):
+            self.features_network.append([])
+            
+        for i in range(n):
+            self.feature_labels_network.append([])
+
+
 
     
 

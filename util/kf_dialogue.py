@@ -40,3 +40,31 @@ class KF_dialogue(QDialog):
             self.layout.addWidget(self.buttonBox)
         else:
             self.layout.addWidget(self.buttonBox)
+            
+            
+            
+            
+class feature_dialogue(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Feature Label")
+
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        layout = QVBoxLayout()
+        label = QLabel("Enter the label of feature point.")
+        
+        e2 = QLineEdit()
+        e2.setValidator(QIntValidator())
+        e2.setMaxLength(6)
+        e2.setFont(QFont("Arial",10))
+        
+        layout.addWidget(label)
+        layout.addWidget(e2)
+        
+        self.setLayout(layout)

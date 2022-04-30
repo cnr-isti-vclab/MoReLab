@@ -1,6 +1,7 @@
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore, QtGui, QtWidgets
+from tools import Tools
 import cv2
 
 
@@ -9,6 +10,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
 
     def __init__(self, parent):
         super(PhotoViewer, self).__init__(parent)
+        self.photoClicked.connect(self.get_mouse_pos)
         self._zoom = 0
         self._empty = True
         self._scene = QtWidgets.QGraphicsScene(self)
@@ -19,8 +21,14 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self.setResizeAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(30, 30, 30)))
+        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(200, 200, 200)))
         self.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.obj = Tools(parent)
+ 
+
+    def get_mouse_pos(self, p):
+        return p
+
 
     def hasPhoto(self):
         return not self._empty
@@ -43,7 +51,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self._zoom = 0
         if pixmap and not pixmap.isNull():
             self._empty = False
-            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+            # self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
             self._photo.setPixmap(pixmap)
         else:
             self._empty = True
@@ -52,7 +60,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self.fitInView()
 
     def wheelEvent(self, event):
-        if self.hasPhoto():
+        if self.hasPhoto() and not self.obj.cross_hair:
             if event.angleDelta().y() > 0:
                 factor = 1.25
                 self._zoom += 1
@@ -65,17 +73,23 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                 self.fitInView()
             else:
                 self._zoom = 0
+                
+                
+    # def toggleDragMode(self):
+    #     if self.dragMode() == QtWidgets.QGraphicsView.ScrollHandDrag:
+    #         self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
+    #     elif not self._photo.pixmap().isNull():
+    #         self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
 
-    def toggleDragMode(self):
+    def setNoDragMode(self):
         if self.dragMode() == QtWidgets.QGraphicsView.ScrollHandDrag:
             self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
-        elif not self._photo.pixmap().isNull():
+            
+            
+    def setScrolDragMode(self):    
+        if self.dragMode() == QtWidgets.QGraphicsView.NoDrag:
             self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
 
-    def mousePressEvent(self, event):
-        if self._photo.isUnderMouse():
-            self.photoClicked.emit(self.mapToScene(event.pos()).toPoint())
-        super(PhotoViewer, self).mousePressEvent(event)
         
     def convert_cv_qt(self, cv_img, width, height):
         """Convert from an opencv image to QPixmap"""
@@ -85,6 +99,38 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
         p = convert_to_Qt_format.scaled(width, height, Qt.KeepAspectRatio)
         return QPixmap.fromImage(p)
+    
+    
+    def mousePressEvent(self, event):
+        if self._photo.isUnderMouse():
+            p = self.mapToScene(event.pos()).toPoint()
+            self.photoClicked.emit(p)
+
+        super(PhotoViewer, self).mousePressEvent(event)
+    
+    
+    def mouseDoubleClickEvent(self, event):
+        if self._photo.isUnderMouse():
+            p = self.mapToScene(event.pos()).toPoint()
+            self.photoClicked.emit(p)
+            self.obj.add_feature(p)
+            
+        super(PhotoViewer, self).mouseDoubleClickEvent(event)
+        
+        
+    def keyPressEvent(self, event):
+        super(PhotoViewer, self).keyPressEvent(event)
+        if event.key() in (QtCore.Qt.Key_Delete, QtCore.Qt.Key_Backspace):
+            self.obj.delete_feature(1)
+
+        
+    # def mouseMoveEvent(self, event):
+    #     if self._photo.isUnderMouse():
+    #         p = self.mapToScene(event.pos()).toPoint()
+    #         self.mouse_pos = p
+    #         self.photoClicked.emit(p)
+
+    #     super(PhotoViewer, self).mousePressEvent(event)
 
         
 

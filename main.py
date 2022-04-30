@@ -1,11 +1,11 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-from central_widget import Widget, SliderFrame
 from PyQt5.QtGui import *
 import sys, os, sip, json, glob, cv2
-from util.video import Video
-import pyqtgraph as pg
+from central_widget import Widget, SliderFrame
+from object_panel import ObjectPanel
 
+from util.video import Video
 
 
 class Window(QMainWindow):
@@ -14,6 +14,7 @@ class Window(QMainWindow):
         self.setWindowTitle('MoReLab' )
         self.showMaximized()
         self.widget = Widget()
+        self.wdg_tree = ObjectPanel()
         self.create_menu()
         self.create_statusbar()
         self.create_toolbar() 
@@ -33,12 +34,12 @@ class Window(QMainWindow):
         
         self.vboxLayout2 = QVBoxLayout()
         self.vboxLayout2.addWidget(self.widget.scroll_area, 1)
-        self.vboxLayout2.addWidget(self.widget.viewer , 4)
+        self.vboxLayout2.addWidget(self.widget.viewer , 5)
         
         self.hboxLayout = QHBoxLayout()
-        self.hboxLayout.addLayout(self.vboxLayout3)
-        self.hboxLayout.addLayout(self.vboxLayout2)
-        self.hboxLayout.addWidget(self.widget.wdg4)
+        self.hboxLayout.addLayout(self.vboxLayout3, 1)
+        self.hboxLayout.addLayout(self.vboxLayout2, 4)
+        self.hboxLayout.addWidget(self.wdg_tree.tree, 1)
         
         self.widget.setLayout(self.hboxLayout)
         self.setCentralWidget(self.widget)
@@ -52,6 +53,9 @@ class Window(QMainWindow):
         toolbar.addAction(self.save_pr)
         toolbar.addAction(self.open_mov)
         toolbar.addAction(self.exit_pr)
+
+        toolbar.addAction(self.widget.viewer.obj.mv_tool)
+        toolbar.addAction(self.widget.viewer.obj.ft_tool)
         
         self.addToolBarBreak(Qt.TopToolBarArea) 
 
