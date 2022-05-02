@@ -20,6 +20,8 @@ class Video:
         self.features_network = []
         self.feature_labels_network = []
         
+        self.features_data = {}
+        
         self.summary = ""
 
     
@@ -191,6 +193,9 @@ class Video:
             
         for i in range(n):
             self.feature_labels_network.append([])
+            
+            
+
 
 
 

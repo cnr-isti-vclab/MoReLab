@@ -3,9 +3,9 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import sys, os, sip, json, glob, cv2
 from central_widget import Widget, SliderFrame
-from object_panel import ObjectPanel
 
 from util.video import Video
+from tools import Tools
 
 
 class Window(QMainWindow):
@@ -14,7 +14,7 @@ class Window(QMainWindow):
         self.setWindowTitle('MoReLab' )
         self.showMaximized()
         self.widget = Widget()
-        self.wdg_tree = ObjectPanel()
+        
         self.create_menu()
         self.create_statusbar()
         self.create_toolbar() 
@@ -37,9 +37,9 @@ class Window(QMainWindow):
         self.vboxLayout2.addWidget(self.widget.viewer , 5)
         
         self.hboxLayout = QHBoxLayout()
-        self.hboxLayout.addLayout(self.vboxLayout3, 1)
+        self.hboxLayout.addLayout(self.vboxLayout3, 1 )
         self.hboxLayout.addLayout(self.vboxLayout2, 4)
-        self.hboxLayout.addWidget(self.wdg_tree.tree, 1)
+        self.hboxLayout.addWidget(self.widget.viewer.obj.wdg_tree.tree, 2)
         
         self.widget.setLayout(self.hboxLayout)
         self.setCentralWidget(self.widget)
@@ -84,6 +84,7 @@ class Window(QMainWindow):
         fileMenu.addAction(self.new_pr)
         self.new_pr.triggered.connect(self.new_project)
         self.new_pr.setShortcut("ctrl+n")
+        
 
         self.open_pr = QAction(QIcon("./icons/open_project.png"),"&Open",self)
         fileMenu.addAction(self.open_pr)
@@ -105,6 +106,8 @@ class Window(QMainWindow):
         self.exit_pr.triggered.connect(self.exit_project)
         self.exit_pr.setShortcut("Esc")
         
+
+        
     
     def ask_save_dialogue(self):
         msgBox = QMessageBox()
@@ -120,8 +123,10 @@ class Window(QMainWindow):
         
     def new_project(self):
         self.ask_save_dialogue()
-        self.setCentralWidget(QWidget())
+
         self.widget = Widget()
+        # self.widget.viewer.obj = Tools(self.widget)
+        self.setCentralWidget(self.widget)
         self.project_name_label.setText("untitled.json")
         
     def exit_project(self):

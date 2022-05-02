@@ -4,16 +4,22 @@ from PyQt5.QtGui import *
 from ellipse import Ellipse
 from label import Label
 import numpy as np
+from object_panel import ObjectPanel
 
 
 class Tools(QObject):
     
     def __init__(self, ctrl_wdg):
-        super().__init__()
+        super().__init__(ctrl_wdg)
         self.ctrl_wdg = ctrl_wdg
+        # print(self.ctrl_wdg.selected_movie_idx)
+        self.wdg_tree = ObjectPanel()
         self.add_tool_icons()
         self.cross_hair = False
         self.labels = []
+        self.associated_frames = [[]]
+        self.selected_feature_index =-1
+        self.count_ = 0
         
 
     def add_tool_icons(self):
@@ -24,19 +30,26 @@ class Tools(QObject):
 
         
     def move_tool(self):
-        print('move')
+        # print('move')
         self.cross_hair = False
         self.hide_features(False)
-        
+        self.wdg_tree.tree.clear()
         self.ctrl_wdg.viewer.setScrolDragMode()
         self.ctrl_wdg.setCursor(QCursor(Qt.ArrowCursor))
         
     def feature_tool(self):
-        print('feature')
+        # print('feature')
         self.ctrl_wdg.setCursor(QCursor(Qt.CrossCursor))
         self.ctrl_wdg.viewer.setNoDragMode()
         self.cross_hair = True
         self.hide_features(True)
+        
+    def refresh(self):
+        self.labels = []
+        self.associated_frames = [[]]
+        self.selected_feature_index =-1
+        self.count_ = 0
+        self.wdg_tree.tree.clear()
 
     
     def add_feature(self, p):
@@ -49,16 +62,35 @@ class Tools(QObject):
                 label = v.n_objects_kf_regular[t, 0]
             elif self.ctrl_wdg.kf_method == "Network":
                 v.n_objects_kf_network[t, 0] += 1
-                label = v.n_objects_kf_regular[t, 0]
+                label = v.n_objects_kf_network[t, 0]
+                
+                
+                
+            if label not in self.labels:
+                self.selected_feature_index += 1
+                self.labels.append(label)
+            else:
+                self.count_ = self.labels.index(label)
+                self.selected_feature_index = self.labels.index(label)
+                
+                
+            if t not in self.associated_frames[self.count_]:
+                self.associated_frames[self.count_].append(t)
+            else:
+                self.associated_frames.append([t])
+                
+
+            # print(self.count_)
+            # print(self.selected_feature_index)
+            # print(self.associated_frames)
+            
                 
             l = 10
             x = p.x() - int(l/2)
             y = p.y() - int(l/2)
             
-            ellipse = Ellipse(x, y, l, l)
-            if label not in self.labels:
-                self.labels.append(label)
-            text = Label(x-int(l/2), y-2*l, label)
+            ellipse = Ellipse(x, y, l, l)            
+            text = Label(x-int(l/2), y-2*l, label, self)
 
             self.ctrl_wdg.viewer._scene.addItem(ellipse)
             self.ctrl_wdg.viewer._scene.addItem(text)
@@ -70,8 +102,13 @@ class Tools(QObject):
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(ellipse)
                 v.feature_labels_network[t].append(text)
-                    
-            data_keys = ["Label", "Associated Frames", "Pos"]
+                
+            if len(self.labels) == len(self.associated_frames):                
+                v.features_data = {"Label": self.labels,
+                       "Frames": self.associated_frames}
+                self.wdg_tree.add_feature_data(v.features_data)
+            else:
+                print("Mismatch in dimensions!")   
             
             
     def hide_features(self, current=True):
@@ -106,6 +143,8 @@ class Tools(QObject):
             self.features.pop(i)
             self.ctrl_wdg.viewer._scene.removeItem(self.feature_labels[i])
             self.feature_labels.pop(i)
+        
+ 
             
     
             

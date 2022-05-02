@@ -1,8 +1,9 @@
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore, QtGui, QtWidgets
-from tools import Tools
 import cv2
+from tools import Tools
+
 
 
 class PhotoViewer(QtWidgets.QGraphicsView):
@@ -24,6 +25,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(200, 200, 200)))
         self.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.obj = Tools(parent)
+
  
 
     def get_mouse_pos(self, p):

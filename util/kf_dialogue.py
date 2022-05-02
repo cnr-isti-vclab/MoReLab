@@ -44,7 +44,7 @@ class KF_dialogue(QDialog):
             
             
             
-class feature_dialogue(QDialog):
+class Feature_Dialogue(QDialog):
     def __init__(self):
         super().__init__()
 
@@ -57,14 +57,38 @@ class feature_dialogue(QDialog):
         self.buttonBox.rejected.connect(self.reject)
 
         layout = QVBoxLayout()
+        h_layout = QHBoxLayout()
         label = QLabel("Enter the label of feature point.")
         
-        e2 = QLineEdit()
-        e2.setValidator(QIntValidator())
-        e2.setMaxLength(6)
-        e2.setFont(QFont("Arial",10))
+        self.e2 = QLineEdit()
+        self.e2.setValidator(QIntValidator())
+        self.e2.setMaxLength(6)
+        self.e2.setFont(QFont("Arial",15))
         
-        layout.addWidget(label)
-        layout.addWidget(e2)
+        h_layout.addWidget(label)
+        h_layout.addWidget(self.e2)
+        
+        layout.addLayout(h_layout)
+        layout.addWidget(self.buttonBox)
         
         self.setLayout(layout)
+        
+        
+def duplicate_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("This feature label already exists on this frame. Please give another label.")
+    msgBox.setWindowTitle("Features with duplicate labels")
+    msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+     
+    returnValue = msgBox.exec()
+    
+    
+def increment_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("This feature label is too high. Please use the next increment number for new feature label.")
+    msgBox.setWindowTitle("Too high Feature label")
+    msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+     
+    returnValue = msgBox.exec()

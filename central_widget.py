@@ -10,6 +10,7 @@ import numpy as np
 
 
 
+
 class SliderFrame(QFrame):
     def __init__(self, myslider):
         QFrame.__init__(self)
@@ -33,6 +34,7 @@ class Widget(QWidget):
         self.selected_movie_idx = -1
         self.movie_caps = []
         self.viewer = PhotoViewer(self)
+        
         self.thumbnail_height = 64
         self.thumbnail_width = 104
         self.kf_method = ""
@@ -102,6 +104,8 @@ class Widget(QWidget):
         self.selected_thumbnail_index = index
         if self.viewer.obj.cross_hair:
             self.viewer.obj.hide_features(True)
+            if self.movie_caps[self.selected_movie_idx].features_data != {}:
+                self.viewer.obj.wdg_tree.add_feature_data(self.movie_caps[self.selected_movie_idx].features_data)
         else:
             self.viewer.obj.hide_features(False)
         ## Deselect all thumbnails in the image selector
@@ -126,6 +130,7 @@ class Widget(QWidget):
         
         p = self.viewer.convert_cv_qt(img_file, img_file.shape[1] , img_file.shape[0] )
         self.viewer.setPhoto(p)
+        
         # self.wdg3.setPixmap(self.viewer.setPhoto(p))
 
         
@@ -168,6 +173,7 @@ class Widget(QWidget):
     def select_movie(self, movie_path):
         self.deselect_movies()
         self.viewer.obj.hide_features(False)
+        self.viewer.obj.refresh()
         
         for i,p in enumerate(self.movie_paths):
             if p == movie_path:
@@ -289,7 +295,6 @@ class Widget(QWidget):
                     rate_str = dlg.e1.text()
                     sampling_rate = int(rate_str)
                     v1.key_frames_regular, v1.key_frame_indices_regular, v1.features_regular, v1.feature_labels_regular, v1.n_objects_kf_regular = v.extract_frames_regularly(sampling_rate)
-
 
                 elif self.kf_method == "Network":
                     v1.key_frames_network, v1.key_frame_indices_network, v1.features_network, v1.feature_labels_network, v1.n_objects_kf_network = v.cleanSequence()
