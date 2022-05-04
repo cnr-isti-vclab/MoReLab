@@ -11,7 +11,7 @@ from tools import Tools
 class Window(QMainWindow):
     def __init__(self):
         super(QMainWindow, self).__init__()
-        self.setWindowTitle('MoReLab' )
+        self.setWindowTitle('MoReLab')
         self.showMaximized()
         self.widget = Widget()
         
@@ -47,15 +47,27 @@ class Window(QMainWindow):
         
     def create_toolbar(self):
         toolbar = QToolBar("&ToolBar", self)
-        self.addToolBar( Qt.TopToolBarArea , toolbar )
-        toolbar.addAction(self.new_pr)
-        toolbar.addAction(self.open_pr)
-        toolbar.addAction(self.save_pr)
-        toolbar.addAction(self.open_mov)
-        toolbar.addAction(self.exit_pr)
+        self.addToolBar(Qt.TopToolBarArea , toolbar )
 
-        toolbar.addAction(self.widget.viewer.obj.mv_tool)
-        toolbar.addAction(self.widget.viewer.obj.ft_tool)
+        
+        
+        # self.om_tool = self.newButton("open_movie.png",     "Open Movie",  flatbuttonstyle1, self.open_movie)
+        
+        self.widget.viewer.obj.np_tool.clicked.connect(self.new_project)
+        self.widget.viewer.obj.op_tool.clicked.connect(self.open_project)
+        self.widget.viewer.obj.om_tool.clicked.connect(self.open_movie)
+        self.widget.viewer.obj.sp_tool.clicked.connect(self.save_project)
+        self.widget.viewer.obj.ep_tool.clicked.connect(self.exit_project)
+        
+
+        toolbar.addWidget(self.widget.viewer.obj.np_tool)
+        toolbar.addWidget(self.widget.viewer.obj.op_tool)
+        toolbar.addWidget(self.widget.viewer.obj.om_tool)
+        # toolbar.addWidget(self.widget.viewer.obj.om_tool)
+        toolbar.addWidget(self.widget.viewer.obj.sp_tool)
+        toolbar.addWidget(self.widget.viewer.obj.ep_tool)
+        toolbar.addWidget(self.widget.viewer.obj.mv_tool)
+        toolbar.addWidget(self.widget.viewer.obj.ft_tool)
         
         self.addToolBarBreak(Qt.TopToolBarArea) 
 

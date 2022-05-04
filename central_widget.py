@@ -53,11 +53,6 @@ class Widget(QWidget):
         self.btn_kf = QPushButton("Extract Key-frames")
         self.btn_kf.clicked.connect(self.extract)
 
-
-    def create_wdg4(self):
-        self.wdg4 = QLabel('Object \n Window ', self)
-        self.wdg4.setStyleSheet("border: 1px solid gray;")
-        self.wdg4.setAlignment(Qt.AlignmentFlag.AlignCenter)
             
     def find_kfs(self):
         if self.kf_method == "Regular":
@@ -102,12 +97,9 @@ class Widget(QWidget):
         
     def displayThumbnail(self, index):
         self.selected_thumbnail_index = index
-        if self.viewer.obj.cross_hair:
-            self.viewer.obj.hide_features(True)
-            if self.movie_caps[self.selected_movie_idx].features_data != {}:
-                self.viewer.obj.wdg_tree.add_feature_data(self.movie_caps[self.selected_movie_idx].features_data)
-        else:
-            self.viewer.obj.hide_features(False)
+        self.viewer.obj.hide_features(True)
+        if self.movie_caps[self.selected_movie_idx].features_data != {}:
+            self.viewer.obj.wdg_tree.add_feature_data(self.movie_caps[self.selected_movie_idx].features_data)
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)
@@ -126,12 +118,10 @@ class Widget(QWidget):
         else:
             img_file = np.zeros(shape=(400, 400))
         
-        # print("Selected image index : "+str(index))
         
         p = self.viewer.convert_cv_qt(img_file, img_file.shape[1] , img_file.shape[0] )
         self.viewer.setPhoto(p)
         
-        # self.wdg3.setPixmap(self.viewer.setPhoto(p))
 
         
 

@@ -62,7 +62,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self.fitInView()
 
     def wheelEvent(self, event):
-        if self.hasPhoto() and not self.obj.cross_hair:
+        if self.hasPhoto():
             if event.angleDelta().y() > 0:
                 factor = 1.25
                 self._zoom += 1

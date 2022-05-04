@@ -47,6 +47,7 @@ class Label(QGraphicsTextItem):
                         
                     if not duplicate:
                         if l > max(self.parent.labels) + 1:
+                            increment_dialogue()
                             l = max(self.parent.labels) + 1
                         last_label = self.label
                         self.label = str(l)
@@ -68,19 +69,18 @@ class Label(QGraphicsTextItem):
                             self.parent.associated_frames.append([t])
                         
                         self.parent.associated_frames[int(last_label)-1].remove(t)
-    
-                        
-                        # print(self.parent.count_)
-                        # print(self.parent.selected_feature_index)
-                        # print(self.parent.associated_frames)
                         
                         
                             
                         
                     if len(self.parent.labels) == len(self.parent.associated_frames):                
                         v.features_data = {"Label": self.parent.labels,
-                               "Frames": self.parent.associated_frames}
+                                "Frames": self.parent.associated_frames}
                         self.parent.wdg_tree.add_feature_data(v.features_data)
                     else:
-                        print("Mismatch in dimensions!")   
-
+                        print("Mismatch in dimensions!")
+                        
+            if event.button() == Qt.LeftButton:
+                self.setFlag(QGraphicsItem.ItemIsMovable)            
+                self.setFlag(QGraphicsItem.ItemIsSelectable)
+                
