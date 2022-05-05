@@ -2,39 +2,42 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
-class ObjectPanel:
+class ObjectPanel(QTreeWidget):
     def __init__(self):
         super().__init__()
-        self.create_tree()
-        
-        
-    def create_tree(self):
-        self.tree = QTreeWidget()
-        self.tree.setColumnCount(2)
-        self.tree.setHeaderLabels(["Features", "Info"])
+        self.setColumnCount(2)
+        self.setHeaderLabels(["Features", "Info"])
         
     
     def add_feature_data(self, data):
-        self.tree.clear()
+        self.clear()
         labels = data["Label"]
         frames = data["Frames"]
+        locs = data["Locations"]
         items = []
         for i,f in enumerate(frames):
             item = QTreeWidgetItem(["Feature "+str(labels[i])])
-            
             child1 = QTreeWidgetItem(["Label", str(labels[i])])
             str_f = ""
+            str_loc = ""
             for j,ff in enumerate(f):
                 if j==0:
                     str_f = str_f + str(ff)
+                    str_loc = str_loc + '('+str(locs[i][j][0])+ ',' + str(locs[i][j][1])+')'
                 else:
-                    str_f = str_f + ', '+ str(ff) 
+                    str_f = str_f + ', '+ str(ff)
+                    str_loc = str_loc + ', ('+str(locs[i][j][0])+ ',' + str(locs[i][j][1])+')'
+                                   
             child2 = QTreeWidgetItem(["Associated Frames", str_f])
+            child3 = QTreeWidgetItem(["Locations", str_loc])
             
             item.addChild(child1)
             item.addChild(child2)
+            item.addChild(child3)
             
             items.append(item)
-        self.tree.insertTopLevelItems(0, items)
+        self.insertTopLevelItems(0, items)
+        
+        
         
                 

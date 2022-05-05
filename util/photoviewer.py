@@ -119,11 +119,10 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             
         super(PhotoViewer, self).mouseDoubleClickEvent(event)
         
-        
-    def keyPressEvent(self, event):
-        super(PhotoViewer, self).keyPressEvent(event)
-        if event.key() in (QtCore.Qt.Key_Delete, QtCore.Qt.Key_Backspace):
-            self.obj.delete_feature(1)
+    # def keyPressEvent(self, event):
+    #     super(PhotoViewer, self).keyPressEvent(event)
+    #     if event.key() in (QtCore.Qt.Key_Delete, QtCore.Qt.Key_Backspace):
+    #         self.obj.delete_feature(self.obj.selected_feature_index)
 
         
     # def mouseMoveEvent(self, event):

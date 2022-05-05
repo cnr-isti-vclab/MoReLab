@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from feature_crosshair import FeatureCrosshair
-from label import Label
+
 import numpy as np
 from object_panel import ObjectPanel
 import cv2
@@ -24,6 +24,7 @@ class Tools(QObject):
         self.add_tool_icons()
         self.cross_hair = False
         self.labels = []
+        self.locs = [[]]
         self.associated_frames = [[]]
         self.selected_feature_index =-1
         self.count_ = 0
@@ -84,7 +85,7 @@ class Tools(QObject):
         self.mv_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
         self.cross_hair = False
         # self.hide_features(False)
-        self.wdg_tree.tree.clear()
+        self.wdg_tree.clear()
         self.ctrl_wdg.viewer.setScrolDragMode()
         self.ctrl_wdg.setCursor(QCursor(Qt.ArrowCursor))
         
@@ -102,7 +103,7 @@ class Tools(QObject):
         self.associated_frames = [[]]
         self.selected_feature_index =-1
         self.count_ = 0
-        self.wdg_tree.tree.clear()
+        self.wdg_tree.clear()
 
     
     def add_feature(self, p):
@@ -118,6 +119,7 @@ class Tools(QObject):
                 label = v.n_objects_kf_network[t, 0]
                 
                 
+            fc = FeatureCrosshair(self.feature_pixmap, p.x(), p.y(), label, self)
                 
             if label not in self.labels:
                 self.selected_feature_index += 1
@@ -129,43 +131,36 @@ class Tools(QObject):
                 
             if t not in self.associated_frames[self.count_]:
                 self.associated_frames[self.count_].append(t)
+                self.locs[self.count_].append((fc.x_loc, fc.y_loc))
             else:
                 self.associated_frames.append([t])
+                self.locs.append([(fc.x_loc, fc.y_loc)])
                 
-
-            # print(self.count_)
-            # print(self.selected_feature_index)
-            # print(self.associated_frames)
             
-                
-            l = 10
-            x = p.x() - int(l/2)
-            y = p.y() - int(l/2)
-            
-            # img = cv2.imread("icons/crosshair.png", cv2.IMREAD_UNCHANGED)
-            # p = self.convert_cv_qt(img, 20, 20)
-            
-            
-            fc = FeatureCrosshair(self.feature_pixmap, x, y)            
-            text = Label(x-int(l/2), y-2*l, label, self)
+            # Add feature on the scene
 
             self.ctrl_wdg.viewer._scene.addItem(fc)
-            self.ctrl_wdg.viewer._scene.addItem(text)
+            self.ctrl_wdg.viewer._scene.addItem(fc.label)
             
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t].append(fc)
-                v.feature_labels_regular[t].append(text)
+                v.feature_labels_regular[t].append(fc.label)
                 
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(fc)
-                v.feature_labels_network[t].append(text)
+                v.feature_labels_network[t].append(fc.label)
                 
-            if len(self.labels) == len(self.associated_frames):                
-                v.features_data = {"Label": self.labels,
-                       "Frames": self.associated_frames}
-                self.wdg_tree.add_feature_data(v.features_data)
-            else:
-                print("Mismatch in dimensions!")   
+            self.display_data(v)
+            
+            
+    def display_data(self, v):
+        if (len(self.labels) == len(self.associated_frames)) and (len(self.labels) == len(self.locs)):                
+            v.features_data = {"Label": self.labels,
+                   "Frames": self.associated_frames,
+                   "Locations": self.locs}
+            self.wdg_tree.add_feature_data(v.features_data)
+        else:
+            print("Mismatch in dimensions!")
             
             
     def hide_features(self, current=True):
@@ -194,13 +189,23 @@ class Tools(QObject):
                     v.feature_labels_network[t][j].setVisible(True)
 
     
-    def delete_feature(self, i):
-        if len(self.features) > i:
-            self.ctrl_wdg.viewer._scene.removeItem(self.features[i])
-            self.features.pop(i)
-            self.ctrl_wdg.viewer._scene.removeItem(self.feature_labels[i])
-            self.feature_labels.pop(i)
+    # def delete_feature(self, i):
+    #     t = self.ctrl_wdg.selected_thumbnail_index            
+    #     v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
         
+    #     if self.ctrl_wdg.kf_method == "Regular":
+    #         self.ctrl_wdg.viewer._scene.removeItem(v.features_regular[t][i])
+    #         v.features_regular[t].pop(i)
+    #         self.ctrl_wdg.viewer._scene.removeItem(v.feature_labels_regular[t][i])
+    #         v.feature_labels_regular[t].pop(i)
+            
+    #     elif self.ctrl_wdg.kf_method == "Network":
+    #         self.ctrl_wdg.viewer._scene.removeItem(v.features_network[t][i])
+    #         v.features_regular[t].pop(i)
+    #         self.ctrl_wdg.viewer._scene.removeItem(v.feature_labels_network[t][i])
+    #         v.feature_labels_network[t].pop(i)
+
+
  
             
     

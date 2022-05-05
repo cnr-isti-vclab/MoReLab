@@ -39,7 +39,7 @@ class Window(QMainWindow):
         self.hboxLayout = QHBoxLayout()
         self.hboxLayout.addLayout(self.vboxLayout3, 1 )
         self.hboxLayout.addLayout(self.vboxLayout2, 4)
-        self.hboxLayout.addWidget(self.widget.viewer.obj.wdg_tree.tree, 2)
+        self.hboxLayout.addWidget(self.widget.viewer.obj.wdg_tree, 2)
         
         self.widget.setLayout(self.hboxLayout)
         self.setCentralWidget(self.widget)
