@@ -49,7 +49,7 @@ class FeatureCrosshair(QGraphicsPixmapItem):
                 
         v = self.parent.ctrl_wdg.movie_caps[self.parent.ctrl_wdg.selected_movie_idx]
 
-        self.parent.display_data(v)
+        self.parent.display_data()
         
 
             

@@ -98,8 +98,8 @@ class Widget(QWidget):
     def displayThumbnail(self, index):
         self.selected_thumbnail_index = index
         self.viewer.obj.hide_features(True)
-        if self.movie_caps[self.selected_movie_idx].features_data != {}:
-            self.viewer.obj.wdg_tree.add_feature_data(self.movie_caps[self.selected_movie_idx].features_data, self.viewer.obj.deleted_labels)
+        if self.viewer.obj.features_data != {}:
+            self.viewer.obj.wdg_tree.add_feature_data(self.viewer.obj.features_data, self.viewer.obj.deleted_labels)
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)
@@ -163,7 +163,8 @@ class Widget(QWidget):
     def select_movie(self, movie_path):
         self.deselect_movies()
         self.viewer.obj.hide_features(False)
-        self.viewer.obj.refresh()
+        # self.viewer.obj.refresh()
+        self.viewer.obj.wdg_tree.clear()
         
         for i,p in enumerate(self.movie_paths):
             if p == movie_path:

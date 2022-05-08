@@ -18,7 +18,6 @@ class Video:
         self.n_objects_kf_network = np.array([])
         self.features_network = []
         
-        self.features_data = {}
         
         self.summary = ""
 

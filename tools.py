@@ -27,10 +27,12 @@ class Tools(QObject):
         self.labels = []
         self.locs = [[]]
         self.associated_frames = [[]]
+        self.associated_videos = [[]]
         
         self.labels2 = []
         self.locs2 = [[]]
         self.associated_frames2 = [[]]
+        self.associated_videos2 = [[]]
         self.first_delete = False
         
         # self.associated_frames2 = [[]]
@@ -39,6 +41,8 @@ class Tools(QObject):
         self.deleted_labels = []
         self.partially_deleted_labels = []
         self.partially_frames = []
+        
+        self.features_data = {}
         
 
     def add_tool_icons(self):
@@ -108,13 +112,6 @@ class Tools(QObject):
         self.ctrl_wdg.viewer.setNoDragMode()
         self.cross_hair = True
         self.hide_features(True)
-        
-    def refresh(self):
-        self.labels = []
-        self.associated_frames = [[]]
-        self.selected_feature_index =-1
-        self.count_ = 0
-        self.wdg_tree.clear()
 
     
     def add_feature(self, p):
@@ -129,6 +126,8 @@ class Tools(QObject):
                 v.n_objects_kf_network[t, 0] += 1
                 label = v.n_objects_kf_network[t, 0]
                 
+            print("Label: "+str(label))
+                
                 
             fc = FeatureCrosshair(self.feature_pixmap, p.x(), p.y(), label, self)
                 
@@ -140,12 +139,14 @@ class Tools(QObject):
                 self.selected_feature_index = self.labels.index(label)
                 
                 
-            if t not in self.associated_frames[self.count_]:
+            if (t not in self.associated_frames[self.count_]) or (self.ctrl_wdg.selected_movie_idx not in self.associated_videos[self.count_]):
                 self.associated_frames[self.count_].append(t)
+                self.associated_videos[self.count_].append(self.ctrl_wdg.selected_movie_idx)
                 # self.associated_frames2[self.count_].append(t)
                 self.locs[self.count_].append([fc.x_loc, fc.y_loc])
             else:
                 self.associated_frames.append([t])
+                self.associated_videos.append([self.ctrl_wdg.selected_movie_idx])
                 # self.associated_frames2.append([t])
                 self.locs.append([[fc.x_loc, fc.y_loc]])
                             
@@ -160,16 +161,17 @@ class Tools(QObject):
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(fc)
                 
-            self.display_data(v)
+            self.display_data()
             
             
-    def display_data(self, v):
+    def display_data(self):
         if not self.first_delete:
             if (len(self.labels) == len(self.associated_frames)) and (len(self.labels) == len(self.locs)):                
-                v.features_data = {"Label": self.labels,
+                self.features_data = {"Label": self.labels,
                        "Frames": self.associated_frames,
+                       "Videos": self.associated_videos,
                        "Locations": self.locs}
-                self.wdg_tree.add_feature_data(v.features_data, self.deleted_labels)
+                self.wdg_tree.add_feature_data(self.features_data, self.deleted_labels)
             else:
                 print("Mismatch in dimensions!")
                 print(self.labels)
@@ -178,10 +180,11 @@ class Tools(QObject):
                 
         else:
             if (len(self.labels2) == len(self.associated_frames2)) and (len(self.labels2) == len(self.locs2)):                
-                v.features_data = {"Label": self.labels2,
+                self.features_data = {"Label": self.labels2,
                        "Frames": self.associated_frames2,
+                       "Videos": self.associated_videos2,
                        "Locations": self.locs2}
-                self.wdg_tree.add_feature_data(v.features_data, self.deleted_labels)
+                self.wdg_tree.add_feature_data(self.features_data, self.deleted_labels)
             else:
                 print("Mismatch in dimensions!")
                 print(self.labels2)
@@ -239,6 +242,7 @@ class Tools(QObject):
             self.first_delete = True
             self.labels2 = self.labels
             self.associated_frames2 = self.associated_frames
+            self.associated_videos2 = self.associated_videos
             self.locs2 = self.locs
         
         if i != -1:
@@ -253,6 +257,7 @@ class Tools(QObject):
             if len(self.associated_frames2[i]) > 1:
                 pic_idx = self.associated_frames2[i].index(t)
                 self.associated_frames2[i].pop(pic_idx)
+                self.associated_videos2[i].pop(pic_idx)
                 self.locs2[i].pop(pic_idx)
                 self.partially_deleted_labels.append(self.labels[i])
                 self.partially_frames.append(t)
@@ -264,7 +269,7 @@ class Tools(QObject):
                 # self.labels2.pop(i)
                 
             
-            self.display_data(v)
+            self.display_data()
 
 
  

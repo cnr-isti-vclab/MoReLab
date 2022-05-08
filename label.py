@@ -68,13 +68,16 @@ class Label(QGraphicsTextItem):
                         
                     if t not in self.tool_obj.associated_frames[self.tool_obj.count_]:
                         self.tool_obj.associated_frames[self.tool_obj.count_].append(t)
-                        self.tool_obj.locs[self.tool_obj.count_].append((self.parent.x_loc, self.parent.y_loc))
+                        self.tool_obj.associated_videos[self.tool_obj.count_].append(self.tool_obj.ctrl_wdg.selected_movie_idx)
+                        self.tool_obj.locs[self.tool_obj.count_].append([self.parent.x_loc, self.parent.y_loc])
                     else:
                         self.tool_obj.associated_frames.append([t])
-                        self.tool_obj.locs.append([(self.parent.x_loc, self.parent.y_loc)])
+                        self.tool_obj.associated_videos.append([self.tool_obj.ctrl_wdg.selected_movie_idx])
+                        self.tool_obj.locs.append([[self.parent.x_loc, self.parent.y_loc]])
                     
                     idx = self.tool_obj.associated_frames[int(last_label)-1].index(t)
                     self.tool_obj.associated_frames[int(last_label)-1].pop(idx)
+                    self.tool_obj.associated_videos[int(last_label)-1].pop(idx)
                     self.tool_obj.locs[int(last_label)-1].pop(idx)
                           
-                    self.tool_obj.display_data(v)
+                    self.tool_obj.display_data()
