@@ -4,12 +4,12 @@ from PyQt5.QtGui import *
 from util.kf_dialogue import Feature_Dialogue, duplicate_dialogue, increment_dialogue
 
 class Label(QGraphicsTextItem):
-    def __init__(self, x, y, label_idx, parent, g):
+    def __init__(self, x, y, label_idx, tool_obj, parent):
         super().__init__(str(label_idx))
         self.label = str(label_idx)
         self.create_label(x, y)
+        self.tool_obj = tool_obj
         self.parent = parent
-        self.g = g
         
         
     def create_label(self, x, y):
@@ -22,34 +22,36 @@ class Label(QGraphicsTextItem):
        
     def mousePressEvent(self, event):
         p = self.mapToScene(event.pos()).toPoint()
+        
         if event.button() == Qt.RightButton:
+            self.tool_obj.selected_feature_index = int(self.label) - 1 
             dlg = Feature_Dialogue()
             if dlg.exec():
-                t = self.parent.ctrl_wdg.selected_thumbnail_index
-                v = self.parent.ctrl_wdg.movie_caps[self.parent.ctrl_wdg.selected_movie_idx]
+                t = self.tool_obj.ctrl_wdg.selected_thumbnail_index
+                v = self.tool_obj.ctrl_wdg.movie_caps[self.tool_obj.ctrl_wdg.selected_movie_idx]
                 
                 l = int(dlg.e2.text())                   
                 duplicate = False
                 
                 # print(t)
                 
-                if self.parent.ctrl_wdg.kf_method == "Regular":
-                    for text_label in v.feature_labels_regular[t]:
-                        if int(text_label.label) == l:
+                if self.tool_obj.ctrl_wdg.kf_method == "Regular":
+                    for f in v.features_regular[t]:
+                        if int(f.label.label) == l:
                             duplicate = True
                             duplicate_dialogue()  
 
-                elif self.parent.ctrl_wdg.kf_method == "Network":
-                    for text_label in v.feature_labels_network[t]:
-                        if int(text_label.label) == l:
+                elif self.tool_obj.ctrl_wdg.kf_method == "Network":
+                    for f in v.features_network[t]:
+                        if int(f.label.label) == l:
                             duplicate = True
                             duplicate_dialogue()  
  
                     
                 if not duplicate:
-                    if l > max(self.parent.labels) + 1:
+                    if l > max(self.tool_obj.labels) + 1:
                         increment_dialogue()
-                        l = max(self.parent.labels) + 1
+                        l = max(self.tool_obj.labels) + 1
                     last_label = self.label
                     self.label = str(l)
                     self.setPlainText(self.label)
@@ -57,22 +59,22 @@ class Label(QGraphicsTextItem):
                     # print(t)
                     # print(int(last_label)-1)
                     # print(self.parent.associated_frames[int(last_label)-1])
-                    if l not in self.parent.labels:
-                        self.parent.selected_feature_index += 1
-                        self.parent.labels.append(l)
+                    if l not in self.tool_obj.labels:
+                        self.tool_obj.selected_feature_index += 1
+                        self.tool_obj.labels.append(l)
                     else:
-                        self.parent.count_ = self.parent.labels.index(l)
-                        self.parent.selected_feature_index = self.parent.labels.index(l)
+                        self.tool_obj.count_ = self.parent.labels.index(l)
+                        self.tool_obj.selected_feature_index = self.tool_obj.labels.index(l)
                         
-                    if t not in self.parent.associated_frames[self.parent.count_]:
-                        self.parent.associated_frames[self.parent.count_].append(t)
-                        self.parent.locs[self.parent.count_].append((self.g.x_loc, self.g.y_loc))
+                    if t not in self.tool_obj.associated_frames[self.tool_obj.count_]:
+                        self.tool_obj.associated_frames[self.tool_obj.count_].append(t)
+                        self.tool_obj.locs[self.tool_obj.count_].append((self.parent.x_loc, self.parent.y_loc))
                     else:
-                        self.parent.associated_frames.append([t])
-                        self.parent.locs.append([(self.g.x_loc, self.g.y_loc)])
+                        self.tool_obj.associated_frames.append([t])
+                        self.tool_obj.locs.append([(self.parent.x_loc, self.parent.y_loc)])
                     
-                    idx = self.parent.associated_frames[int(last_label)-1].index(t)
-                    self.parent.associated_frames[int(last_label)-1].pop(idx)
-                    self.parent.locs[int(last_label)-1].pop(idx)
+                    idx = self.tool_obj.associated_frames[int(last_label)-1].index(t)
+                    self.tool_obj.associated_frames[int(last_label)-1].pop(idx)
+                    self.tool_obj.locs[int(last_label)-1].pop(idx)
                           
-                    self.parent.display_data(v)
+                    self.tool_obj.display_data(v)

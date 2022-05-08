@@ -18,6 +18,8 @@ class FeatureCrosshair(QGraphicsPixmapItem):
         self.label = Label(x-int(self.l/2), y-int((5*self.l)/2), num_str, parent, self)
         
      
+    def mousePressEvent(self, event):        
+        self.parent.selected_feature_index = int(self.label.label) - 1
 
         
         
@@ -36,17 +38,17 @@ class FeatureCrosshair(QGraphicsPixmapItem):
         self.x_loc = int(updated_cursor_x)
         self.y_loc = int(updated_cursor_y)
         
-        thresh = 3
-        for i,loc in enumerate(self.parent.locs):
-            if abs(loc[0]-self.x_loc) < thresh or abs(loc[1]-self.y_loc) < thresh:
-                self.parent.selected_feature_index = i        
-                self.parent.locs[i] = (self.x_loc, self.y_loc)
+        self.parent.selected_feature_index = int(self.label.label) - 1
         
-        
+        f = self.parent.selected_feature_index
         t = self.parent.ctrl_wdg.selected_thumbnail_index
-        v = self.parent.ctrl_wdg.movie_caps[self.parent.ctrl_wdg.selected_movie_idx]
         
-    
+        pic_idx = self.parent.associated_frames[f].index(t)
+        self.parent.locs[f][pic_idx][0] = self.x_loc
+        self.parent.locs[f][pic_idx][1] = self.y_loc
+                
+        v = self.parent.ctrl_wdg.movie_caps[self.parent.ctrl_wdg.selected_movie_idx]
+
         self.parent.display_data(v)
         
 

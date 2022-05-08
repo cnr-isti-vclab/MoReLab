@@ -14,11 +14,9 @@ class Video:
         self.key_frame_indices_network = []
         self.n_objects_kf_regular = np.array([])
         self.features_regular = []
-        self.feature_labels_regular = []
         
         self.n_objects_kf_network = np.array([])
         self.features_network = []
-        self.feature_labels_network = []
         
         self.features_data = {}
         
@@ -54,16 +52,13 @@ class Video:
         self.init_features_regular(len(kfs))
         self.cap.release()
 
-        return kfs, idxs, self.features_regular, self.feature_labels_regular, self.n_objects_kf_regular
+        return kfs, idxs, self.features_regular,  self.n_objects_kf_regular
     
     def init_features_regular(self, n):
         self.n_objects_kf_regular = np.zeros(shape=(n, 1), dtype=int)
         
         for i in range(n):
-            self.features_regular.append([])
-            
-        for i in range(n):
-            self.feature_labels_regular.append([])            
+            self.features_regular.append([])        
     
             
     def fromVideoFrameToNP(self, frame):
@@ -181,7 +176,7 @@ class Video:
         self.init_features_network(len(kfs))
         self.cap.release()
         
-        return kfs, idxs, self.features_network, self.feature_labels_network, self.n_objects_kf_network
+        return kfs, idxs, self.features_network,  self.n_objects_kf_network
     
     
     
@@ -190,9 +185,6 @@ class Video:
         
         for i in range(n):
             self.features_network.append([])
-            
-        for i in range(n):
-            self.feature_labels_network.append([])
             
             
 

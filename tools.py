@@ -23,11 +23,22 @@ class Tools(QObject):
         self.feature_pixmap = QPixmap("icons/small_crosshair.png")
         self.add_tool_icons()
         self.cross_hair = False
+        
         self.labels = []
         self.locs = [[]]
         self.associated_frames = [[]]
+        
+        self.labels2 = []
+        self.locs2 = [[]]
+        self.associated_frames2 = [[]]
+        self.first_delete = False
+        
+        # self.associated_frames2 = [[]]
         self.selected_feature_index =-1
         self.count_ = 0
+        self.deleted_labels = []
+        self.partially_deleted_labels = []
+        self.partially_frames = []
         
 
     def add_tool_icons(self):
@@ -131,12 +142,13 @@ class Tools(QObject):
                 
             if t not in self.associated_frames[self.count_]:
                 self.associated_frames[self.count_].append(t)
-                self.locs[self.count_].append((fc.x_loc, fc.y_loc))
+                # self.associated_frames2[self.count_].append(t)
+                self.locs[self.count_].append([fc.x_loc, fc.y_loc])
             else:
                 self.associated_frames.append([t])
-                self.locs.append([(fc.x_loc, fc.y_loc)])
-                
-            
+                # self.associated_frames2.append([t])
+                self.locs.append([[fc.x_loc, fc.y_loc]])
+                            
             # Add feature on the scene
 
             self.ctrl_wdg.viewer._scene.addItem(fc)
@@ -144,23 +156,37 @@ class Tools(QObject):
             
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t].append(fc)
-                v.feature_labels_regular[t].append(fc.label)
                 
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(fc)
-                v.feature_labels_network[t].append(fc.label)
                 
             self.display_data(v)
             
             
     def display_data(self, v):
-        if (len(self.labels) == len(self.associated_frames)) and (len(self.labels) == len(self.locs)):                
-            v.features_data = {"Label": self.labels,
-                   "Frames": self.associated_frames,
-                   "Locations": self.locs}
-            self.wdg_tree.add_feature_data(v.features_data)
+        if not self.first_delete:
+            if (len(self.labels) == len(self.associated_frames)) and (len(self.labels) == len(self.locs)):                
+                v.features_data = {"Label": self.labels,
+                       "Frames": self.associated_frames,
+                       "Locations": self.locs}
+                self.wdg_tree.add_feature_data(v.features_data, self.deleted_labels)
+            else:
+                print("Mismatch in dimensions!")
+                print(self.labels)
+                print(self.associated_frames)
+                print(self.locs)
+                
         else:
-            print("Mismatch in dimensions!")
+            if (len(self.labels2) == len(self.associated_frames2)) and (len(self.labels2) == len(self.locs2)):                
+                v.features_data = {"Label": self.labels2,
+                       "Frames": self.associated_frames2,
+                       "Locations": self.locs2}
+                self.wdg_tree.add_feature_data(v.features_data, self.deleted_labels)
+            else:
+                print("Mismatch in dimensions!")
+                print(self.labels2)
+                print(self.associated_frames2)
+                print(self.locs2)
             
             
     def hide_features(self, current=True):
@@ -170,40 +196,75 @@ class Tools(QObject):
         if self.ctrl_wdg.kf_method == "Regular":
             for i in range(v.n_objects_kf_regular.shape[0]):
                 for j,f in enumerate(v.features_regular[i]):
+                    f.label.setVisible(False)
                     f.setVisible(False)
-                    v.feature_labels_regular[i][j].setVisible(False)
         elif self.ctrl_wdg.kf_method == "Network":
             for i in range(v.n_objects_kf_network.shape[0]):
                 for j,f in enumerate(v.features_network[i]):
+                    f.label.setVisible(False)
                     f.setVisible(False)
-                    v.feature_labels_network[i][j].setVisible(False)
-                    
+        
+        print(self.partially_frames)
         if current:
             if self.ctrl_wdg.kf_method == "Regular":
                 for j,f in enumerate(v.features_regular[t]):
-                    f.setVisible(True)
-                    v.feature_labels_regular[t][j].setVisible(True)
+                    if t in self.partially_frames:
+                        if (int(f.label.label) not in self.deleted_labels) and (int(f.label.label) not in self.partially_deleted_labels):
+                            f.label.setVisible(True)
+                            f.setVisible(True)
+                    else:
+                        if (int(f.label.label) not in self.deleted_labels):
+                            f.label.setVisible(True)
+                            f.setVisible(True)
+                            
             elif self.ctrl_wdg.kf_method == "Network":
                 for j,f in enumerate(v.features_network[t]):
-                    f.setVisible(True)
-                    v.feature_labels_network[t][j].setVisible(True)
+                    if t in self.partially_frames:
+                        if (int(f.label.label) not in self.deleted_labels) and (int(f.label.label) not in self.partially_deleted_labels):
+                            f.label.setVisible(True)
+                            f.setVisible(True)
+                    else:
+                        if (int(f.label.label) not in self.deleted_labels):
+                            f.label.setVisible(True)
+                            f.setVisible(True)
 
     
-    # def delete_feature(self, i):
-    #     t = self.ctrl_wdg.selected_thumbnail_index            
-    #     v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
+    def delete_feature(self):
+        t = self.ctrl_wdg.selected_thumbnail_index            
+        v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
+        i = self.selected_feature_index
+        print(i)
         
-    #     if self.ctrl_wdg.kf_method == "Regular":
-    #         self.ctrl_wdg.viewer._scene.removeItem(v.features_regular[t][i])
-    #         v.features_regular[t].pop(i)
-    #         self.ctrl_wdg.viewer._scene.removeItem(v.feature_labels_regular[t][i])
-    #         v.feature_labels_regular[t].pop(i)
+        if not self.first_delete:
+            self.first_delete = True
+            self.labels2 = self.labels
+            self.associated_frames2 = self.associated_frames
+            self.locs2 = self.locs
+        
+        if i != -1:
+            if self.ctrl_wdg.kf_method == "Regular":
+                v.features_regular[t][i].label.setVisible(False)
+                v.features_regular[t][i].setVisible(False)
+                
+            elif self.ctrl_wdg.kf_method == "Network":
+                v.features_network[t][i].label.setVisible(False)
+                v.features_network[t][i].setVisible(False)
+                
+            if len(self.associated_frames2[i]) > 1:
+                pic_idx = self.associated_frames2[i].index(t)
+                self.associated_frames2[i].pop(pic_idx)
+                self.locs2[i].pop(pic_idx)
+                self.partially_deleted_labels.append(self.labels[i])
+                self.partially_frames.append(t)
+                
+            elif len(self.associated_frames2[i]) == 1:
+                self.deleted_labels.append(self.labels[i])
+                # self.associated_frames2.pop(i)
+                # self.locs2.pop(i)
+                # self.labels2.pop(i)
+                
             
-    #     elif self.ctrl_wdg.kf_method == "Network":
-    #         self.ctrl_wdg.viewer._scene.removeItem(v.features_network[t][i])
-    #         v.features_regular[t].pop(i)
-    #         self.ctrl_wdg.viewer._scene.removeItem(v.feature_labels_network[t][i])
-    #         v.feature_labels_network[t].pop(i)
+            self.display_data(v)
 
 
  
