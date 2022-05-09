@@ -99,7 +99,7 @@ class Widget(QWidget):
         self.selected_thumbnail_index = index
         self.viewer.obj.hide_features(True)
         if self.viewer.obj.features_data != {}:
-            self.viewer.obj.wdg_tree.add_feature_data(self.viewer.obj.features_data, self.viewer.obj.deleted_labels)
+            self.viewer.obj.wdg_tree.add_feature_data(self.viewer.obj.features_data)
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)
@@ -285,10 +285,10 @@ class Widget(QWidget):
                 if self.kf_method == "Regular":
                     rate_str = dlg.e1.text()
                     sampling_rate = int(rate_str)
-                    v1.key_frames_regular, v1.key_frame_indices_regular, v1.features_regular,  v1.n_objects_kf_regular = v.extract_frames_regularly(sampling_rate)
+                    v1.key_frames_regular, v1.key_frame_indices_regular, v1.features_regular, v1.hide_regular,  v1.n_objects_kf_regular = v.extract_frames_regularly(sampling_rate)
 
                 elif self.kf_method == "Network":
-                    v1.key_frames_network, v1.key_frame_indices_network, v1.features_network, v1.n_objects_kf_network = v.cleanSequence()
+                    v1.key_frames_network, v1.key_frame_indices_network, v1.features_network, v1.hide_network,  v1.n_objects_kf_network = v.cleanSequence()
 
         else:
             self.kf_method = dlg.kf_met

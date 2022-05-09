@@ -25,22 +25,14 @@ class Tools(QObject):
         self.cross_hair = False
         
         self.labels = []
-        self.locs = [[]]
-        self.associated_frames = [[]]
-        self.associated_videos = [[]]
-        
-        self.labels2 = []
-        self.locs2 = [[]]
-        self.associated_frames2 = [[]]
-        self.associated_videos2 = [[]]
-        self.first_delete = False
+        self.locs = []
+        self.associated_frames = []
+        self.associated_videos = []
         
         # self.associated_frames2 = [[]]
         self.selected_feature_index =-1
         self.count_ = 0
-        self.deleted_labels = []
-        self.partially_deleted_labels = []
-        self.partially_frames = []
+        
         
         self.features_data = {}
         
@@ -126,29 +118,32 @@ class Tools(QObject):
                 v.n_objects_kf_network[t, 0] += 1
                 label = v.n_objects_kf_network[t, 0]
                 
-            print("Label: "+str(label))
-                
-                
             fc = FeatureCrosshair(self.feature_pixmap, p.x(), p.y(), label, self)
                 
             if label not in self.labels:
                 self.selected_feature_index += 1
                 self.labels.append(label)
-            else:
-                self.count_ = self.labels.index(label)
-                self.selected_feature_index = self.labels.index(label)
-                
-                
-            if (t not in self.associated_frames[self.count_]) or (self.ctrl_wdg.selected_movie_idx not in self.associated_videos[self.count_]):
-                self.associated_frames[self.count_].append(t)
-                self.associated_videos[self.count_].append(self.ctrl_wdg.selected_movie_idx)
-                # self.associated_frames2[self.count_].append(t)
-                self.locs[self.count_].append([fc.x_loc, fc.y_loc])
-            else:
                 self.associated_frames.append([t])
                 self.associated_videos.append([self.ctrl_wdg.selected_movie_idx])
-                # self.associated_frames2.append([t])
                 self.locs.append([[fc.x_loc, fc.y_loc]])
+                
+            else:
+                self.selected_feature_index = self.labels.index(label)
+                self.associated_frames[self.selected_feature_index].append(t)
+                self.associated_videos[self.selected_feature_index].append(self.ctrl_wdg.selected_movie_idx)
+                self.locs[self.selected_feature_index].append([fc.x_loc, fc.y_loc])
+                
+                
+            # if (t not in self.associated_frames[self.count_]) or (self.ctrl_wdg.selected_movie_idx not in self.associated_videos[self.count_]):
+            #     self.associated_frames[self.count_].append(t)
+            #     self.associated_videos[self.count_].append(self.ctrl_wdg.selected_movie_idx)
+            #     # self.associated_frames2[self.count_].append(t)
+            #     self.locs[self.count_].append([fc.x_loc, fc.y_loc])
+            # else:
+            #     self.associated_frames.append([t])
+            #     self.associated_videos.append([self.ctrl_wdg.selected_movie_idx])
+            #     # self.associated_frames2.append([t])
+            #     self.locs.append([[fc.x_loc, fc.y_loc]])
                             
             # Add feature on the scene
 
@@ -157,39 +152,27 @@ class Tools(QObject):
             
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t].append(fc)
+                v.hide_regular[t].append(False)
                 
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(fc)
+                v.hide_network[t].append(False)
                 
             self.display_data()
             
             
     def display_data(self):
-        if not self.first_delete:
-            if (len(self.labels) == len(self.associated_frames)) and (len(self.labels) == len(self.locs)):                
-                self.features_data = {"Label": self.labels,
-                       "Frames": self.associated_frames,
-                       "Videos": self.associated_videos,
-                       "Locations": self.locs}
-                self.wdg_tree.add_feature_data(self.features_data, self.deleted_labels)
-            else:
-                print("Mismatch in dimensions!")
-                print(self.labels)
-                print(self.associated_frames)
-                print(self.locs)
-                
+        if (len(self.labels) == len(self.associated_frames)) and (len(self.labels) == len(self.locs)):                
+            self.features_data = {"Label": self.labels,
+                   "Frames": self.associated_frames,
+                   "Videos": self.associated_videos,
+                   "Locations": self.locs}
+            self.wdg_tree.add_feature_data(self.features_data)
         else:
-            if (len(self.labels2) == len(self.associated_frames2)) and (len(self.labels2) == len(self.locs2)):                
-                self.features_data = {"Label": self.labels2,
-                       "Frames": self.associated_frames2,
-                       "Videos": self.associated_videos2,
-                       "Locations": self.locs2}
-                self.wdg_tree.add_feature_data(self.features_data, self.deleted_labels)
-            else:
-                print("Mismatch in dimensions!")
-                print(self.labels2)
-                print(self.associated_frames2)
-                print(self.locs2)
+            print("Mismatch in dimensions!")
+            print(self.labels)
+            print(self.associated_frames)
+            print(self.locs)
             
             
     def hide_features(self, current=True):
@@ -207,66 +190,62 @@ class Tools(QObject):
                     f.label.setVisible(False)
                     f.setVisible(False)
         
-        print(self.partially_frames)
         if current:
             if self.ctrl_wdg.kf_method == "Regular":
                 for j,f in enumerate(v.features_regular[t]):
-                    if t in self.partially_frames:
-                        if (int(f.label.label) not in self.deleted_labels) and (int(f.label.label) not in self.partially_deleted_labels):
-                            f.label.setVisible(True)
-                            f.setVisible(True)
-                    else:
-                        if (int(f.label.label) not in self.deleted_labels):
-                            f.label.setVisible(True)
-                            f.setVisible(True)
+                    if not v.hide_regular[t][j]:
+                        f.label.setVisible(True)
+                        f.setVisible(True)
                             
             elif self.ctrl_wdg.kf_method == "Network":
                 for j,f in enumerate(v.features_network[t]):
-                    if t in self.partially_frames:
-                        if (int(f.label.label) not in self.deleted_labels) and (int(f.label.label) not in self.partially_deleted_labels):
-                            f.label.setVisible(True)
-                            f.setVisible(True)
-                    else:
-                        if (int(f.label.label) not in self.deleted_labels):
-                            f.label.setVisible(True)
-                            f.setVisible(True)
+                    if not v.hide_network[t][j]:
+                        f.label.setVisible(True)
+                        f.setVisible(True)
 
     
     def delete_feature(self):
         t = self.ctrl_wdg.selected_thumbnail_index            
         v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
         i = self.selected_feature_index
-        print(i)
-        
-        if not self.first_delete:
-            self.first_delete = True
-            self.labels2 = self.labels
-            self.associated_frames2 = self.associated_frames
-            self.associated_videos2 = self.associated_videos
-            self.locs2 = self.locs
         
         if i != -1:
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t][i].label.setVisible(False)
                 v.features_regular[t][i].setVisible(False)
+                v.hide_regular[t][i] = True
+                # v.features_regular[t].pop(i)
                 
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t][i].label.setVisible(False)
                 v.features_network[t][i].setVisible(False)
+                v.hide_network[t][i] = True
+                # v.features_network[t].pop(i)
                 
-            if len(self.associated_frames2[i]) > 1:
-                pic_idx = self.associated_frames2[i].index(t)
-                self.associated_frames2[i].pop(pic_idx)
-                self.associated_videos2[i].pop(pic_idx)
-                self.locs2[i].pop(pic_idx)
-                self.partially_deleted_labels.append(self.labels[i])
-                self.partially_frames.append(t)
+            if len(self.associated_frames[i]) > 1:
+                idd = [m for m, x in enumerate(self.associated_frames[i]) if x == t]
+                print(idd)
+                if len(idd) == 1:
+                    pic_idx = idd[0]
+                else:
+                    idd2 = [n for n, x in enumerate(self.associated_videos[i]) if x == self.ctrl_wdg.selected_movie_idx]
+                    d = list(set(idd2).intersection(idd))
+                    if len(d) == 1:
+                        pic_idx = d[0]
+                    else:
+                        print("Problem in deleting")
+
+                self.associated_frames[i].pop(pic_idx)
+                self.associated_videos[i].pop(pic_idx)
+                self.locs[i].pop(pic_idx)
+
                 
-            elif len(self.associated_frames2[i]) == 1:
-                self.deleted_labels.append(self.labels[i])
-                # self.associated_frames2.pop(i)
-                # self.locs2.pop(i)
-                # self.labels2.pop(i)
+            elif len(self.associated_frames[i]) == 1:
+                self.labels[i] = -1
+                self.associated_frames[i] = [-1]
+                self.associated_videos[i] = [-1]
+                self.locs[i] = [[-1, -1]]
+                
                 
             
             self.display_data()

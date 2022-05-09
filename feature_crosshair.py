@@ -43,6 +43,7 @@ class FeatureCrosshair(QGraphicsPixmapItem):
         f = self.parent.selected_feature_index
         t = self.parent.ctrl_wdg.selected_thumbnail_index
         
+        
         pic_idx = self.parent.associated_frames[f].index(t)
         self.parent.locs[f][pic_idx][0] = self.x_loc
         self.parent.locs[f][pic_idx][1] = self.y_loc
