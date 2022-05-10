@@ -99,7 +99,7 @@ class Widget(QWidget):
         self.selected_thumbnail_index = index
         self.viewer.obj.hide_features(True)
         if self.viewer.obj.features_data != {}:
-            self.viewer.obj.wdg_tree.add_feature_data(self.viewer.obj.features_data)
+            self.viewer.obj.wdg_tree.add_feature_data(self.viewer.obj.features_data, self.viewer.obj.selected_feature_index)
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)

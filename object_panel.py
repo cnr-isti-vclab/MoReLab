@@ -7,15 +7,18 @@ class ObjectPanel(QTreeWidget):
         super().__init__()
         self.setColumnCount(2)
         self.setHeaderLabels(["Features", "Info"])
+        self.label_index = -1
+        self.items = []
         
     
-    def add_feature_data(self, data):
+    def add_feature_data(self, data, feature_idx):
         self.clear()
+        print(feature_idx)
         labels = data["Label"]
         frames = data["Frames"]
         videos = data["Videos"]
         locs = data["Locations"]
-        items = []
+        self.items = []
         # print(deleted)
         # print(labels)
         # print("-----------")
@@ -44,6 +47,19 @@ class ObjectPanel(QTreeWidget):
                 
                 items.append(item)
         self.insertTopLevelItems(0, items)
+        
+        self.itemClicked.connect(self.item_selected)
+        self.items[feature_idx].setSelected(True)
+        self.label_index = int(self.items[feature_idx].child(0).text(1)) - 1
+        
+        
+        
+    def item_selected(self, selection):
+        ch = selection.child(0)
+        ch.setSelected(True)
+        label = ch.text(1)
+        self.label_index = int(label) - 1
+        
         
         
         

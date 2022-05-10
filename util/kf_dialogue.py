@@ -109,7 +109,7 @@ def duplicate_dialogue():
     
 def increment_dialogue():
     msgBox = QMessageBox()
-    msgBox.setText("This feature label is too high. Nex increment number will be used as new feature label.")
+    msgBox.setText("This feature label is too high. Next increment number will be used as new feature label.")
     msgBox.setWindowTitle("Too high Feature label")
     msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
     # msgBox.buttonClicked.connect(msgButtonClick)

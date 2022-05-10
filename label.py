@@ -21,8 +21,6 @@ class Label(QGraphicsTextItem):
 
        
     def mousePressEvent(self, event):
-        p = self.mapToScene(event.pos()).toPoint()
-        
         if event.button() == Qt.RightButton:
             self.tool_obj.selected_feature_index = int(self.label) - 1 
             dlg = Feature_Dialogue()
@@ -35,6 +33,8 @@ class Label(QGraphicsTextItem):
                 
                 print("Label : "+str(l))
                 print(self.tool_obj.labels)
+                print(self.tool_obj.associated_frames)
+                print()
                 
                 if self.tool_obj.ctrl_wdg.kf_method == "Regular":
                     for m, f in enumerate(v.features_regular[t]):
@@ -75,22 +75,30 @@ class Label(QGraphicsTextItem):
                         
                         if self.tool_obj.labels[l-1] == -1:
                             self.tool_obj.labels[l-1] = l
-
+                            self.tool_obj.associated_frames[l-1] = [t]
+                            self.tool_obj.associated_videos[l-1] = [self.tool_obj.ctrl_wdg.selected_movie_idx]
+                            self.tool_obj.locs[l-1] = [[self.parent.x_loc, self.parent.y_loc]]
                             
-                        self.tool_obj.associated_frames[self.tool_obj.selected_feature_index].append(t)
-                        self.tool_obj.associated_videos[self.tool_obj.selected_feature_index].append(self.tool_obj.ctrl_wdg.selected_movie_idx)
-                        self.tool_obj.locs[self.tool_obj.selected_feature_index].append([self.parent.x_loc, self.parent.y_loc])
+                        else:                                
+                            self.tool_obj.associated_frames[self.tool_obj.selected_feature_index].append(t)
+                            self.tool_obj.associated_videos[self.tool_obj.selected_feature_index].append(self.tool_obj.ctrl_wdg.selected_movie_idx)
+                            self.tool_obj.locs[self.tool_obj.selected_feature_index].append([self.parent.x_loc, self.parent.y_loc])
 
                     self.label = str(l)    
                     self.setPlainText(self.label)
                     
-
-                    idx = self.tool_obj.associated_frames[int(last_label)-1].index(t)
-                    self.tool_obj.associated_frames[int(last_label)-1].pop(idx)
-                    self.tool_obj.associated_videos[int(last_label)-1].pop(idx)
-                    self.tool_obj.locs[int(last_label)-1].pop(idx)
                     
-                    if len(self.tool_obj.associated_frames[int(last_label)-1]) == 0:
+                    if len(self.tool_obj.associated_frames[int(last_label)-1]) == 1:
                         self.tool_obj.labels[int(last_label)-1] = -1
-                          
+                        self.tool_obj.associated_frames[int(last_label)-1] = [-1]
+                        self.tool_obj.associated_videos[int(last_label)-1] = [-1]
+                        self.tool_obj.locs[int(last_label)-1] = [-1]
+                        
+                    else:
+                        idx = self.tool_obj.associated_frames[int(last_label)-1].index(t)
+                        self.tool_obj.associated_frames[int(last_label)-1].pop(idx)
+                        self.tool_obj.associated_videos[int(last_label)-1].pop(idx)
+                        self.tool_obj.locs[int(last_label)-1].pop(idx)
+
+                    
                     self.tool_obj.display_data()

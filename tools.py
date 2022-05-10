@@ -121,7 +121,7 @@ class Tools(QObject):
             fc = FeatureCrosshair(self.feature_pixmap, p.x(), p.y(), label, self)
                 
             if label not in self.labels:
-                self.selected_feature_index += 1
+                self.selected_feature_index = label -1
                 self.labels.append(label)
                 self.associated_frames.append([t])
                 self.associated_videos.append([self.ctrl_wdg.selected_movie_idx])
@@ -167,7 +167,7 @@ class Tools(QObject):
                    "Frames": self.associated_frames,
                    "Videos": self.associated_videos,
                    "Locations": self.locs}
-            self.wdg_tree.add_feature_data(self.features_data)
+            self.wdg_tree.add_feature_data(self.features_data, self.selected_feature_index)
         else:
             print("Mismatch in dimensions!")
             print(self.labels)
@@ -208,6 +208,7 @@ class Tools(QObject):
         t = self.ctrl_wdg.selected_thumbnail_index            
         v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
         i = self.selected_feature_index
+        print("To be deleted : "+str(i))
         
         if i != -1:
             if self.ctrl_wdg.kf_method == "Regular":
@@ -247,7 +248,7 @@ class Tools(QObject):
                 self.locs[i] = [[-1, -1]]
                 
                 
-            
+            self.selected_feature_index = 0
             self.display_data()
 
 
