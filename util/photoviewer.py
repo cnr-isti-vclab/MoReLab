@@ -53,7 +53,8 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self._zoom = 0
         if pixmap and not pixmap.isNull():
             self._empty = False
-            # self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+            if not self.obj.cross_hair:    
+                self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
             self._photo.setPixmap(pixmap)
         else:
             self._empty = True

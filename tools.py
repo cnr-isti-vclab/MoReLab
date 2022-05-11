@@ -19,7 +19,7 @@ class Tools(QObject):
                 QToolTip { background-color: white; color: black); }
                 """
         # print(self.ctrl_wdg.selected_movie_idx)
-        self.wdg_tree = ObjectPanel()
+        self.wdg_tree = ObjectPanel(self)
         self.feature_pixmap = QPixmap("icons/small_crosshair.png")
         self.add_tool_icons()
         self.cross_hair = False
@@ -94,13 +94,13 @@ class Tools(QObject):
         # self.hide_features(False)
         self.wdg_tree.clear()
         self.ctrl_wdg.viewer.setScrolDragMode()
-        self.ctrl_wdg.setCursor(QCursor(Qt.ArrowCursor))
+        self.ctrl_wdg.viewer.setCursor(QCursor(Qt.ArrowCursor))
         
     def feature_tool(self):
         # print('feature')
         self.mv_tool.setStyleSheet(self.tool_btn_style)
         self.ft_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
-        self.ctrl_wdg.setCursor(QCursor(Qt.CrossCursor))
+        self.ctrl_wdg.viewer.setCursor(QCursor(Qt.CrossCursor))
         self.ctrl_wdg.viewer.setNoDragMode()
         self.cross_hair = True
         self.hide_features(True)
@@ -119,31 +119,30 @@ class Tools(QObject):
                 label = v.n_objects_kf_network[t, 0]
                 
             fc = FeatureCrosshair(self.feature_pixmap, p.x(), p.y(), label, self)
+            print(label)
                 
             if label not in self.labels:
-                self.selected_feature_index = label -1
-                self.labels.append(label)
-                self.associated_frames.append([t])
-                self.associated_videos.append([self.ctrl_wdg.selected_movie_idx])
-                self.locs.append([[fc.x_loc, fc.y_loc]])
+                if len(labels) > label:
+                    self.selected_feature_index = label -1
+                    if self.labels[self.selected_feature_index] == -1:
+                        self.associated_frames[self.selected_feature_index][0] = t
+                        self.associated_videos[self.selected_feature_index][0] = self.ctrl_wdg.selected_movie_idx
+                        self.locs[self.selected_feature_index][0] = [fc.x_loc, fc.y_loc]
+                    else:
+                        print("Localllllllllllllllllllllllllllllllllllllllll")
+                else:
+                    ++self.selected_feature_index
+                    self.labels.append(label)
+                    self.associated_frames.append([t])
+                    self.associated_videos.append([self.ctrl_wdg.selected_movie_idx])
+                    self.locs.append([[fc.x_loc, fc.y_loc]])
                 
             else:
                 self.selected_feature_index = self.labels.index(label)
                 self.associated_frames[self.selected_feature_index].append(t)
                 self.associated_videos[self.selected_feature_index].append(self.ctrl_wdg.selected_movie_idx)
                 self.locs[self.selected_feature_index].append([fc.x_loc, fc.y_loc])
-                
-                
-            # if (t not in self.associated_frames[self.count_]) or (self.ctrl_wdg.selected_movie_idx not in self.associated_videos[self.count_]):
-            #     self.associated_frames[self.count_].append(t)
-            #     self.associated_videos[self.count_].append(self.ctrl_wdg.selected_movie_idx)
-            #     # self.associated_frames2[self.count_].append(t)
-            #     self.locs[self.count_].append([fc.x_loc, fc.y_loc])
-            # else:
-            #     self.associated_frames.append([t])
-            #     self.associated_videos.append([self.ctrl_wdg.selected_movie_idx])
-            #     # self.associated_frames2.append([t])
-            #     self.locs.append([[fc.x_loc, fc.y_loc]])
+
                             
             # Add feature on the scene
 
@@ -225,7 +224,6 @@ class Tools(QObject):
                 
             if len(self.associated_frames[i]) > 1:
                 idd = [m for m, x in enumerate(self.associated_frames[i]) if x == t]
-                print(idd)
                 if len(idd) == 1:
                     pic_idx = idd[0]
                 else:
@@ -248,7 +246,10 @@ class Tools(QObject):
                 self.locs[i] = [[-1, -1]]
                 
                 
-            self.selected_feature_index = 0
+            self.wdg_tree.label_index = 0
+            self.selected_feature_index = int(self.wdg_tree.items[self.wdg_tree.label_index].child(0).text(1)) - 1
+            print("Feature Index : "+str(self.selected_feature_index))
+            print("Label Index : "+str(self.wdg_tree.label_index))
             self.display_data()
 
 

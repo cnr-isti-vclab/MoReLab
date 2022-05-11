@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-import sys, os, sip, json, glob, cv2
+import sys, os, sip, json, glob, cv2, platform
 from central_widget import Widget, SliderFrame
 
 from util.video import Video
@@ -202,7 +202,13 @@ class Window(QMainWindow):
                 msgBox.setStandardButtons(QMessageBox.Ok)                 
                 returnValue = msgBox.exec()
             else:
-                movie_name = movie_path.split('/')[-1]
+                opsys = platform.system()
+                print(type(opsys))
+                print(opsys)
+                if opsys == "Windows":
+                    movie_name = movie_path.split('\\')[-1]
+                else:
+                    movie_name = movie_path.split('/')[-1]
                 display_msg = "Opened "+movie_name      
                 self.statusBar.showMessage(display_msg, 2000)
                                 
