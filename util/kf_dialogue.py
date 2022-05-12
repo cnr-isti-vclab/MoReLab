@@ -101,7 +101,7 @@ def duplicate_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("This feature label already exists on this frame. Please give another label.")
     msgBox.setWindowTitle("Features with duplicate labels")
-    msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+    msgBox.setStandardButtons(QMessageBox.Ok)
     # msgBox.buttonClicked.connect(msgButtonClick)
      
     returnValue = msgBox.exec()
@@ -111,7 +111,17 @@ def increment_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("This feature label is too high. Next increment number will be used as new feature label.")
     msgBox.setWindowTitle("Too high Feature label")
-    msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+     
+    returnValue = msgBox.exec()
+    
+    
+def feature_absent_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("The selected feature is not present on the selected frame. Please select another feature. ")
+    msgBox.setWindowTitle("Feature Not Found")
+    msgBox.setStandardButtons(QMessageBox.Ok)
     # msgBox.buttonClicked.connect(msgButtonClick)
      
     returnValue = msgBox.exec()

@@ -50,6 +50,7 @@ class Label(QGraphicsTextItem):
                     
                 if not duplicate:
                     last_label = self.label
+                    print("Last label : "+str(last_label))
 
                     if l > max(self.tool_obj.labels) + 1:
                         increment_dialogue()
@@ -100,5 +101,9 @@ class Label(QGraphicsTextItem):
                         self.tool_obj.associated_videos[int(last_label)-1].pop(idx)
                         self.tool_obj.locs[int(last_label)-1].pop(idx)
 
-                    
+                    print("Label : "+str(l))
+                    print(self.tool_obj.labels)
+                    print(self.tool_obj.associated_frames)
+                    print()                    
+    
                     self.tool_obj.display_data()

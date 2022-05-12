@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from feature_crosshair import FeatureCrosshair
+from util.kf_dialogue import feature_absent_dialogue
 
 import numpy as np
 from object_panel import ObjectPanel
@@ -119,10 +120,9 @@ class Tools(QObject):
                 label = v.n_objects_kf_network[t, 0]
                 
             fc = FeatureCrosshair(self.feature_pixmap, p.x(), p.y(), label, self)
-            print(label)
                 
             if label not in self.labels:
-                if len(labels) > label:
+                if len(self.labels) > label:
                     self.selected_feature_index = label -1
                     if self.labels[self.selected_feature_index] == -1:
                         self.associated_frames[self.selected_feature_index][0] = t
@@ -131,7 +131,7 @@ class Tools(QObject):
                     else:
                         print("Localllllllllllllllllllllllllllllllllllllllll")
                 else:
-                    ++self.selected_feature_index
+                    self.selected_feature_index = label - 1
                     self.labels.append(label)
                     self.associated_frames.append([t])
                     self.associated_videos.append([self.ctrl_wdg.selected_movie_idx])
@@ -209,7 +209,17 @@ class Tools(QObject):
         i = self.selected_feature_index
         print("To be deleted : "+str(i))
         
-        if i != -1:
+        found = False
+        if self.ctrl_wdg.kf_method == "Regular":
+            for m,ft in enumerate(v.features_regular[t]):
+                if not v.hide_regular[t][m] and i == (int(ft.label.label) - 1):
+                    found = True
+            
+        elif self.ctrl_wdg.kf_method == "Regular":
+            for m,ft in enumerate(v.features_network[t]):
+                if not v.hide_network[t][m] and i == (int(ft.label.label) - 1):
+                    found = True
+        if found:
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t][i].label.setVisible(False)
                 v.features_regular[t][i].setVisible(False)
@@ -248,9 +258,13 @@ class Tools(QObject):
                 
             self.wdg_tree.label_index = 0
             self.selected_feature_index = int(self.wdg_tree.items[self.wdg_tree.label_index].child(0).text(1)) - 1
+            print(self.associated_frames)
+            print(self.labels)
             print("Feature Index : "+str(self.selected_feature_index))
             print("Label Index : "+str(self.wdg_tree.label_index))
             self.display_data()
+        else:
+            feature_absent_dialogue()
 
 
  

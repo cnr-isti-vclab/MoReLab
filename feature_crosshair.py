@@ -18,8 +18,21 @@ class FeatureCrosshair(QGraphicsPixmapItem):
         self.label = Label(x-int(self.l/2), y-int((5*self.l)/2), num_str, parent, self)
         
      
-    def mousePressEvent(self, event):        
+    def mousePressEvent(self, event):
+        print(self.parent.wdg_tree.label_index)
+        self.parent.wdg_tree.items[self.parent.wdg_tree.label_index].setSelected(False)
         self.parent.selected_feature_index = int(self.label.label) - 1
+        count = 0
+        for i,lb in enumerate(self.parent.labels):
+            if lb == int(self.label.label):
+                break
+            if lb != -1:
+                count = count + 1
+
+        self.parent.wdg_tree.label_index = count
+        print("Pressed")
+        print(count)
+        self.parent.wdg_tree.items[count].setSelected(True)
 
         
         
