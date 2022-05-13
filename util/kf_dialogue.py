@@ -125,3 +125,18 @@ def feature_absent_dialogue():
     # msgBox.buttonClicked.connect(msgButtonClick)
      
     returnValue = msgBox.exec()
+    
+
+def show_dialogue(self):
+    msgBox = QMessageBox()
+    msgBox.setText("Are you sure you want to extract key-frames again ?")
+    msgBox.setWindowTitle("Key-frame extraction")
+    msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+     
+    returnValue = msgBox.exec()
+    b = False
+    if returnValue == QMessageBox.Yes:
+       b = True
+
+    return b

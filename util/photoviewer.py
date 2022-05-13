@@ -122,9 +122,8 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         
     def keyPressEvent(self, event):
         # super(PhotoViewer, self).keyPressEvent(event)
-        print(event.key())
+        # print(event.key())
         if event.key() in (QtCore.Qt.Key_Delete, QtCore.Qt.Key_Backspace):
-
             self.obj.delete_feature()
 
         

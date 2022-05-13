@@ -3,7 +3,8 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from util.video import Video
 from util.photoviewer import PhotoViewer
-from util.kf_dialogue import KF_dialogue
+from util.kf_dialogue import KF_dialogue, show_dialogue
+from document import Document
 import json, os, glob
 import cv2
 import numpy as np
@@ -34,6 +35,7 @@ class Widget(QWidget):
         self.selected_movie_idx = -1
         self.movie_caps = []
         self.viewer = PhotoViewer(self)
+        self.doc = Document(self)
         
         self.thumbnail_height = 64
         self.thumbnail_width = 104
@@ -70,6 +72,7 @@ class Widget(QWidget):
         self.grid_layout = QHBoxLayout()
         row_in_grid_layout = 0
         kfs = self.find_kfs()
+        print("Number of thumbnails: "+str(len(kfs)))
         for i, img in enumerate(kfs):
             img_label = QLabel("")
             img_label.setAlignment(Qt.AlignCenter)
@@ -149,6 +152,8 @@ class Widget(QWidget):
     def switch_kf_method(self):
         kfs_regular = self.movie_caps[self.selected_movie_idx].key_frames_regular
         kfs_network = self.movie_caps[self.selected_movie_idx].key_frames_network
+        print(len(kfs_regular))
+        print(len(kfs_network))
         if len(kfs_regular) > 0 and len(kfs_network) > 0:
             return
         elif len(kfs_regular) == 0 and len(kfs_network) == 0:
@@ -176,96 +181,9 @@ class Widget(QWidget):
         v = self.movie_caps[self.selected_movie_idx]
         self.summary_wdg.setText(v.video_summary())
         self.populate_scrollbar()
+        
         self.viewer.setPhoto()
         
-        
-    def show_dialogue(self):
-        msgBox = QMessageBox()
-        msgBox.setText("Are you sure you want to extract key-frames again ?")
-        msgBox.setWindowTitle("Key-frame extraction")
-        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        # msgBox.buttonClicked.connect(msgButtonClick)
-         
-        returnValue = msgBox.exec()
-        b = False
-        if returnValue == QMessageBox.Yes:
-           b = True
-
-        return b
-    
-
-            
-
-    def save_directory(self, name_project):
-        out_dir = os.path.join(name_project.split('.')[0], 'extracted_frames')
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
-        for i, p in enumerate(self.movie_paths):
-            video_folder = p.split('/')[-1].split('.')[0]
-            video_folder_path = os.path.join(out_dir, video_folder)
-            
-            if len(self.movie_caps[i].key_frames_regular) > 0:
-                path_regular = os.path.join(video_folder_path , 'Regular')
-                if not os.path.exists(path_regular):
-                    os.makedirs(path_regular)
-                    
-                for j, img in enumerate(self.movie_caps[i].key_frames_regular):
-                    img_path = os.path.join(path_regular, self.movie_caps[i].key_frame_indices_regular[j] +'.png')
-                    cv2.imwrite(img_path, img)
-                    
-            if len(self.movie_caps[i].key_frames_network) > 0:
-                path_network = os.path.join(video_folder_path , 'Network')
-                if not os.path.exists(path_network):
-                    os.makedirs(path_network)
-                for j, img in enumerate(self.movie_caps[i].key_frames_network):
-                    img_path = os.path.join(path_network, self.movie_caps[i].key_frame_indices_network[j] +'.png')
-                    cv2.imwrite(img_path, img)
-        
-    def get_data(self):
-        data = {
-            "movies" : self.movie_paths,
-            "selected_movie" : self.selected_movie_path,
-            "selected_kf_method" : self.kf_method,
-            "displayIndex": self.selected_thumbnail_index
-            }
-        return data
-    
-    def load_data(self, project_path):
-        with open (project_path) as myfile:
-            data=json.load(myfile)
-            
-        self.movie_paths = data["movies"]
-        self.selected_movie_path = data["selected_movie"]
-        self.kf_method = data["selected_kf_method"]
-        self.selected_thumbnail_index = data["displayIndex"]
-        
-        a = os.path.join(project_path.split('.')[0], 'extracted_frames')
-        movie_dirs = os.listdir(a)
-    
- 
-        for i,p in enumerate(self.movie_paths):
-            movie_name = p.split('/')[-1]
-            btn = QPushButton(movie_name)
-            self.movie_buttons.append(btn)
-            v = Video(p)
-            self.movie_caps.append(v)
-            self.summary_wdg.setText(v.video_summary())
-            
-            for j,mv in enumerate(movie_dirs):
-                if movie_name.split('.')[0] == mv:
-                    movie_dirr = os.path.join(a, mv)
-                    
-                    img_names_regular = sorted(glob.glob(movie_dirr+'/Regular/*.png'))
-                    v.key_frames_regular = [cv2.imread(x) for x in img_names_regular]
-                    
-                    img_names_network = sorted(glob.glob(movie_dirr+'/Network/*.png'))
-                    v.key_frames_network = [cv2.imread(x) for x in img_names_network]
-            
-        self.select_movie(self.selected_movie_path)
-        
-        if self.selected_thumbnail_index != -1:
-            self.displayThumbnail(self.selected_thumbnail_index)
-            
     
             
     def extract(self):
@@ -276,7 +194,7 @@ class Widget(QWidget):
 
             kfs = self.find_kfs()
             if len(kfs) >0:
-                b = self.show_dialogue()
+                b = show_dialogue()
             if b:
                 
                 v = Video(self.selected_movie_path)

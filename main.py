@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-import sys, os, sip, json, glob, cv2, platform
+import sys, os, sip, json, glob, cv2
 from central_widget import Widget, SliderFrame
 
 from util.video import Video
@@ -131,6 +131,7 @@ class Window(QMainWindow):
         returnValue = msgBox.exec()
         if returnValue == QMessageBox.Yes:
            self.save_project()
+          
 
         
     def new_project(self):
@@ -154,10 +155,10 @@ class Window(QMainWindow):
         )
         if response[0] != '':
             project_path = response[0]
-            self.widget.load_data(project_path)
+            self.widget.doc.load_data(project_path)
             self.create_layout() 
             
-            display_msg = "Opened "+project_path.split('/')[-1]
+            display_msg = "Opened "+self.widget.doc(project_path)
             self.statusBar.showMessage(display_msg, 2000)
         
     def save_project(self):
@@ -170,14 +171,17 @@ class Window(QMainWindow):
                 filter = file_types
             )
         if self.save_response[0] != '':
-            name_project = self.save_response[0]
-            self.project_name_label.setText(name_project.split('/')[-1])
-            display_msg = "Saving "+name_project.split('/')[-1]
+            name_project = os.path.relpath(self.save_response[0], os.getcwd())
+            
+            disp_name_project = self.widget.doc.split_path(name_project)
+            
+            self.project_name_label.setText(disp_name_project)
+            display_msg = "Saving "+disp_name_project
             self.statusBar.showMessage(display_msg, 2000)
             
-            self.widget.save_directory(name_project)
+            self.widget.doc.save_directory(name_project)
             
-            data = self.widget.get_data()
+            data = self.widget.doc.get_data()
             json_object = json.dumps(data, indent = 4)
             with open(name_project, "w") as outfile:
                 outfile.write(json_object)
@@ -202,11 +206,7 @@ class Window(QMainWindow):
                 msgBox.setStandardButtons(QMessageBox.Ok)                 
                 returnValue = msgBox.exec()
             else:
-                opsys = platform.system()
-                if opsys == "Windows":
-                    movie_name = movie_path.split('\\')[-1]
-                else:
-                    movie_name = movie_path.split('/')[-1]
+                movie_name = self.widget.doc.split_path(movie_path)
                 display_msg = "Opened "+movie_name      
                 self.statusBar.showMessage(display_msg, 2000)
                                 
