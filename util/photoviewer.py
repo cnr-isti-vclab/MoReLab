@@ -107,7 +107,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
     def mousePressEvent(self, event):
         if self._photo.isUnderMouse():
             p = self.mapToScene(event.pos()).toPoint()
-            self.photoClicked.emit(p)
+            # self.photoClicked.emit(p)
 
         super(PhotoViewer, self).mousePressEvent(event)
     
@@ -115,19 +115,21 @@ class PhotoViewer(QtWidgets.QGraphicsView):
     def mouseDoubleClickEvent(self, event):
         if self._photo.isUnderMouse():
             p = self.mapToScene(event.pos()).toPoint()
-            self.photoClicked.emit(p)
-            self.obj.add_feature(p)
+            # self.photoClicked.emit(p)
+            self.obj.add_feature(p.x(), p.y())
             
         super(PhotoViewer, self).mouseDoubleClickEvent(event)
         
     def keyPressEvent(self, event):
-        super(PhotoViewer, self).keyPressEvent(event)
+        # super(PhotoViewer, self).keyPressEvent(event)
+        print(event.key())
         if event.key() in (QtCore.Qt.Key_Delete, QtCore.Qt.Key_Backspace):
+
             self.obj.delete_feature()
 
         
     # def mouseMoveEvent(self, event):
-    #     if self._photo.isUnderMouse():
+        # if self._photo.isUnderMouse():
     #         p = self.mapToScene(event.pos()).toPoint()
     #         self.mouse_pos = p
     #         self.photoClicked.emit(p)

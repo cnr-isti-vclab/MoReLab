@@ -19,6 +19,13 @@ class Label(QGraphicsTextItem):
         # self.setFlag(QGraphicsItem.ItemIsFocusable)
         self.setVisible(True)
 
+
+    def set_visibility(self, v, t, f, visibility):
+        if self.tool_obj.ctrl_wdg.kf_method == "Regular":
+            v.hide_regular[t][f] = visibility
+        elif self.tool_obj.ctrl_wdg.kf_method == "Network":
+            v.hide_network[t][f] = visibility
+
        
     def mousePressEvent(self, event):
         if event.button() == Qt.RightButton:
@@ -31,18 +38,20 @@ class Label(QGraphicsTextItem):
                 l = int(dlg.e2.text())                   
                 duplicate = False
                 
-                print("Label : "+str(l))
-                print(self.tool_obj.labels)
-                print(self.tool_obj.associated_frames)
-                print()
+                # print("Label : "+str(l))
+                # print(self.tool_obj.labels)
+                # print(self.tool_obj.associated_frames)
+                # print()
                 
                 if self.tool_obj.ctrl_wdg.kf_method == "Regular":
+                    n_current = v.n_objects_kf_regular[t, 0]
                     for m, f in enumerate(v.features_regular[t]):
                         if int(f.label.label) == l and not v.hide_regular[t][m]:
                             duplicate = True
                             duplicate_dialogue()  
 
                 elif self.tool_obj.ctrl_wdg.kf_method == "Network":
+                    n_current = v.n_objects_kf_network[t, 0]
                     for m, f in enumerate(v.features_network[t]):
                         if int(f.label.label) == l and not v.hide_network[t][m]:
                             duplicate = True
@@ -50,44 +59,43 @@ class Label(QGraphicsTextItem):
                     
                 if not duplicate:
                     last_label = self.label
-                    print("Last label : "+str(last_label))
-
-                    if l > max(self.tool_obj.labels) + 1:
-                        increment_dialogue()
-                        l = max(self.tool_obj.labels) + 1
+                    # print("Last label : "+str(last_label))
+                    self.set_visibility(v, t, int(last_label)-1, True)
+                    
+                    
+                    # Add new Label
+                    
+                    if l > n_current:
+                        if l > max(self.tool_obj.labels) + 1:
+                            increment_dialogue()
+                            l = max(self.tool_obj.labels) + 1  
+                            
+                        self.setVisible(False)
+                        self.parent.setVisible(False)
                         
-                        self.tool_obj.selected_feature_index += 1
-                        self.tool_obj.labels.append(l)
-                        self.tool_obj.associated_frames.append([t])
-                        self.tool_obj.associated_videos.append([self.tool_obj.ctrl_wdg.selected_movie_idx])
-                        self.tool_obj.locs.append([[self.parent.x_loc, self.parent.y_loc]])
-                        
-                        
+                        for idxx in range(n_current, l):
+                            self.tool_obj.add_feature(self.parent.x_loc+int(self.parent.l/2), self.parent.y_loc+int(self.parent.l/2))
+                            if idxx < l-1:
+                                self.tool_obj.delete_feature()
                     else:
-                        if self.tool_obj.ctrl_wdg.kf_method == "Regular":
-                            if v.hide_regular[t][l-1]:
-                                self.tool_obj.selected_feature_index = l-1
-                                v.hide_regular[t][l-1] = False
-                        
-                        elif self.tool_obj.ctrl_wdg.kf_method == "Network":
-                            if v.hide_network[t][l-1]:
-                                self.tool_obj.selected_feature_index = l-1
-                                v.hide_network[t][l-1] = False
-                        
                         if self.tool_obj.labels[l-1] == -1:
                             self.tool_obj.labels[l-1] = l
                             self.tool_obj.associated_frames[l-1] = [t]
                             self.tool_obj.associated_videos[l-1] = [self.tool_obj.ctrl_wdg.selected_movie_idx]
                             self.tool_obj.locs[l-1] = [[self.parent.x_loc, self.parent.y_loc]]
-                            
                         else:                                
-                            self.tool_obj.associated_frames[self.tool_obj.selected_feature_index].append(t)
-                            self.tool_obj.associated_videos[self.tool_obj.selected_feature_index].append(self.tool_obj.ctrl_wdg.selected_movie_idx)
-                            self.tool_obj.locs[self.tool_obj.selected_feature_index].append([self.parent.x_loc, self.parent.y_loc])
+                            self.tool_obj.associated_frames[l-1].append(t)
+                            self.tool_obj.associated_videos[l-1].append(self.tool_obj.ctrl_wdg.selected_movie_idx)
+                            self.tool_obj.locs[l-1].append([self.parent.x_loc, self.parent.y_loc])
 
+                    
+                    self.tool_obj.selected_feature_index = l-1
+                    self.set_visibility(v, t, self.tool_obj.selected_feature_index, False)
+                                        
                     self.label = str(l)    
                     self.setPlainText(self.label)
                     
+                    # Remove previous label
                     
                     if len(self.tool_obj.associated_frames[int(last_label)-1]) == 1:
                         self.tool_obj.labels[int(last_label)-1] = -1
@@ -96,14 +104,14 @@ class Label(QGraphicsTextItem):
                         self.tool_obj.locs[int(last_label)-1] = [-1]
                         
                     else:
-                        idx = self.tool_obj.associated_frames[int(last_label)-1].index(t)
+                        idx = self.tool_obj.find_idx(int(last_label)-1, t)
                         self.tool_obj.associated_frames[int(last_label)-1].pop(idx)
                         self.tool_obj.associated_videos[int(last_label)-1].pop(idx)
                         self.tool_obj.locs[int(last_label)-1].pop(idx)
-
-                    print("Label : "+str(l))
-                    print(self.tool_obj.labels)
-                    print(self.tool_obj.associated_frames)
-                    print()                    
+    
+                    # print("Label : "+str(l))
+                    # print(self.tool_obj.labels)
+                    # print(self.tool_obj.associated_frames)
+                    # print()                    
     
                     self.tool_obj.display_data()

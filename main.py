@@ -203,8 +203,6 @@ class Window(QMainWindow):
                 returnValue = msgBox.exec()
             else:
                 opsys = platform.system()
-                print(type(opsys))
-                print(opsys)
                 if opsys == "Windows":
                     movie_name = movie_path.split('\\')[-1]
                 else:

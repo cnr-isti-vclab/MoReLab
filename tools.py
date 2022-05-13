@@ -22,6 +22,8 @@ class Tools(QObject):
         # print(self.ctrl_wdg.selected_movie_idx)
         self.wdg_tree = ObjectPanel(self)
         self.feature_pixmap = QPixmap("icons/small_crosshair.png")
+        # print(type(self.feature_pixmap.size()))
+        # print(self.feature_pixmap.size())
         self.add_tool_icons()
         self.cross_hair = False
         
@@ -107,7 +109,7 @@ class Tools(QObject):
         self.hide_features(True)
 
     
-    def add_feature(self, p):
+    def add_feature(self, x, y):
         if self.cross_hair:
             t = self.ctrl_wdg.selected_thumbnail_index
             v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
@@ -119,17 +121,18 @@ class Tools(QObject):
                 v.n_objects_kf_network[t, 0] += 1
                 label = v.n_objects_kf_network[t, 0]
                 
-            fc = FeatureCrosshair(self.feature_pixmap, p.x(), p.y(), label, self)
+            fc = FeatureCrosshair(self.feature_pixmap, x, y, label, self)
                 
             if label not in self.labels:
                 if len(self.labels) > label:
                     self.selected_feature_index = label -1
                     if self.labels[self.selected_feature_index] == -1:
+                        self.labels[self.selected_feature_index] = label
                         self.associated_frames[self.selected_feature_index][0] = t
                         self.associated_videos[self.selected_feature_index][0] = self.ctrl_wdg.selected_movie_idx
                         self.locs[self.selected_feature_index][0] = [fc.x_loc, fc.y_loc]
                     else:
-                        print("Localllllllllllllllllllllllllllllllllllllllll")
+                        print("Problem in adding feature...............")
                 else:
                     self.selected_feature_index = label - 1
                     self.labels.append(label)
@@ -202,23 +205,38 @@ class Tools(QObject):
                         f.label.setVisible(True)
                         f.setVisible(True)
 
+
+    def find_idx(self, f, t):
+        idd = [m for m, x in enumerate(self.associated_frames[f]) if x == t]
+        if len(idd) == 1:
+            pic_idx = idd[0]
+        else:
+            idd2 = [n for n, x in enumerate(self.associated_videos[f]) if x == self.ctrl_wdg.selected_movie_idx]
+            d = list(set(idd2).intersection(idd))
+            if len(d) == 1:
+                pic_idx = d[0]
+            else:
+                print("Problem in Finding index")
+        
+        return pic_idx
+        
+
     
     def delete_feature(self):
         t = self.ctrl_wdg.selected_thumbnail_index            
         v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
         i = self.selected_feature_index
-        print("To be deleted : "+str(i))
+        # print("To be deleted : "+str(i))
         
         found = False
-        if self.ctrl_wdg.kf_method == "Regular":
-            for m,ft in enumerate(v.features_regular[t]):
-                if not v.hide_regular[t][m] and i == (int(ft.label.label) - 1):
-                    found = True
+        if self.ctrl_wdg.kf_method == "Regular" and len(v.hide_regular[t]) > i:
+            if not v.hide_regular[t][i] and i == (int(v.features_regular[t][i].label.label) - 1):
+                found = True
             
-        elif self.ctrl_wdg.kf_method == "Regular":
-            for m,ft in enumerate(v.features_network[t]):
-                if not v.hide_network[t][m] and i == (int(ft.label.label) - 1):
-                    found = True
+        elif self.ctrl_wdg.kf_method == "Network" and len(v.hide_network[t]) > i:
+            if not v.hide_network[t][i] and i == (int(v.features_network[t][i].label.label) - 1):
+                found = True
+                
         if found:
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t][i].label.setVisible(False)
@@ -233,17 +251,7 @@ class Tools(QObject):
                 # v.features_network[t].pop(i)
                 
             if len(self.associated_frames[i]) > 1:
-                idd = [m for m, x in enumerate(self.associated_frames[i]) if x == t]
-                if len(idd) == 1:
-                    pic_idx = idd[0]
-                else:
-                    idd2 = [n for n, x in enumerate(self.associated_videos[i]) if x == self.ctrl_wdg.selected_movie_idx]
-                    d = list(set(idd2).intersection(idd))
-                    if len(d) == 1:
-                        pic_idx = d[0]
-                    else:
-                        print("Problem in deleting")
-
+                pic_idx = self.find_idx(i,t)
                 self.associated_frames[i].pop(pic_idx)
                 self.associated_videos[i].pop(pic_idx)
                 self.locs[i].pop(pic_idx)
@@ -258,10 +266,10 @@ class Tools(QObject):
                 
             self.wdg_tree.label_index = 0
             self.selected_feature_index = int(self.wdg_tree.items[self.wdg_tree.label_index].child(0).text(1)) - 1
-            print(self.associated_frames)
-            print(self.labels)
-            print("Feature Index : "+str(self.selected_feature_index))
-            print("Label Index : "+str(self.wdg_tree.label_index))
+            # print(self.associated_frames)
+            # print(self.labels)
+            # print("Feature Index : "+str(self.selected_feature_index))
+            # print("Label Index : "+str(self.wdg_tree.label_index))
             self.display_data()
         else:
             feature_absent_dialogue()

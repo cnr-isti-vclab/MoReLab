@@ -22,14 +22,10 @@ class ObjectPanel(QTreeWidget):
         self.items = []
         
         selected_label = labels[feature_idx]
-        print("Treeeeeeeeee")
-        print(labels)
-        print(self.label_index)
-        print(feature_idx)
-
-        # print(deleted)
+        # print("Treeeeeeeeee")
         # print(labels)
-        # print("-----------")
+        # print(self.label_index)
+        # print(feature_idx)
         count = 0
         for i,f in enumerate(frames):
             if labels[i] != -1:
@@ -58,9 +54,8 @@ class ObjectPanel(QTreeWidget):
                 item.addChild(child3)
                 count = count + 1
                 self.items.append(item)
+                
         
-        print(count)
-        print(self.label_index)
         self.insertTopLevelItems(0, self.items)
         self.itemClicked.connect(self.item_selected)
         
@@ -71,6 +66,8 @@ class ObjectPanel(QTreeWidget):
         
     def item_selected(self, selection):
         self.label_index = self.items.index(selection)
+        # print(type(self.label_index))
+        # print(self.label_index)
         selection.setSelected(True)
         ch = selection.child(0)
         label = ch.text(1)
