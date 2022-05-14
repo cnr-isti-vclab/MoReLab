@@ -12,11 +12,12 @@ class Video:
         self.key_frame_indices_regular = []
         self.key_frames_network = []
         self.key_frame_indices_network = []
-        self.n_objects_kf_regular = np.array([])
+        
+        self.n_objects_kf_regular = []
         self.features_regular = []
         self.hide_regular = []
         
-        self.n_objects_kf_network = np.array([])
+        self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
         
@@ -55,10 +56,9 @@ class Video:
 
         return kfs, idxs, self.features_regular, self.hide_regular, self.n_objects_kf_regular
     
-    def init_features_regular(self, n):
-        self.n_objects_kf_regular = np.zeros(shape=(n, 1), dtype=int)
-        
+    def init_features_regular(self, n):        
         for i in range(n):
+            self.n_objects_kf_regular.append(0)
             self.features_regular.append([])
             self.hide_regular.append([])
     
@@ -182,10 +182,9 @@ class Video:
     
     
     
-    def init_features_network(self, n):
-        self.n_objects_kf_network = np.zeros(shape=(n, 1), dtype=int)
-        
+    def init_features_network(self, n):        
         for i in range(n):
+            self.n_objects_kf_network.append(0)
             self.features_network.append([])
             self.hide_network.append([])
             

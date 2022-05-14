@@ -67,6 +67,12 @@ class Tools(QObject):
         self.sp_tool.setIconSize(QSize(icon_size, icon_size))
         self.sp_tool.setStyleSheet(self.tool_btn_style)
         self.sp_tool.setToolTip("Save Project")
+        
+        self.sp_as_tool = QPushButton()
+        self.sp_as_tool.setIcon(QIcon("./icons/save_as.png"))
+        self.sp_as_tool.setIconSize(QSize(icon_size, icon_size))
+        self.sp_as_tool.setStyleSheet(self.tool_btn_style)
+        self.sp_as_tool.setToolTip("Save as")
 
         self.ep_tool = QPushButton()
         self.ep_tool.setIcon(QIcon("./icons/exit_project.png"))
@@ -115,11 +121,11 @@ class Tools(QObject):
             v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
             
             if self.ctrl_wdg.kf_method == "Regular":
-                v.n_objects_kf_regular[t, 0] += 1
-                label = v.n_objects_kf_regular[t, 0]
+                v.n_objects_kf_regular[t] += 1
+                label = v.n_objects_kf_regular[t]
             elif self.ctrl_wdg.kf_method == "Network":
-                v.n_objects_kf_network[t, 0] += 1
-                label = v.n_objects_kf_network[t, 0]
+                v.n_objects_kf_network[t] += 1
+                label = v.n_objects_kf_network[t]
                 
             fc = FeatureCrosshair(self.feature_pixmap, x, y, label, self)
                 
@@ -181,29 +187,32 @@ class Tools(QObject):
         t = self.ctrl_wdg.selected_thumbnail_index            
         v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
         
-        if self.ctrl_wdg.kf_method == "Regular":
-            for i in range(v.n_objects_kf_regular.shape[0]):
-                for j,f in enumerate(v.features_regular[i]):
-                    f.label.setVisible(False)
-                    f.setVisible(False)
-        elif self.ctrl_wdg.kf_method == "Network":
-            for i in range(v.n_objects_kf_network.shape[0]):
-                for j,f in enumerate(v.features_network[i]):
-                    f.label.setVisible(False)
-                    f.setVisible(False)
+        for v1 in self.ctrl_wdg.movie_caps:
+            for i in range(len(v1.n_objects_kf_regular)):
+                if v1.features_regular !=  []:
+                    for j,f in enumerate(v1.features_regular[i]):
+                        f.label.setVisible(False)
+                        f.setVisible(False)
+            for i in range(len(v1.n_objects_kf_network)):
+                if v1.features_network !=  []:
+                    for j,f in enumerate(v1.features_network[i]):
+                        f.label.setVisible(False)
+                        f.setVisible(False)
         
-        if current:
+        if current and self.cross_hair:
             if self.ctrl_wdg.kf_method == "Regular":
-                for j,f in enumerate(v.features_regular[t]):
-                    if not v.hide_regular[t][j]:
-                        f.label.setVisible(True)
-                        f.setVisible(True)
+                if v.features_regular != []:
+                    for j,f in enumerate(v.features_regular[t]):
+                        if not v.hide_regular[t][j]:
+                            f.label.setVisible(True)
+                            f.setVisible(True)
                             
             elif self.ctrl_wdg.kf_method == "Network":
-                for j,f in enumerate(v.features_network[t]):
-                    if not v.hide_network[t][j]:
-                        f.label.setVisible(True)
-                        f.setVisible(True)
+                if v.features_network != []:
+                    for j,f in enumerate(v.features_network[t]):
+                        if not v.hide_network[t][j]:
+                            f.label.setVisible(True)
+                            f.setVisible(True)
 
 
     def find_idx(self, f, t):

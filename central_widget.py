@@ -72,7 +72,7 @@ class Widget(QWidget):
         self.grid_layout = QHBoxLayout()
         row_in_grid_layout = 0
         kfs = self.find_kfs()
-        print("Number of thumbnails: "+str(len(kfs)))
+        # print("Number of thumbnails: "+str(len(kfs)))
         for i, img in enumerate(kfs):
             img_label = QLabel("")
             img_label.setAlignment(Qt.AlignCenter)
@@ -152,8 +152,8 @@ class Widget(QWidget):
     def switch_kf_method(self):
         kfs_regular = self.movie_caps[self.selected_movie_idx].key_frames_regular
         kfs_network = self.movie_caps[self.selected_movie_idx].key_frames_network
-        print(len(kfs_regular))
-        print(len(kfs_network))
+        # print(len(kfs_regular))
+        # print(len(kfs_network))
         if len(kfs_regular) > 0 and len(kfs_network) > 0:
             return
         elif len(kfs_regular) == 0 and len(kfs_network) == 0:

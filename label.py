@@ -44,14 +44,14 @@ class Label(QGraphicsTextItem):
                 # print()
                 
                 if self.tool_obj.ctrl_wdg.kf_method == "Regular":
-                    n_current = v.n_objects_kf_regular[t, 0]
+                    n_current = v.n_objects_kf_regular[t]
                     for m, f in enumerate(v.features_regular[t]):
                         if int(f.label.label) == l and not v.hide_regular[t][m]:
                             duplicate = True
                             duplicate_dialogue()  
 
                 elif self.tool_obj.ctrl_wdg.kf_method == "Network":
-                    n_current = v.n_objects_kf_network[t, 0]
+                    n_current = v.n_objects_kf_network[t]
                     for m, f in enumerate(v.features_network[t]):
                         if int(f.label.label) == l and not v.hide_network[t][m]:
                             duplicate = True
@@ -101,7 +101,7 @@ class Label(QGraphicsTextItem):
                         self.tool_obj.labels[int(last_label)-1] = -1
                         self.tool_obj.associated_frames[int(last_label)-1] = [-1]
                         self.tool_obj.associated_videos[int(last_label)-1] = [-1]
-                        self.tool_obj.locs[int(last_label)-1] = [-1]
+                        self.tool_obj.locs[int(last_label)-1] = [[-1, -1]]
                         
                     else:
                         idx = self.tool_obj.find_idx(int(last_label)-1, t)

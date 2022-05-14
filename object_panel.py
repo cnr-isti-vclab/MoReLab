@@ -21,6 +21,8 @@ class ObjectPanel(QTreeWidget):
         locs = data["Locations"]
         self.items = []
         
+        # print(videos)
+        
         selected_label = labels[feature_idx]
         # print("Treeeeeeeeee")
         # print(labels)

@@ -57,6 +57,7 @@ class Window(QMainWindow):
         self.widget.viewer.obj.op_tool.clicked.connect(self.open_project)
         self.widget.viewer.obj.om_tool.clicked.connect(self.open_movie)
         self.widget.viewer.obj.sp_tool.clicked.connect(self.save_project)
+        self.widget.viewer.obj.sp_as_tool.clicked.connect(self.save_as_project)
         self.widget.viewer.obj.ep_tool.clicked.connect(self.exit_project)
         
 
@@ -65,6 +66,7 @@ class Window(QMainWindow):
         toolbar.addWidget(self.widget.viewer.obj.om_tool)
         # toolbar.addWidget(self.widget.viewer.obj.om_tool)
         toolbar.addWidget(self.widget.viewer.obj.sp_tool)
+        toolbar.addWidget(self.widget.viewer.obj.sp_as_tool)
         toolbar.addWidget(self.widget.viewer.obj.ep_tool)
         toolbar.addWidget(self.widget.viewer.obj.mv_tool)
         toolbar.addWidget(self.widget.viewer.obj.ft_tool)
@@ -107,6 +109,11 @@ class Window(QMainWindow):
         fileMenu.addAction(self.save_pr)
         self.save_pr.triggered.connect(self.save_project)
         self.save_pr.setShortcut("ctrl+s")
+        
+        self.save_as = QAction(QIcon("./icons/save_as.png"),"&Save as",self)
+        fileMenu.addAction(self.save_as)
+        self.save_as.triggered.connect(self.save_as_project)
+        self.save_as.setShortcut("ctrl+shift+s")
         
         self.open_mov = QAction(QIcon("./icons/open_movie.png"),"&Import Movie",self)
         fileMenu.addAction(self.open_mov)
@@ -158,8 +165,26 @@ class Window(QMainWindow):
             self.widget.doc.load_data(project_path)
             self.create_layout() 
             
-            display_msg = "Opened "+self.widget.doc(project_path)
+            display_msg = "Opened "+self.widget.doc.split_path(project_path)
             self.statusBar.showMessage(display_msg, 2000)
+            
+    
+    def implement_save(self, p):
+        name_project = os.path.relpath(p, os.getcwd())
+        
+        disp_name_project = self.widget.doc.split_path(name_project)
+        
+        display_msg = "Saving "+disp_name_project
+        self.statusBar.showMessage(display_msg, 2000)
+        
+        self.widget.doc.save_directory(name_project)
+        
+        data = self.widget.doc.get_data()
+        json_object = json.dumps(data, indent = 4)
+        with open(name_project, "w") as outfile:
+            outfile.write(json_object)        
+    
+    
         
     def save_project(self):
         if self.project_name_label.text() == 'untitled.json':
@@ -172,20 +197,26 @@ class Window(QMainWindow):
             )
         if self.save_response[0] != '':
             name_project = os.path.relpath(self.save_response[0], os.getcwd())
-            
             disp_name_project = self.widget.doc.split_path(name_project)
-            
             self.project_name_label.setText(disp_name_project)
-            display_msg = "Saving "+disp_name_project
-            self.statusBar.showMessage(display_msg, 2000)
-            
-            self.widget.doc.save_directory(name_project)
-            
-            data = self.widget.doc.get_data()
-            json_object = json.dumps(data, indent = 4)
-            with open(name_project, "w") as outfile:
-                outfile.write(json_object)
+
+            self.implement_save(self.save_response[0])
+
                 
+                
+    def save_as_project(self):
+        if self.project_name_label.text() == 'untitled.json':
+            self.save_project()
+        else:
+            file_types = "json (*.json)"
+            save_as_response = QFileDialog.getSaveFileName(
+                parent = self,
+                caption = 'Save as.',
+                directory = os.getcwd(),
+                filter = file_types
+            )
+            if save_as_response[0] != '':
+                self.implement_save(save_as_response[0])        
 
         
     def open_movie(self):
