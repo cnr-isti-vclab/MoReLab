@@ -44,7 +44,8 @@ class Document():
             "movies" : self.ctrl_wdg.movie_paths,
             "selected_movie" : self.ctrl_wdg.selected_movie_path,
             "selected_kf_method" : self.ctrl_wdg.kf_method,
-            "displayIndex": self.ctrl_wdg.selected_thumbnail_index + 1,
+            "cross_hair" : self.ctrl_wdg.viewer.obj.cross_hair,
+            "displayIndex": self.ctrl_wdg.selected_thumbnail_index,
             "labels" : labels,
             "frames" : frames,
             "videos" : videos,
@@ -63,7 +64,8 @@ class Document():
         self.ctrl_wdg.movie_paths = data["movies"]
         self.ctrl_wdg.selected_movie_path = data["selected_movie"]
         self.ctrl_wdg.kf_method = data["selected_kf_method"]
-        self.ctrl_wdg.selected_thumbnail_index = data["displayIndex"] - 1
+        self.ctrl_wdg.selected_thumbnail_index = data["displayIndex"]
+        self.ctrl_wdg.viewer.obj.cross_hair = data["cross_hair"]
 
         for j,f in enumerate(data["frames"]):
             self.ctrl_wdg.viewer.obj.labels.append(int(data["labels"][j]))
@@ -78,18 +80,16 @@ class Document():
                 ab.append(a)
             self.ctrl_wdg.viewer.obj.locs.append(ab)
         
+        feature_data_list = data["feature_dict"]
+
         # print(self.ctrl_wdg.viewer.obj.labels)
         # print(self.ctrl_wdg.viewer.obj.associated_frames)
         # print(self.ctrl_wdg.viewer.obj.associated_videos)
         # print(self.ctrl_wdg.viewer.obj.locs)
         
-        feature_data_list = data["feature_dict"]
-        
-        
         a = os.path.join(project_path.split('.')[0], 'extracted_frames')
         movie_dirs = os.listdir(a)
 
-    
         count = 0
         for i,p in enumerate(self.ctrl_wdg.movie_paths):
             movie_name = self.split_path(p)
@@ -122,10 +122,6 @@ class Document():
                     
                     img_names_network = sorted(glob.glob(movie_dirr+'/Network/*.png'))
                     v.key_frames_network = [cv2.imread(x) for x in img_names_network]          
-            
-        
-            feature_pixmap = QPixmap("icons/small_crosshair.png")
-            
 
             for j, val in enumerate(v.n_objects_kf_regular):
                 v.features_regular.append([])
@@ -133,13 +129,13 @@ class Document():
                     bool_list = v.hide_regular[j]
                     for k in range(val):
                         if bool_list[k]:
-                            fc = FeatureCrosshair(feature_pixmap, 0, 0, k+1, self.ctrl_wdg.viewer.obj)
+                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, 0, 0, k+1, self.ctrl_wdg.viewer.obj)
                             v.features_regular[j].append(fc)
 
                         else:
                             loccc = self.ctrl_wdg.viewer.obj.locs[k][self.ctrl_wdg.viewer.obj.find_idx(k, j)]
                             
-                            fc = FeatureCrosshair(feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.viewer.obj)
+                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.viewer.obj)
                             v.features_regular[j].append(fc)
                             self.ctrl_wdg.viewer._scene.addItem(fc)
                             self.ctrl_wdg.viewer._scene.addItem(fc.label)
@@ -150,12 +146,12 @@ class Document():
                     bool_list = v.hide_network[j]
                     for k in range(val):
                         if bool_list[k]:
-                            fc = FeatureCrosshair(feature_pixmap, 0, 0, k+1, self.ctrl_wdg.viewer.obj)
+                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, 0, 0, k+1, self.ctrl_wdg.viewer.obj)
                             v.features_network[j].append(fc)
 
                         else:
                             loccc = self.ctrl_wdg.viewer.obj.locs[k][self.ctrl_wdg.viewer.obj.find_idx(k, j)]
-                            fc = FeatureCrosshair(feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.viewer.obj)
+                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.viewer.obj)
                             v.features_network[j].append(fc)
                             self.ctrl_wdg.viewer._scene.addItem(fc)
                             self.ctrl_wdg.viewer._scene.addItem(fc.label)
@@ -166,8 +162,11 @@ class Document():
         
         if self.ctrl_wdg.selected_thumbnail_index != -1:
             self.ctrl_wdg.displayThumbnail(self.ctrl_wdg.selected_thumbnail_index)
-        
-        self.ctrl_wdg.viewer.obj.display_data()
+            
+        if self.ctrl_wdg.viewer.obj.cross_hair:
+            self.ctrl_wdg.viewer.obj.feature_tool()
+            self.ctrl_wdg.viewer.obj.display_data()
+            
 
 
 

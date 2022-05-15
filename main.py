@@ -162,6 +162,11 @@ class Window(QMainWindow):
         )
         if response[0] != '':
             project_path = response[0]
+            
+            name_project = os.path.relpath(project_path, os.getcwd())
+            disp_name_project = self.widget.doc.split_path(name_project)
+            self.project_name_label.setText(disp_name_project)
+            
             self.widget.doc.load_data(project_path)
             self.create_layout() 
             

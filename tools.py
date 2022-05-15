@@ -100,6 +100,7 @@ class Tools(QObject):
         self.ft_tool.setStyleSheet(self.tool_btn_style)
         self.mv_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
         self.cross_hair = False
+        self.hide_features(False)
         # self.hide_features(False)
         self.wdg_tree.clear()
         self.ctrl_wdg.viewer.setScrolDragMode()
@@ -113,6 +114,7 @@ class Tools(QObject):
         self.ctrl_wdg.viewer.setNoDragMode()
         self.cross_hair = True
         self.hide_features(True)
+        self.display_data()
 
     
     def add_feature(self, x, y):
