@@ -118,6 +118,7 @@ class Tools(QObject):
 
     
     def add_feature(self, x, y):
+        # print(self.selected_feature_index)
         if self.cross_hair:
             t = self.ctrl_wdg.selected_thumbnail_index
             v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
@@ -142,7 +143,7 @@ class Tools(QObject):
                     else:
                         print("Problem in adding feature...............")
                 else:
-                    self.selected_feature_index = label - 1
+                    self.selected_feature_index = self.selected_feature_index + 1
                     self.labels.append(label)
                     self.associated_frames.append([t])
                     self.associated_videos.append([self.ctrl_wdg.selected_movie_idx])
@@ -172,6 +173,7 @@ class Tools(QObject):
             
             
     def display_data(self):
+        # print(self.selected_feature_index)
         if (len(self.labels) == len(self.associated_frames)) and (len(self.labels) == len(self.locs)):                
             self.features_data = {"Label": self.labels,
                    "Frames": self.associated_frames,
