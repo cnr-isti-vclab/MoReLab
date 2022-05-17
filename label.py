@@ -28,7 +28,7 @@ class Label(QGraphicsTextItem):
 
        
     def mousePressEvent(self, event):
-        if event.button() == Qt.RightButton:
+        if event.button() == Qt.RightButton and self.tool_obj.cross_hair:
             self.tool_obj.selected_feature_index = int(self.label) - 1 
             dlg = Feature_Dialogue()
             if dlg.exec():

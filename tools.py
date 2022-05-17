@@ -100,9 +100,9 @@ class Tools(QObject):
         self.ft_tool.setStyleSheet(self.tool_btn_style)
         self.mv_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
         self.cross_hair = False
-        self.hide_features(False)
+        self.hide_features(True)
         # self.hide_features(False)
-        self.wdg_tree.clear()
+        self.display_data()
         self.ctrl_wdg.viewer.setScrolDragMode()
         self.ctrl_wdg.viewer.setCursor(QCursor(Qt.ArrowCursor))
         
@@ -179,6 +179,8 @@ class Tools(QObject):
                    "Frames": self.associated_frames,
                    "Videos": self.associated_videos,
                    "Locations": self.locs}
+        
+            # print("Feature index: "+str(self.selected_feature_index))
             self.wdg_tree.add_feature_data(self.features_data, self.selected_feature_index)
         else:
             print("Mismatch in dimensions!")
@@ -203,7 +205,7 @@ class Tools(QObject):
                         f.label.setVisible(False)
                         f.setVisible(False)
         
-        if current and self.cross_hair:
+        if current:
             if self.ctrl_wdg.kf_method == "Regular":
                 if v.features_regular != []:
                     for j,f in enumerate(v.features_regular[t]):
@@ -241,51 +243,52 @@ class Tools(QObject):
         i = self.selected_feature_index
         # print("To be deleted : "+str(i))
         
-        found = False
-        if self.ctrl_wdg.kf_method == "Regular" and len(v.hide_regular[t]) > i:
-            if not v.hide_regular[t][i] and i == (int(v.features_regular[t][i].label.label) - 1):
-                found = True
-            
-        elif self.ctrl_wdg.kf_method == "Network" and len(v.hide_network[t]) > i:
-            if not v.hide_network[t][i] and i == (int(v.features_network[t][i].label.label) - 1):
-                found = True
+        if self.cross_hair:
+            found = False
+            if self.ctrl_wdg.kf_method == "Regular" and len(v.hide_regular[t]) > i:
+                if not v.hide_regular[t][i] and i == (int(v.features_regular[t][i].label.label) - 1):
+                    found = True
                 
-        if found:
-            if self.ctrl_wdg.kf_method == "Regular":
-                v.features_regular[t][i].label.setVisible(False)
-                v.features_regular[t][i].setVisible(False)
-                v.hide_regular[t][i] = True
-                # v.features_regular[t].pop(i)
-                
-            elif self.ctrl_wdg.kf_method == "Network":
-                v.features_network[t][i].label.setVisible(False)
-                v.features_network[t][i].setVisible(False)
-                v.hide_network[t][i] = True
-                # v.features_network[t].pop(i)
-                
-            if len(self.associated_frames[i]) > 1:
-                pic_idx = self.find_idx(i,t)
-                self.associated_frames[i].pop(pic_idx)
-                self.associated_videos[i].pop(pic_idx)
-                self.locs[i].pop(pic_idx)
-
-                
-            elif len(self.associated_frames[i]) == 1:
-                self.labels[i] = -1
-                self.associated_frames[i] = [-1]
-                self.associated_videos[i] = [-1]
-                self.locs[i] = [[-1, -1]]
-                
-                
-            self.wdg_tree.label_index = 0
-            self.selected_feature_index = int(self.wdg_tree.items[self.wdg_tree.label_index].child(0).text(1)) - 1
-            # print(self.associated_frames)
-            # print(self.labels)
-            # print("Feature Index : "+str(self.selected_feature_index))
-            # print("Label Index : "+str(self.wdg_tree.label_index))
-            self.display_data()
-        else:
-            feature_absent_dialogue()
+            elif self.ctrl_wdg.kf_method == "Network" and len(v.hide_network[t]) > i:
+                if not v.hide_network[t][i] and i == (int(v.features_network[t][i].label.label) - 1):
+                    found = True
+                    
+            if found:
+                if self.ctrl_wdg.kf_method == "Regular":
+                    v.features_regular[t][i].label.setVisible(False)
+                    v.features_regular[t][i].setVisible(False)
+                    v.hide_regular[t][i] = True
+                    # v.features_regular[t].pop(i)
+                    
+                elif self.ctrl_wdg.kf_method == "Network":
+                    v.features_network[t][i].label.setVisible(False)
+                    v.features_network[t][i].setVisible(False)
+                    v.hide_network[t][i] = True
+                    # v.features_network[t].pop(i)
+                    
+                if len(self.associated_frames[i]) > 1:
+                    pic_idx = self.find_idx(i,t)
+                    self.associated_frames[i].pop(pic_idx)
+                    self.associated_videos[i].pop(pic_idx)
+                    self.locs[i].pop(pic_idx)
+    
+                    
+                elif len(self.associated_frames[i]) == 1:
+                    self.labels[i] = -1
+                    self.associated_frames[i] = [-1]
+                    self.associated_videos[i] = [-1]
+                    self.locs[i] = [[-1, -1]]
+                    
+                    
+                self.wdg_tree.label_index = 0
+                self.selected_feature_index = int(self.wdg_tree.items[self.wdg_tree.label_index].child(0).text(1)) - 1
+                # print(self.associated_frames)
+                # print(self.labels)
+                # print("Feature Index : "+str(self.selected_feature_index))
+                # print("Label Index : "+str(self.wdg_tree.label_index))
+                self.display_data()
+            else:
+                feature_absent_dialogue()
 
 
  

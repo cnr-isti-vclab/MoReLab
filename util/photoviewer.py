@@ -14,6 +14,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self.photoClicked.connect(self.get_mouse_pos)
         self._zoom = 0
         self._empty = True
+        self.importing = False
         self._scene = QtWidgets.QGraphicsScene(self)
         self._photo = QtWidgets.QGraphicsPixmapItem()
         self._scene.addItem(self._photo)
@@ -60,7 +61,9 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             self._empty = True
             self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
             self._photo.setPixmap(QtGui.QPixmap())
-        self.fitInView()
+            
+        if not self.importing:
+            self.fitInView()
 
     def wheelEvent(self, event):
         if self.hasPhoto():
@@ -76,6 +79,8 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                 self.fitInView()
             else:
                 self._zoom = 0
+
+        
                 
                 
     # def toggleDragMode(self):
@@ -104,12 +109,11 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         return QPixmap.fromImage(p)
     
     
-    def mousePressEvent(self, event):
-        if self._photo.isUnderMouse():
-            p = self.mapToScene(event.pos()).toPoint()
-            # self.photoClicked.emit(p)
-
-        super(PhotoViewer, self).mousePressEvent(event)
+    # def mousePressEvent(self, event):
+    #     if self._photo.isUnderMouse():
+    #         if self.obj.wdg_tree.label_index != -1:
+    #             # self.obj.wdg_tree.item_selected(self.obj.wdg_tree.items[self.obj.wdg_tree.label_index])
+    #             self.obj.wdg_tree.select_feature()
     
     
     def mouseDoubleClickEvent(self, event):

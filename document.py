@@ -50,7 +50,8 @@ class Document():
             "frames" : frames,
             "videos" : videos,
             "locations" : loccs,
-            "feature_dict" : data_movies
+            "feature_dict" : data_movies,
+            "selected_feature" : self.ctrl_wdg.viewer.obj.selected_feature_index
             }
         return data
 
@@ -66,7 +67,8 @@ class Document():
         self.ctrl_wdg.kf_method = data["selected_kf_method"]
         self.ctrl_wdg.selected_thumbnail_index = data["displayIndex"]
         self.ctrl_wdg.viewer.obj.cross_hair = data["cross_hair"]
-
+        
+        self.ctrl_wdg.viewer.importing = True
         for j,f in enumerate(data["frames"]):
             self.ctrl_wdg.viewer.obj.labels.append(int(data["labels"][j]))
             # print(f)
@@ -104,12 +106,8 @@ class Document():
             
             v.n_objects_kf_regular = [int(x) for x in video_data["n_obj_regular"]]
             
-            # print("-------------------------------------")
-            # print(v.n_objects_kf_regular)
-            
             v.n_objects_kf_network = [int(x) for x in video_data["n_obj_network"]]
             
-            # print(v.n_objects_kf_network)
             
             v.hide_regular = video_data["hide_regular"]
             v.hide_network = video_data["hide_network"]
@@ -160,19 +158,18 @@ class Document():
         
         self.ctrl_wdg.select_movie(self.ctrl_wdg.selected_movie_path)
         
+        self.ctrl_wdg.viewer.obj.selected_feature_index = data["selected_feature"]
+        
         if self.ctrl_wdg.selected_thumbnail_index != -1:
             self.ctrl_wdg.displayThumbnail(self.ctrl_wdg.selected_thumbnail_index)
             
+        self.ctrl_wdg.viewer.importing = False
         if self.ctrl_wdg.viewer.obj.cross_hair:
             self.ctrl_wdg.viewer.obj.feature_tool()
-            self.ctrl_wdg.viewer.obj.display_data()
+        else:
+            self.ctrl_wdg.viewer.obj.move_tool()
+
             
-
-
-
-
-    
-
 
     def split_path(self, complete_path):
         op_sys = platform.system()
@@ -182,8 +179,6 @@ class Document():
             split_path = complete_path.split('/')[-1]
 
         return split_path
-    
-
 
 
     def save_directory(self, name_project):
@@ -212,7 +207,3 @@ class Document():
                     img_path = os.path.join(path_network, self.ctrl_wdg.movie_caps[i].key_frame_indices_network[j] +'.png')
                     cv2.imwrite(img_path, img)
                     
-                    
-
-            
-        

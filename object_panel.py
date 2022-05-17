@@ -63,21 +63,50 @@ class ObjectPanel(QTreeWidget):
             self.insertTopLevelItems(0, self.items)
             self.itemClicked.connect(self.item_selected)
             
-            
-            self.items[self.label_index].setSelected(True)
+            if self.tool_obj.cross_hair:
+                self.item_selected(self.items[self.label_index])
         
         
         
     def item_selected(self, selection):
-        self.label_index = self.items.index(selection)
-        # print(type(self.label_index))
-        # print(self.label_index)
-        selection.setSelected(True)
-        ch = selection.child(0)
-        label = ch.text(1)
-        self.tool_obj.selected_feature_index = int(label) - 1
+        if self.tool_obj.cross_hair:
+            self.label_index = self.items.index(selection)
+            # print(type(self.label_index))
+            # print(self.label_index)
+            selection.setSelected(True)
+            ch = selection.child(0)
+            label = ch.text(1)
+            self.tool_obj.selected_feature_index = int(label) - 1
+            
+            self.select_feature()
+        else:
+            selection.setSelected(False)
         
         
+    
+    def select_feature(self):
+        t = self.tool_obj.ctrl_wdg.selected_thumbnail_index            
+        v = self.tool_obj.ctrl_wdg.movie_caps[self.tool_obj.ctrl_wdg.selected_movie_idx]
+        f = self.tool_obj.selected_feature_index
         
-        
+        if t!=-1 and f!=-1:
+            found = False
+            if self.tool_obj.ctrl_wdg.kf_method == "Regular" and len(v.hide_regular[t]) > f:
+                if not v.hide_regular[t][f] and f == (int(v.features_regular[t][f].label.label) - 1):
+                    found = True
                 
+            elif self.tool_obj.ctrl_wdg.kf_method == "Network" and len(v.hide_network[t]) > f:
+                if not v.hide_network[t][f] and f == (int(v.features_network[t][f].label.label) - 1):
+                    found = True
+            
+            if self.tool_obj.ctrl_wdg.kf_method == "Regular":
+                for i,fc in enumerate(v.features_regular[t]):
+                    fc.setSelected(False)
+                if found:
+                    v.features_regular[t][f].setSelected(True)
+                    
+            elif self.tool_obj.ctrl_wdg.kf_method == "Network":
+                for i,fc in enumerate(v.features_network[t]):
+                    fc.setSelected(False)
+                if found:
+                    v.features_network[t][f].setSelected(True)            

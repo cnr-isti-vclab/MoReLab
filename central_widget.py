@@ -37,8 +37,11 @@ class Widget(QWidget):
         self.viewer = PhotoViewer(self)
         self.doc = Document(self)
         
-        self.thumbnail_height = 64
-        self.thumbnail_width = 104
+        self.thumbnail_text_stylesheet = """color:black;
+                                 font-weight:bold;
+                                 background-color:none;"""
+        self.thumbnail_height = 96
+        self.thumbnail_width = 120
         self.kf_method = ""
         
         self.create_wdg1()
@@ -76,9 +79,10 @@ class Widget(QWidget):
         for i, img in enumerate(kfs):
             img_label = QLabel("")
             img_label.setAlignment(Qt.AlignCenter)
-            text_label = QLabel("")
+            text_label = QLabel(str(i+1))
             text_label.setAlignment(Qt.AlignCenter)
-            # text_label.setText(str(i))
+            text_label.setFont(QFont("Sanserif", 10))
+            text_label.setStyleSheet(self.thumbnail_text_stylesheet)
             pixmap_scaled = self.viewer.convert_cv_qt(img, self.thumbnail_width, self.thumbnail_height)
             img_label.setPixmap(pixmap_scaled)
 
@@ -101,29 +105,28 @@ class Widget(QWidget):
     def displayThumbnail(self, index):
         self.selected_thumbnail_index = index
         self.viewer.obj.hide_features(True)
-        if self.viewer.obj.features_data != {}:
-            self.viewer.obj.wdg_tree.add_feature_data(self.viewer.obj.features_data, self.viewer.obj.selected_feature_index)
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)
             text_label = self.grid_layout.itemAt(text_label_index).itemAt(1).widget()
-            text_label.setStyleSheet("background-color:none;")
+            text_label.setStyleSheet(self.thumbnail_text_stylesheet)
 
         ## Select the single clicked thumbnail
         text_label_of_thumbnail = self.grid_layout.itemAt(index)\
             .itemAt(1).widget()
-        text_label_of_thumbnail.setStyleSheet("background-color:blue;")
+        text_label_of_thumbnail.setStyleSheet("background-color:rgb(135, 206, 235);"
+                                              "font-weight:bold;")
         
         if self.kf_method == "Regular":    
             img_file = self.movie_caps[self.selected_movie_idx].key_frames_regular[self.selected_thumbnail_index]
         elif self.kf_method == "Network":
             img_file = self.movie_caps[self.selected_movie_idx].key_frames_network[self.selected_thumbnail_index]
-        else:
-            img_file = np.zeros(shape=(400, 400))
         
-        
+        # print(img_file.shape)
         p = self.viewer.convert_cv_qt(img_file, img_file.shape[1] , img_file.shape[0] )
         self.viewer.setPhoto(p)
+        if not self.viewer.importing:
+            self.viewer.fitInView()
         
 
         
