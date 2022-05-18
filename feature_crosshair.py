@@ -41,7 +41,7 @@ class FeatureCrosshair(QGraphicsPixmapItem):
     def mouseMoveEvent(self, event):
         # print("Moving")
         
-        v = self.parent.ctrl_wdg.movie_caps[self.parent.ctrl_wdg.selected_movie_idx]
+        v = self.parent.ctrl_wdg.mv_panel.movie_caps[self.parent.ctrl_wdg.mv_panel.selected_movie_idx]
         f = self.parent.selected_feature_index
         t = self.parent.ctrl_wdg.selected_thumbnail_index
         

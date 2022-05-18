@@ -1,24 +1,23 @@
-import platform, os, glob, json
+import os, glob, json
 import cv2
 import numpy as np
 from util.video import Video
+from util.util import split_path
 from feature_crosshair import FeatureCrosshair
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
+
 class Document():
     def __init__(self, ctrl_wdg):
         super().__init__()
         self.ctrl_wdg = ctrl_wdg
         
-        
-        
-        
     def get_data(self):
         data_movies = []
-        for  i,v in enumerate(self.ctrl_wdg.movie_caps):
+        for  i,v in enumerate(self.ctrl_wdg.mv_panel.movie_caps):
             movie_feature_data = {"n_obj_regular" : [str(x) for x in v.n_objects_kf_regular],
                                   "n_obj_network" : [str(x) for x in v.n_objects_kf_network],
                                   "hide_regular": v.hide_regular,
@@ -41,8 +40,8 @@ class Document():
             loccs.append(ab)     
         
         data = {
-            "movies" : self.ctrl_wdg.movie_paths,
-            "selected_movie" : self.ctrl_wdg.selected_movie_path,
+            "movies" : self.ctrl_wdg.mv_panel.movie_paths,
+            "selected_movie" : self.ctrl_wdg.mv_panel.selected_movie_path,
             "selected_kf_method" : self.ctrl_wdg.kf_method,
             "cross_hair" : self.ctrl_wdg.viewer.obj.cross_hair,
             "displayIndex": self.ctrl_wdg.selected_thumbnail_index,
@@ -62,8 +61,7 @@ class Document():
         with open (project_path) as myfile:
             data=json.load(myfile)
             
-        self.ctrl_wdg.movie_paths = data["movies"]
-        self.ctrl_wdg.selected_movie_path = data["selected_movie"]
+        mv_paths = data["movies"]
         self.ctrl_wdg.kf_method = data["selected_kf_method"]
         self.ctrl_wdg.selected_thumbnail_index = data["displayIndex"]
         self.ctrl_wdg.viewer.obj.cross_hair = data["cross_hair"]
@@ -91,23 +89,16 @@ class Document():
         
         a = os.path.join(project_path.split('.')[0], 'extracted_frames')
         movie_dirs = os.listdir(a)
-
         count = 0
-        for i,p in enumerate(self.ctrl_wdg.movie_paths):
-            movie_name = self.split_path(p)
-            btn = QPushButton(movie_name)
-            self.ctrl_wdg.movie_buttons.append(btn)
-            v = Video(p)
-            self.ctrl_wdg.movie_caps.append(v)
-            self.ctrl_wdg.summary_wdg.setText(v.video_summary())
-            self.ctrl_wdg.selected_movie_idx = i
-            
-            video_data = feature_data_list[i]
-            
+        for i,p in enumerate(mv_paths):
+            movie_name = split_path(p)
+            self.ctrl_wdg.mv_panel.add_movie(p)
+            self.ctrl_wdg.mv_panel.selected_movie_idx = i
+            v = self.ctrl_wdg.mv_panel.movie_caps[i]
+            video_data = feature_data_list[i]            
             v.n_objects_kf_regular = [int(x) for x in video_data["n_obj_regular"]]
             
-            v.n_objects_kf_network = [int(x) for x in video_data["n_obj_network"]]
-            
+            v.n_objects_kf_network = [int(x) for x in video_data["n_obj_network"]]            
             
             v.hide_regular = video_data["hide_regular"]
             v.hide_network = video_data["hide_network"]
@@ -154,56 +145,50 @@ class Document():
                             self.ctrl_wdg.viewer._scene.addItem(fc)
                             self.ctrl_wdg.viewer._scene.addItem(fc.label)
                                 
+        
+        self.ctrl_wdg.mv_panel.selected_movie_path = data["selected_movie"]
 
+        self.ctrl_wdg.mv_panel.selected_movie_idx = self.ctrl_wdg.mv_panel.movie_paths.index(self.ctrl_wdg.mv_panel.selected_movie_path)
+        self.ctrl_wdg.mv_panel.select_movie(self.ctrl_wdg.mv_panel.items[self.ctrl_wdg.mv_panel.selected_movie_idx])
         
-        self.ctrl_wdg.select_movie(self.ctrl_wdg.selected_movie_path)
-        
-        self.ctrl_wdg.viewer.obj.selected_feature_index = data["selected_feature"]
+
         
         if self.ctrl_wdg.selected_thumbnail_index != -1:
             self.ctrl_wdg.displayThumbnail(self.ctrl_wdg.selected_thumbnail_index)
-            
+
+        self.ctrl_wdg.viewer.obj.selected_feature_index = data["selected_feature"]            
         self.ctrl_wdg.viewer.importing = False
         if self.ctrl_wdg.viewer.obj.cross_hair:
             self.ctrl_wdg.viewer.obj.feature_tool()
         else:
             self.ctrl_wdg.viewer.obj.move_tool()
 
-            
 
-    def split_path(self, complete_path):
-        op_sys = platform.system()
-        if op_sys == "Windows":
-            split_path = complete_path.split('\\')[-1]
-        else:
-            split_path = complete_path.split('/')[-1]
-
-        return split_path
 
 
     def save_directory(self, name_project):
         out_dir = os.path.join(name_project.split('.')[0], 'extracted_frames')
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-        for i, p in enumerate(self.ctrl_wdg.movie_paths):
-            aa = self.split_path(p)
+        for i, p in enumerate(self.ctrl_wdg.mv_panel.movie_paths):
+            aa = split_path(p)
             video_folder = aa.split('.')[0]
             video_folder_path = os.path.join(out_dir, video_folder)
             
-            if len(self.ctrl_wdg.movie_caps[i].key_frames_regular) > 0:
+            if len(self.ctrl_wdg.mv_panel.movie_caps[i].key_frames_regular) > 0:
                 path_regular = os.path.join(video_folder_path , 'Regular')
                 if not os.path.exists(path_regular):
                     os.makedirs(path_regular)
                     
-                for j, img in enumerate(self.ctrl_wdg.movie_caps[i].key_frames_regular):
-                    img_path = os.path.join(path_regular, self.ctrl_wdg.movie_caps[i].key_frame_indices_regular[j] +'.png')
+                for j, img in enumerate(self.ctrl_wdg.mv_panel.movie_caps[i].key_frames_regular):
+                    img_path = os.path.join(path_regular, self.ctrl_wdg.mv_panel.movie_caps[i].key_frame_indices_regular[j] +'.png')
                     cv2.imwrite(img_path, img)
                     
-            if len(self.ctrl_wdg.movie_caps[i].key_frames_network) > 0:
+            if len(self.ctrl_wdg.mv_panel.movie_caps[i].key_frames_network) > 0:
                 path_network = os.path.join(video_folder_path , 'Network')
                 if not os.path.exists(path_network):
                     os.makedirs(path_network)
-                for j, img in enumerate(self.ctrl_wdg.movie_caps[i].key_frames_network):
-                    img_path = os.path.join(path_network, self.ctrl_wdg.movie_caps[i].key_frame_indices_network[j] +'.png')
+                for j, img in enumerate(self.ctrl_wdg.mv_panel.movie_caps[i].key_frames_network):
+                    img_path = os.path.join(path_network, self.ctrl_wdg.mv_panel.movie_caps[i].key_frame_indices_network[j] +'.png')
                     cv2.imwrite(img_path, img)
                     

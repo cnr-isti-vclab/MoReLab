@@ -2,10 +2,12 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import sys, os, sip, json, glob, cv2
-from central_widget import Widget, SliderFrame
+from central_widget import Widget
+from util.util import movie_dialogue, split_path
 
 from util.video import Video
 from tools import Tools
+
 
 
 class Window(QMainWindow):
@@ -15,21 +17,15 @@ class Window(QMainWindow):
         self.showMaximized()
         self.widget = Widget()
         
+        
         self.create_menu()
         self.create_statusbar()
-        self.create_toolbar() 
+        self.create_toolbar()
 
 
     def create_layout(self):
-        self.vboxLayout1 = QVBoxLayout()
         self.vboxLayout3 = QVBoxLayout()
-        for i,btn in enumerate(self.widget.movie_buttons):
-            self.vboxLayout1.addWidget(btn, 1)
-            btn.clicked.connect(self.make_calluser(self.widget.movie_paths[i]))   
-        
-        v1 = SliderFrame(self.vboxLayout1)
-        self.vboxLayout3.addWidget(v1, 1)
-        self.vboxLayout3.addWidget(self.widget.summary_wdg)
+        self.vboxLayout3.addWidget(self.widget.mv_panel)
         self.vboxLayout3.addWidget(self.widget.btn_kf)
         
         self.vboxLayout2 = QVBoxLayout()
@@ -164,20 +160,20 @@ class Window(QMainWindow):
             project_path = response[0]
             
             name_project = os.path.relpath(project_path, os.getcwd())
-            disp_name_project = self.widget.doc.split_path(name_project)
+            disp_name_project = split_path(name_project)
             self.project_name_label.setText(disp_name_project)
             
             self.widget.doc.load_data(project_path)
             self.create_layout() 
             
-            display_msg = "Opened "+self.widget.doc.split_path(project_path)
+            display_msg = "Opened "+split_path(project_path)
             self.statusBar.showMessage(display_msg, 2000)
             
     
     def implement_save(self, p):
         name_project = os.path.relpath(p, os.getcwd())
         
-        disp_name_project = self.widget.doc.split_path(name_project)
+        disp_name_project = split_path(name_project)
         
         display_msg = "Saving "+disp_name_project
         self.statusBar.showMessage(display_msg, 2000)
@@ -202,7 +198,7 @@ class Window(QMainWindow):
             )
         if self.save_response[0] != '':
             name_project = os.path.relpath(self.save_response[0], os.getcwd())
-            disp_name_project = self.widget.doc.split_path(name_project)
+            disp_name_project = split_path(name_project)
             self.project_name_label.setText(disp_name_project)
 
             self.implement_save(self.save_response[0])
@@ -235,40 +231,22 @@ class Window(QMainWindow):
         )
         if response[0] != '':
             movie_path = os.path.relpath(response[0], os.getcwd())
-            if movie_path in self.widget.movie_paths:
-                msgBox = QMessageBox()
-                msgBox.setText("This movie has already been loaded.")
-                msgBox.setWindowTitle("Open movie")
-                msgBox.setStandardButtons(QMessageBox.Ok)                 
-                returnValue = msgBox.exec()
+            if movie_path in self.widget.mv_panel.movie_paths:
+                movie_dialogue()
             else:
-                movie_name = self.widget.doc.split_path(movie_path)
+                movie_name = split_path(movie_path)
                 display_msg = "Opened "+movie_name      
                 self.statusBar.showMessage(display_msg, 2000)
-                                
-                btn = QPushButton(movie_name)
-                self.widget.add_movie(movie_path, btn)
-                self.widget.select_movie(movie_path)
+                self.widget.mv_panel.add_movie(movie_path)
                 
-                if len(self.widget.movie_buttons) == 1:
-                    self.create_layout()
-                else:
-                    self.vboxLayout1.addWidget(btn, 1)
-                    btn.clicked.connect(self.make_calluser(movie_path))        
+                if len(self.widget.mv_panel.movie_paths) == 1:
+                    self.create_layout()      
 
         
     def create_statusbar(self):
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
     
-        
-    def make_calluser(self, movie_path):
-        def calluser():
-            movie_name = movie_path.split('/')[-1]
-            display_msg = "Selected "+movie_name
-            self.statusBar.showMessage(display_msg, 2000)
-            self.widget.select_movie(movie_path)
-        return calluser
 
 
 if __name__=="__main__":

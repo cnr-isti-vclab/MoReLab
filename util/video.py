@@ -28,33 +28,27 @@ class Video:
     def video_summary(self):
         self.fps = round(self.cap.get(cv2.CAP_PROP_FPS))
         self.n_frames = int(self.cap.get(cv2. CAP_PROP_FRAME_COUNT))
-        self.duration = int(self.n_frames/self.fps)
+        self.duration = round(self.n_frames/self.fps, 2)
         success, frame_cv = self.cap.read()
         if success:
             self.height, self.width, _ = frame_cv.shape
-        self.summary = "Video Summary: \n\nFPS: "+str(self.fps)+"\nNumber of Frames: "+str(self.n_frames)+ \
-            "\nLength: "+str(self.duration) +" sec.\nResolution: "+str(self.width)+" X "+str(self.height)
-        return self.summary        
 
 
     def extract_frames_regularly(self, sampling_rate):
         # print("Extracting frames regularly")
         count = 0
-        idxs = []
-        kfs = []
         while self.cap.isOpened():
             success, frame_cv = self.cap.read()
             if not success:
                 break
             if count % sampling_rate == 0:
-                kfs.append(frame_cv)
-                idxs.append(str(count).zfill(6))
+                self.key_frames_regular.append(frame_cv)
+                self.key_frame_indices_regular.append(str(count).zfill(6))
             count = count + 1
    
-        self.init_features_regular(len(kfs))
+        self.init_features_regular(len(self.key_frames_regular))
         self.cap.release()
 
-        return kfs, idxs, self.features_regular, self.hide_regular, self.n_objects_kf_regular
     
     def init_features_regular(self, n):        
         for i in range(n):
@@ -115,8 +109,6 @@ class Video:
         # print("Extracting frames by network")
         n = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         bLoad = True
-        idxs = []
-        kfs = []
         j = 0
         lst_m = []
         lst_s = []
@@ -163,22 +155,21 @@ class Video:
                         bWhile = False
                         bLoad = False
                         img = img_n
-                        idxs.append(str(j-1).zfill(6))
-                        kfs.append(img_n_cv)
+                        self.key_frame_indices_network.append(str(j-1).zfill(6))
+                        self.key_frames_network.append(img_n_cv)
                         # print("Index : "+str(j-1))
 
                 if(bFirst):
                     bFirst = False
                     lst_m.append(j_old)
-                    idxs.append(str(j-1).zfill(6))
-                    kfs.append(img_cv)
+                    self.key_frame_indices_network.append(str(j-1).zfill(6))
+                    self.key_frames_network.append(img_cv)
                     # print("First frame")
                     # print('Frame ' + str(j_old) + ' is kept')
         
-        self.init_features_network(len(kfs))
+        self.init_features_network(len(self.key_frames_network))
         self.cap.release()
         
-        return kfs, idxs, self.features_network, self.hide_network, self.n_objects_kf_network
     
     
     

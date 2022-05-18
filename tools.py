@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from feature_crosshair import FeatureCrosshair
-from util.kf_dialogue import feature_absent_dialogue
+from util.util import feature_absent_dialogue
 
 import numpy as np
 from object_panel import ObjectPanel
@@ -121,7 +121,8 @@ class Tools(QObject):
         # print(self.selected_feature_index)
         if self.cross_hair:
             t = self.ctrl_wdg.selected_thumbnail_index
-            v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
+            v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+            m_idx = self.ctrl_wdg.mv_panel.selected_movie_idx
             
             if self.ctrl_wdg.kf_method == "Regular":
                 v.n_objects_kf_regular[t] += 1
@@ -138,7 +139,7 @@ class Tools(QObject):
                     if self.labels[self.selected_feature_index] == -1:
                         self.labels[self.selected_feature_index] = label
                         self.associated_frames[self.selected_feature_index][0] = t
-                        self.associated_videos[self.selected_feature_index][0] = self.ctrl_wdg.selected_movie_idx
+                        self.associated_videos[self.selected_feature_index][0] = m_idx
                         self.locs[self.selected_feature_index][0] = [fc.x_loc, fc.y_loc]
                     else:
                         print("Problem in adding feature...............")
@@ -146,13 +147,13 @@ class Tools(QObject):
                     self.selected_feature_index = self.selected_feature_index + 1
                     self.labels.append(label)
                     self.associated_frames.append([t])
-                    self.associated_videos.append([self.ctrl_wdg.selected_movie_idx])
+                    self.associated_videos.append([m_idx])
                     self.locs.append([[fc.x_loc, fc.y_loc]])
                 
             else:
                 self.selected_feature_index = self.labels.index(label)
                 self.associated_frames[self.selected_feature_index].append(t)
-                self.associated_videos[self.selected_feature_index].append(self.ctrl_wdg.selected_movie_idx)
+                self.associated_videos[self.selected_feature_index].append(m_idx)
                 self.locs[self.selected_feature_index].append([fc.x_loc, fc.y_loc])
 
                             
@@ -191,9 +192,9 @@ class Tools(QObject):
             
     def hide_features(self, current=True):
         t = self.ctrl_wdg.selected_thumbnail_index            
-        v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         
-        for v1 in self.ctrl_wdg.movie_caps:
+        for v1 in self.ctrl_wdg.mv_panel.movie_caps:
             for i in range(len(v1.n_objects_kf_regular)):
                 if v1.features_regular !=  []:
                     for j,f in enumerate(v1.features_regular[i]):
@@ -226,7 +227,7 @@ class Tools(QObject):
         if len(idd) == 1:
             pic_idx = idd[0]
         else:
-            idd2 = [n for n, x in enumerate(self.associated_videos[f]) if x == self.ctrl_wdg.selected_movie_idx]
+            idd2 = [n for n, x in enumerate(self.associated_videos[f]) if x == self.ctrl_wdg.mv_panel.selected_movie_idx]
             d = list(set(idd2).intersection(idd))
             if len(d) == 1:
                 pic_idx = d[0]
@@ -239,7 +240,7 @@ class Tools(QObject):
     
     def delete_feature(self):
         t = self.ctrl_wdg.selected_thumbnail_index            
-        v = self.ctrl_wdg.movie_caps[self.ctrl_wdg.selected_movie_idx]
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         i = self.selected_feature_index
         # print("To be deleted : "+str(i))
         

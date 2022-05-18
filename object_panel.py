@@ -86,7 +86,7 @@ class ObjectPanel(QTreeWidget):
     
     def select_feature(self):
         t = self.tool_obj.ctrl_wdg.selected_thumbnail_index            
-        v = self.tool_obj.ctrl_wdg.movie_caps[self.tool_obj.ctrl_wdg.selected_movie_idx]
+        v = self.tool_obj.ctrl_wdg.mv_panel.movie_caps[self.tool_obj.ctrl_wdg.mv_panel.selected_movie_idx]
         f = self.tool_obj.selected_feature_index
         
         if t!=-1 and f!=-1:

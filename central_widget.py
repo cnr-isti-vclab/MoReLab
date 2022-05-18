@@ -3,25 +3,15 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from util.video import Video
 from util.photoviewer import PhotoViewer
-from util.kf_dialogue import KF_dialogue, show_dialogue
+from util.kf_dialogue import KF_dialogue
+from util.util import show_dialogue
 from document import Document
+from movie_panel import MoviePanel
+
 import json, os, glob
 import cv2
 import numpy as np
 
-
-
-
-class SliderFrame(QFrame):
-    def __init__(self, myslider):
-        QFrame.__init__(self)
-    
-        self.setStyleSheet("border: 1px solid black; margin: 0px; padding: 0px;")
-   
-        self.layout = QVBoxLayout()
-        self.layout.addLayout(myslider)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
 
 
 class Widget(QWidget):
@@ -36,6 +26,7 @@ class Widget(QWidget):
         self.movie_caps = []
         self.viewer = PhotoViewer(self)
         self.doc = Document(self)
+        self.mv_panel = MoviePanel(self)
         
         self.thumbnail_text_stylesheet = """color:black;
                                  font-weight:bold;
@@ -51,19 +42,15 @@ class Widget(QWidget):
         
         
     def create_wdg1(self):
-        self.summary_wdg = QLabel("")
-        self.summary_wdg.setStyleSheet("border: 1px solid gray;")
-        self.summary_wdg.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        
         self.btn_kf = QPushButton("Extract Key-frames")
         self.btn_kf.clicked.connect(self.extract)
 
             
     def find_kfs(self):
         if self.kf_method == "Regular":
-            kfs = self.movie_caps[self.selected_movie_idx].key_frames_regular
+            kfs = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_regular
         elif self.kf_method == "Network":
-            kfs = self.movie_caps[self.selected_movie_idx].key_frames_network
+            kfs = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_network
         else:
             kfs = []
             
@@ -118,16 +105,15 @@ class Widget(QWidget):
                                               "font-weight:bold;")
         
         if self.kf_method == "Regular":    
-            img_file = self.movie_caps[self.selected_movie_idx].key_frames_regular[self.selected_thumbnail_index]
+            img_file = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_regular[self.selected_thumbnail_index]
         elif self.kf_method == "Network":
-            img_file = self.movie_caps[self.selected_movie_idx].key_frames_network[self.selected_thumbnail_index]
+            img_file = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_network[self.selected_thumbnail_index]
         
         # print(img_file.shape)
         p = self.viewer.convert_cv_qt(img_file, img_file.shape[1] , img_file.shape[0] )
         self.viewer.setPhoto(p)
         if not self.viewer.importing:
             self.viewer.fitInView()
-        
 
         
 
@@ -136,56 +122,6 @@ class Widget(QWidget):
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll_area.setWidgetResizable(True)
-        
-
-    def deselect_movies(self):
-        if len(self.movie_buttons) > 0:
-            for bt in self.movie_buttons:
-                bt.setStyleSheet("color: black; border: none;")
-                
-                
-    def add_movie(self, movie_path, btn):
-        # btn.setStyleSheet("color: blue; border: 1px solid blue;")
-        self.movie_buttons.append(btn)
-        self.movie_paths.append(movie_path)
-        v = Video(movie_path)
-        self.movie_caps.append(v)
-        self.summary_wdg.setText(v.video_summary())
-
-    def switch_kf_method(self):
-        kfs_regular = self.movie_caps[self.selected_movie_idx].key_frames_regular
-        kfs_network = self.movie_caps[self.selected_movie_idx].key_frames_network
-        # print(len(kfs_regular))
-        # print(len(kfs_network))
-        if len(kfs_regular) > 0 and len(kfs_network) > 0:
-            return
-        elif len(kfs_regular) == 0 and len(kfs_network) == 0:
-            return 
-        elif len(kfs_regular) > 0 and len(kfs_network) == 0:
-            self.kf_method = "Regular"
-        elif len(kfs_regular) == 0 and len(kfs_network) > 0:
-            self.kf_method = "Network"
-            
-                
-    
-    def select_movie(self, movie_path):
-        self.deselect_movies()
-        self.viewer.obj.hide_features(False)
-        # self.viewer.obj.refresh()
-        self.viewer.obj.wdg_tree.clear()
-        
-        for i,p in enumerate(self.movie_paths):
-            if p == movie_path:
-                self.selected_movie_path = p
-                self.selected_movie_idx = i
-                
-        self.switch_kf_method()        
-        self.movie_buttons[self.selected_movie_idx].setStyleSheet("color: blue; border: 1px solid blue;")
-        v = self.movie_caps[self.selected_movie_idx]
-        self.summary_wdg.setText(v.video_summary())
-        self.populate_scrollbar()
-        
-        self.viewer.setPhoto()
         
     
             
@@ -199,17 +135,15 @@ class Widget(QWidget):
             if len(kfs) >0:
                 b = show_dialogue()
             if b:
-                
-                v = Video(self.selected_movie_path)
-                v1 = self.movie_caps[self.selected_movie_idx]
+                v1 = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
                 
                 if self.kf_method == "Regular":
                     rate_str = dlg.e1.text()
                     sampling_rate = int(rate_str)
-                    v1.key_frames_regular, v1.key_frame_indices_regular, v1.features_regular, v1.hide_regular,  v1.n_objects_kf_regular = v.extract_frames_regularly(sampling_rate)
+                    v1.extract_frames_regularly(sampling_rate)
 
                 elif self.kf_method == "Network":
-                    v1.key_frames_network, v1.key_frame_indices_network, v1.features_network, v1.hide_network,  v1.n_objects_kf_network = v.cleanSequence()
+                    v1.cleanSequence()
 
         else:
             self.kf_method = dlg.kf_met

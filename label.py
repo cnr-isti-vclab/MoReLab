@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from util.kf_dialogue import Feature_Dialogue, duplicate_dialogue, increment_dialogue
+from util.util import Feature_Dialogue, duplicate_dialogue, increment_dialogue
 
 class Label(QGraphicsTextItem):
     def __init__(self, x, y, label_idx, tool_obj, parent):
@@ -33,7 +33,8 @@ class Label(QGraphicsTextItem):
             dlg = Feature_Dialogue()
             if dlg.exec():
                 t = self.tool_obj.ctrl_wdg.selected_thumbnail_index
-                v = self.tool_obj.ctrl_wdg.movie_caps[self.tool_obj.ctrl_wdg.selected_movie_idx]
+                v = self.tool_obj.ctrl_wdg.mv_panel.movie_caps[self.tool_obj.ctrl_wdg.mv_panel.selected_movie_idx]
+                m_idx = self.tool_obj.ctrl_wdg.mv_panel.selected_movie_idx
                 
                 l = int(dlg.e2.text())                   
                 duplicate = False
@@ -81,11 +82,11 @@ class Label(QGraphicsTextItem):
                         if self.tool_obj.labels[l-1] == -1:
                             self.tool_obj.labels[l-1] = l
                             self.tool_obj.associated_frames[l-1] = [t]
-                            self.tool_obj.associated_videos[l-1] = [self.tool_obj.ctrl_wdg.selected_movie_idx]
+                            self.tool_obj.associated_videos[l-1] = [m_idx]
                             self.tool_obj.locs[l-1] = [[self.parent.x_loc, self.parent.y_loc]]
                         else:                                
                             self.tool_obj.associated_frames[l-1].append(t)
-                            self.tool_obj.associated_videos[l-1].append(self.tool_obj.ctrl_wdg.selected_movie_idx)
+                            self.tool_obj.associated_videos[l-1].append(m_idx)
                             self.tool_obj.locs[l-1].append([self.parent.x_loc, self.parent.y_loc])
 
                     
