@@ -79,7 +79,7 @@ def show_dialogue():
     return b
 
 
-def movie_dialogue(self):
+def movie_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("This movie has already been loaded.")
     msgBox.setWindowTitle("Open movie")
