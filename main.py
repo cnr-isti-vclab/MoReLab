@@ -32,10 +32,14 @@ class Window(QMainWindow):
         self.vboxLayout2.addWidget(self.widget.scroll_area, 1)
         self.vboxLayout2.addWidget(self.widget.viewer , 5)
         
+        vert1 = QVBoxLayout()
+        vert1.addWidget(self.widget.viewer.obj.wdg_tree)
+        vert1.addWidget(self.widget.viewer.obj.cam_btn)
+        
         self.hboxLayout = QHBoxLayout()
         self.hboxLayout.addLayout(self.vboxLayout3, 1 )
         self.hboxLayout.addLayout(self.vboxLayout2, 4)
-        self.hboxLayout.addWidget(self.widget.viewer.obj.wdg_tree, 2)
+        self.hboxLayout.addLayout(vert1, 2)
         
         self.widget.setLayout(self.hboxLayout)
         self.setCentralWidget(self.widget)

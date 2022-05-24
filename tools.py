@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from feature_crosshair import FeatureCrosshair
-from util.util import feature_absent_dialogue
+from util.util import feature_absent_dialogue, numFeature_dialogue
 
 import numpy as np
 from object_panel import ObjectPanel
@@ -25,6 +25,8 @@ class Tools(QObject):
         # print(type(self.feature_pixmap.size()))
         # print(self.feature_pixmap.size())
         self.add_tool_icons()
+        self.cam_btn = QPushButton("Camera Calibration")
+        self.cam_btn.clicked.connect(self.calibrate)
         self.cross_hair = False
         
         self.labels = []
@@ -36,8 +38,40 @@ class Tools(QObject):
         self.selected_feature_index =-1
         self.count_ = 0
         
-        
         self.features_data = {}
+        
+    
+        
+    def calibrate(self):
+        indices = []
+        for i,x in enumerate(self.locs):
+            if len(x) > 1:
+                indices.append(i)
+
+        if (len(self.locs) < 8 or len(indices) < 8):
+            numFeature_dialogue()
+        else:
+            pts1 = np.zeros(shape=(len(indices), 2), dtype=int)
+            pts2 = np.zeros(shape=(len(indices), 2), dtype=int)
+            for i,x in enumerate(indices):
+                pts1[i,:] = self.locs[x][0]
+                pts2[i,:] = self.locs[x][1]
+                
+            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+            print("Fundamental matrix")
+            print(F)
+            
+            # E = K' * F * K
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
 
     def add_tool_icons(self):
@@ -165,6 +199,7 @@ class Tools(QObject):
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t].append(fc)
                 v.hide_regular[t].append(False)
+                # v.locs_regular[t].append()
                 
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(fc)

@@ -70,15 +70,16 @@ class ObjectPanel(QTreeWidget):
         
     def item_selected(self, selection):
         if self.tool_obj.cross_hair:
-            self.label_index = self.items.index(selection)
-            # print(type(self.label_index))
-            # print(self.label_index)
-            selection.setSelected(True)
-            ch = selection.child(0)
-            label = ch.text(1)
-            self.tool_obj.selected_feature_index = int(label) - 1
-            
-            self.select_feature()
+            if selection in self.items:
+                self.label_index = self.items.index(selection)
+                # print(type(self.label_index))
+                # print(self.label_index)
+                selection.setSelected(True)
+                ch = selection.child(0)
+                label = ch.text(1)
+                self.tool_obj.selected_feature_index = int(label) - 1
+                
+                self.select_feature()
         else:
             selection.setSelected(False)
         

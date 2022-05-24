@@ -67,7 +67,7 @@ class MoviePanel(QTreeWidget):
         self.selected_movie_idx = self.items.index(selection)
         self.selected_movie_path = self.movie_paths[self.selected_movie_idx]
         
-        print("selected : "+str(self.selected_movie_idx))
+        # print("selected : "+str(self.selected_movie_idx))
                 
         self.switch_kf_method()        
         self.items[self.selected_movie_idx].setSelected(True)

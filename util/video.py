@@ -21,7 +21,6 @@ class Video:
         self.features_network = []
         self.hide_network = []
         
-        
         self.summary = ""
 
     
@@ -178,12 +177,6 @@ class Video:
             self.n_objects_kf_network.append(0)
             self.features_network.append([])
             self.hide_network.append([])
-            
-            
-
-
-
-
     
 
 
