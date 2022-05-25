@@ -51,6 +51,8 @@ class Tools(QObject):
         if (len(self.locs) < 8 or len(indices) < 8):
             numFeature_dialogue()
         else:
+            v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+            
             pts1 = np.zeros(shape=(len(indices), 2), dtype=int)
             pts2 = np.zeros(shape=(len(indices), 2), dtype=int)
             for i,x in enumerate(indices):
@@ -62,6 +64,35 @@ class Tools(QObject):
             print(F)
             
             # E = K' * F * K
+            # Suppose f = 50 mm. (Cx, Cy) = (w/2, h/2). 
+            K = np.array([[0.05, 0,  int(v.width/2)], [0, 0.05, int(v.height/2)], [0, 0, 1]])
+            
+            E = np.dot(K.transpose(), np.dot(F, K))
+            print("Essential matrix")
+            print(E)
+            
+            
+            # Compute R and t now.
+            U, sigma, V_t = np.linalg.svd(E)
+            print("Sigma")
+            print(sigma)
+            # ideal_sigma = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 0]])
+            # print("Ideally sigma should be : "+str(ideal_sigma))
+            
+            W = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]]) # Francesco's lecture
+            R = np.dot(U, np.dot(W, V_t))
+            
+            t_matrix = np.dot(E, np.linalg.inv(R))
+            t_3, t_2, t_1 = t_matrix[1,0], t_matrix[0, 2], t_matrix[2, 1]
+            t = np.array([[t_1], [t_2], [t_3]])
+            print("Rotation and Translation matrices: ")
+            print(R)
+            print(t)
+            
+            
+            
+            
+            
         
         
         

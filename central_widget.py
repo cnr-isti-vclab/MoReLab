@@ -18,12 +18,7 @@ class Widget(QWidget):
     def __init__(self):
         super().__init__()
             
-        self.selected_movie_path = ""
-        self.movie_buttons = []
-        self.movie_paths = []
         self.selected_thumbnail_index = -1
-        self.selected_movie_idx = -1
-        self.movie_caps = []
         self.viewer = PhotoViewer(self)
         self.doc = Document(self)
         self.mv_panel = MoviePanel(self)

@@ -8,6 +8,9 @@ class Video:
         self.video_path = video_path
         self.cap = cv2.VideoCapture(self.video_path)
         
+        self.height = 0
+        self.width = 0
+        
         self.key_frames_regular = []
         self.key_frame_indices_regular = []
         self.key_frames_network = []
