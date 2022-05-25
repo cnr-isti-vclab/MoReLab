@@ -99,7 +99,7 @@ def split_path(complete_path):
 
 def numFeature_dialogue():
     msgBox = QMessageBox()
-    msgBox.setText("Frames must have atleast 8 features.")
+    msgBox.setText("Atleast two frames must have atleast 8 features.")
     msgBox.setWindowTitle("Number of Features")
     msgBox.setStandardButtons(QMessageBox.Ok)                 
     returnValue = msgBox.exec()
