@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from feature_crosshair import FeatureCrosshair
-from util.util import feature_absent_dialogue, numFeature_dialogue
+from util.util import feature_absent_dialogue, numFeature_dialogue, estimateKMatrix
 
 import numpy as np
 from object_panel import ObjectPanel
@@ -40,6 +40,9 @@ class Tools(QObject):
         
         self.features_data = {}
         
+
+
+        
     
         
     def calibrate(self):
@@ -60,25 +63,14 @@ class Tools(QObject):
                 pts2[i,:] = self.locs[x][1]
                 
             F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
-            print("Fundamental matrix")
-            print(F)
-            
-            # E = K' * F * K
-            # Suppose f = 50 mm. (Cx, Cy) = (w/2, h/2). 
-            K = np.array([[0.05, 0,  int(v.width/2)], [0, 0.05, int(v.height/2)], [0, 0, 1]])
+
+            f = 35
+            K = estimateKMatrix(v.width, v.height, f)
             
             E = np.dot(K.transpose(), np.dot(F, K))
-            print("Essential matrix")
-            print(E)
-            
             
             # Compute R and t now.
-            U, sigma, V_t = np.linalg.svd(E)
-            print("Sigma")
-            print(sigma)
-            # ideal_sigma = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 0]])
-            # print("Ideally sigma should be : "+str(ideal_sigma))
-            
+            U, sigma, V_t = np.linalg.svd(E)            
             W = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]]) # Francesco's lecture
             R = np.dot(U, np.dot(W, V_t))
             
@@ -88,6 +80,10 @@ class Tools(QObject):
             print("Rotation and Translation matrices: ")
             print(R)
             print(t)
+            
+            print("Orthogonality check. Answer should be an identity matrix.")
+            check = np.dot(R, R.transpose())
+            print(check)
             
             
             

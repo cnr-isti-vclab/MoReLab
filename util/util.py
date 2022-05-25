@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import platform
+import numpy as np
 
 
 class Feature_Dialogue(QDialog):
@@ -103,3 +104,19 @@ def numFeature_dialogue():
     msgBox.setWindowTitle("Number of Features")
     msgBox.setStandardButtons(QMessageBox.Ok)                 
     returnValue = msgBox.exec()
+    
+    
+def getFocalLengthPixels(focal_length_mm, sensor_size_mm, sensor_size_px):
+    return (focal_length_mm * sensor_size_px) / sensor_size_mm;
+
+
+def estimateKMatrix(width_in_pixel, height_in_pixel, focal_length_in_mm = 35, sensor_width_in_mm = 4.8, sensor_height_in_mm = 3.6):
+    K = np.zeros((3,3))
+        
+    K[0,0] = getFocalLengthPixels(focal_length_in_mm, sensor_width_in_mm, width_in_pixel)
+    K[1,1] = getFocalLengthPixels(focal_length_in_mm, sensor_height_in_mm, height_in_pixel)
+    K[2,2] = 1.0
+    
+    K[0,2] = width_in_pixel // 2
+    K[1,2] = height_in_pixel // 2
+    return K
