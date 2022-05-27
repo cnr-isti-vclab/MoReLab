@@ -2,12 +2,12 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from feature_crosshair import FeatureCrosshair
-from util.util import feature_absent_dialogue, numFeature_dialogue, estimateKMatrix
+from util.util import feature_absent_dialogue, numFeature_dialogue, estimateKMatrix, normalize, distance_F
 
 import numpy as np
 from object_panel import ObjectPanel
 import cv2
-
+from scipy import optimize
 
 class Tools(QObject):
     
@@ -40,8 +40,41 @@ class Tools(QObject):
         
         self.features_data = {}
         
+        
 
+    def cost_F(self, F):
+        F = np.reshape(F, newshape = (3,3))
+        
+        n = self.pts1_norm.shape[0]
+        pts1 = np.concatenate((self.pts1_norm, np.ones(shape=(n,1))), axis=1)
+        pts2 = np.concatenate((self.pts2_norm, np.ones(shape=(n,1))), axis=1)
 
+        lines1 = np.dot(pts1, F)
+        lines2 = np.dot(pts2, F)
+        
+        res = 0
+        for i in range(n):
+            res = res + distance_F(lines1[i,:], pts2[i,:]) + distance_F(lines2[i,:], pts1[i,:])
+
+        return res
+    
+    
+    
+    
+    def cost_M(self, M):
+        u1 = self.pts1_norm[self.pt_idx, 0]
+        v1 = self.pts1_norm[self.pt_idx, 1]
+        u2 = self.pts2_norm[self.pt_idx, 0]
+        v2 = self.pts2_norm[self.pt_idx, 1]
+        
+        tmp1 = np.square(u1 - (np.dot(self.p1_1.transpose(), M)/np.dot(self.p3_1.transpose(), M)))
+        tmp2 = np.square(v1 - (np.dot(self.p2_1.transpose(), M)/np.dot(self.p3_1.transpose(), M)))
+        tmp3 = np.square(u2 - (np.dot(self.p1_2.transpose(), M)/np.dot(self.p3_2.transpose(), M)))
+        tmp4 = np.square(v2 - (np.dot(self.p2_2.transpose(), M)/np.dot(self.p3_2.transpose(), M)))
+        
+        res = tmp1 + tmp2 + tmp3 + tmp4
+        return res
+        
         
     
         
@@ -62,28 +95,85 @@ class Tools(QObject):
                 pts1[i,:] = self.locs[x][0]
                 pts2[i,:] = self.locs[x][1]
                 
-            F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+            
+            # --------------- Estimate Essential Matrix --------------------
+            
+            
+            self.pts1_norm = normalize(pts1)
+            self.pts2_norm = normalize(pts2)
+            F, mask = cv2.findFundamentalMat(self.pts1_norm,self.pts2_norm,cv2.FM_8POINT)
 
             f = 35
             K = estimateKMatrix(v.width, v.height, f)
             
             E = np.dot(K.transpose(), np.dot(F, K))
+            w,v = np.linalg.eig(E)
+            # print("Eigen values")
+            # print(w)
             
-            # Compute R and t now.
-            U, sigma, V_t = np.linalg.svd(E)            
+            # print("\n\n\n")
+
+            # minimum = optimize.fmin(self.cost_F, F, disp=False)
+            # F = minimum.reshape((3,3))
+            
+            # E = np.dot(K.transpose(), np.dot(F, K))
+            # w,v = np.linalg.eig(E)
+            # print("Eigen values")
+            # print(w)
+
+
+            
+            # ---------------- Compute R and t now ------------------------
+            
+            U, sigma, V_t = np.linalg.svd(E)
+            
             W = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]]) # Francesco's lecture
             R = np.dot(U, np.dot(W, V_t))
             
             t_matrix = np.dot(E, np.linalg.inv(R))
             t_3, t_2, t_1 = t_matrix[1,0], t_matrix[0, 2], t_matrix[2, 1]
             t = np.array([[t_1], [t_2], [t_3]])
-            print("Rotation and Translation matrices: ")
-            print(R)
-            print(t)
             
-            print("Orthogonality check. Answer should be an identity matrix.")
-            check = np.dot(R, R.transpose())
-            print(check)
+            G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
+            G2 = np.concatenate((R,t), axis=1)
+            # print(G.shape)
+            P1 = np.dot(K, G1)
+            P2 = np.dot(K, G2)
+            
+            # print(P1)
+            # print(P2)
+            
+            
+            # -------------------- Triangulation -------------------------
+            
+            self.p1_1 = P1[0,:].reshape((4,1))
+            self.p2_1 = P1[1,:].reshape((4,1))
+            self.p3_1 = P1[2,:].reshape((4,1))
+            
+            self.p1_2 = P2[0,:].reshape((4,1))
+            self.p2_2 = P2[1,:].reshape((4,1))
+            self.p3_2 = P2[2,:].reshape((4,1))
+            
+            self.pt_idx = 0
+            all_M = []
+            M = np.array([1,1,1,1])
+            
+            n = self.pts1_norm.shape[0]
+            for i in range(n):
+                self.pt_idx = i
+                all_M.append(optimize.fmin(self.cost_M, M, disp=False))
+                
+            Pw = np.asarray(all_M)
+            print("All Real word points")
+            print(Pw)
+            
+
+                             
+                             
+                    
+                
+            
+
             
             
             

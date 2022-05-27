@@ -5,6 +5,7 @@ import platform
 import numpy as np
 
 
+
 class Feature_Dialogue(QDialog):
     def __init__(self):
         super().__init__()
@@ -120,3 +121,30 @@ def estimateKMatrix(width_in_pixel, height_in_pixel, focal_length_in_mm = 35, se
     K[0,2] = width_in_pixel // 2
     K[1,2] = height_in_pixel // 2
     return K
+
+def normalize(pts):
+    n = pts.shape[0]
+    pts_mean = np.mean(pts, axis=0)
+    acc = 0
+    for i in range(n):
+        acc = acc + np.sqrt(np.square(pts[i,0]-pts_mean[0]) + np.square(pts[i,1]-pts_mean[1]))
+    s = acc/(n*np.sqrt(2))
+    normalized = np.zeros(shape=(n,2), dtype=int)
+    for i in range(n):
+        normalized[i,0] = int((pts[i,0] - pts_mean[0])/s)
+        normalized[i,1] = int((pts[i,1] - pts_mean[1])/s)
+        
+    return normalized
+
+
+
+
+def distance_F(line, pt):
+    numer = abs(np.sum(np.multiply(line, pt)))
+    denom = np.sqrt(np.square(line[0]) + np.square(line[1]))
+    res = np.square(numer/denom)
+    return res
+        
+
+
+
