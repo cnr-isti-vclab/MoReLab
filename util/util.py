@@ -3,6 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import platform
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 
@@ -144,6 +145,28 @@ def distance_F(line, pt):
     denom = np.sqrt(np.square(line[0]) + np.square(line[1]))
     res = np.square(numer/denom)
     return res
+
+
+def visualize(pts1, pts2, pts3d, labels, display_bool = True):
+    if display_bool:
+        fig1, ax1 = plt.subplots()
+        ax1.scatter(pts1[:, 0], -1*pts1[:, 1], color='b', marker='+')
+        ax1.scatter(pts2[:, 0], -1*pts2[:, 1], color='r', marker='o')
+        for i in range(pts1.shape[0]):
+            ax1.annotate(str(labels[i]+1), (pts1[i,0], -1*pts1[i,1]))
+            ax1.annotate(str(labels[i]+1), (pts2[i,0], -1*pts2[i,1]))
+            
+        # plt
+        plt.title('Observed points')
+        plt.show()
+        
+        fig2 = plt.figure()
+        ax = fig2.add_subplot(111, projection='3d')
+        ax.scatter(pts3d[:, 0], pts3d[:, 1], pts3d[:, 2])
+        for i in range(pts3d.shape[0]):
+            ax.text(pts3d[i, 0], pts3d[i, 1], pts3d[i, 2], str(labels[i]+1))
+        plt.title('Projected 3d Points')
+        plt.show()
         
 
 

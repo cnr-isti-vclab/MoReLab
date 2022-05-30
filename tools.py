@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from feature_crosshair import FeatureCrosshair
-from util.util import feature_absent_dialogue, numFeature_dialogue, estimateKMatrix, normalize, distance_F
+from util.util import feature_absent_dialogue, numFeature_dialogue, estimateKMatrix, normalize, distance_F, visualize
 
 import numpy as np
 from object_panel import ObjectPanel
@@ -79,95 +79,126 @@ class Tools(QObject):
     
         
     def calibrate(self):
-        indices = []
-        for i,x in enumerate(self.locs):
-            if len(x) > 1:
-                indices.append(i)
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        
+        display = True
+        
+        img_indices = []
+        all_locs = []
+        visible_labels = []
+        if self.ctrl_wdg.kf_method == "Regular":
+            for i,hr in enumerate(v.hide_regular):
+                tmp1, tmp2 = [], []
+                count = 0
+                for j,hide in enumerate(hr):
+                    fc = v.features_regular[i][j]
+                    tmp1.append([int(fc.x_loc), int(fc.y_loc)])
+                    if not hide:
+                        tmp2.append(j)
+                        count = count + 1
+                if count > 7:
+                    img_indices.append(i)
+                    all_locs.append(tmp1)
+                    visible_labels.append(tmp2)
 
-        if (len(self.locs) < 8 or len(indices) < 8):
+        
+
+        if len(img_indices) < 2:
             numFeature_dialogue()
         else:
-            v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
-            
-            pts1 = np.zeros(shape=(len(indices), 2), dtype=int)
-            pts2 = np.zeros(shape=(len(indices), 2), dtype=int)
-            for i,x in enumerate(indices):
-                pts1[i,:] = self.locs[x][0]
-                pts2[i,:] = self.locs[x][1]
+            both_visible_idx = []
+            for l1 in visible_labels[0]:
+                if l1 in visible_labels[1]:
+                    both_visible_idx.append(l1)
+                    
+            if len(both_visible_idx) < 8:
+                numFeature_dialogue()
+            else:
+                pts1 = np.zeros((len(both_visible_idx),2), dtype=int)
+                pts2 = np.zeros((len(both_visible_idx),2), dtype=int)
+                for i,l in enumerate(both_visible_idx):
+                    pts1[i,:] = all_locs[0][l]
+                    pts2[i,:] = all_locs[1][l]                    
+                    
                 
             
             # --------------- Estimate Essential Matrix --------------------
-            
-            
-            self.pts1_norm = normalize(pts1)
-            self.pts2_norm = normalize(pts2)
-            F, mask = cv2.findFundamentalMat(self.pts1_norm,self.pts2_norm,cv2.FM_8POINT)
-
-            f = 35
-            K = estimateKMatrix(v.width, v.height, f)
-            
-            E = np.dot(K.transpose(), np.dot(F, K))
-            w,v = np.linalg.eig(E)
-            # print("Eigen values")
-            # print(w)
-            
-            # print("\n\n\n")
-
-            # minimum = optimize.fmin(self.cost_F, F, disp=False)
-            # F = minimum.reshape((3,3))
-            
-            # E = np.dot(K.transpose(), np.dot(F, K))
-            # w,v = np.linalg.eig(E)
-            # print("Eigen values")
-            # print(w)
-
-
-            
-            # ---------------- Compute R and t now ------------------------
-            
-            U, sigma, V_t = np.linalg.svd(E)
-            
-            W = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]]) # Francesco's lecture
-            R = np.dot(U, np.dot(W, V_t))
-            
-            t_matrix = np.dot(E, np.linalg.inv(R))
-            t_3, t_2, t_1 = t_matrix[1,0], t_matrix[0, 2], t_matrix[2, 1]
-            t = np.array([[t_1], [t_2], [t_3]])
-            
-            G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
-            G2 = np.concatenate((R,t), axis=1)
-            # print(G.shape)
-            P1 = np.dot(K, G1)
-            P2 = np.dot(K, G2)
-            
-            # print(P1)
-            # print(P2)
-            
-            
-            # -------------------- Triangulation -------------------------
-            
-            self.p1_1 = P1[0,:].reshape((4,1))
-            self.p2_1 = P1[1,:].reshape((4,1))
-            self.p3_1 = P1[2,:].reshape((4,1))
-            
-            self.p1_2 = P2[0,:].reshape((4,1))
-            self.p2_2 = P2[1,:].reshape((4,1))
-            self.p3_2 = P2[2,:].reshape((4,1))
-            
-            self.pt_idx = 0
-            all_M = []
-            M = np.array([1,1,1,1])
-            
-            n = self.pts1_norm.shape[0]
-            for i in range(n):
-                self.pt_idx = i
-                all_M.append(optimize.fmin(self.cost_M, M, disp=False))
+                # print(both_visible_idx)
+                # print(pts1)
+                # print(pts2)
+                self.pts1_norm = np.int32(pts1)
+                self.pts2_norm = np.int32(pts2)
                 
-            Pw = np.asarray(all_M)
-            print("All Real word points")
-            print(Pw)
+                F, mask = cv2.findFundamentalMat(self.pts1_norm,self.pts2_norm,cv2.FM_8POINT)
+                # print(F)
+    
+                f = 35
+                K = estimateKMatrix(v.width, v.height, f)
+                
+                E = np.dot(K.transpose(), np.dot(F, K))
+                w,v = np.linalg.eig(E)
+                # print("Eigen values")
+                # print(w)
             
-
+                # print("\n\n\n")
+    
+                minimum = optimize.fmin(self.cost_F, F, disp=False)
+                F = minimum.reshape((3,3))
+                
+                E = np.dot(K.transpose(), np.dot(F, K))
+                w,v = np.linalg.eig(E)
+                # print("Eigen values")
+                # print(w)
+                
+            # ---------------- Compute R and t now ------------------------
+                
+                U, sigma, V_t = np.linalg.svd(E)
+                
+                W = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]]) # Francesco's lecture
+                R = np.dot(U, np.dot(W, V_t))
+                
+                t_matrix = np.dot(E, np.linalg.inv(R))
+                t_3, t_2, t_1 = t_matrix[1,0], t_matrix[0, 2], t_matrix[2, 1]
+                t = np.array([[t_1], [t_2], [t_3]])
+                
+                G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
+                G2 = np.concatenate((R,t), axis=1)
+                # print(G.shape)
+                P1 = np.dot(K, G1)
+                P2 = np.dot(K, G2)
+                
+                # print(P1)
+                # print(P2)
+                
+                
+            # -------------------- Triangulation -------------------------
+                
+                self.p1_1 = P1[0,:].reshape((4,1))
+                self.p2_1 = P1[1,:].reshape((4,1))
+                self.p3_1 = P1[2,:].reshape((4,1))
+                
+                self.p1_2 = P2[0,:].reshape((4,1))
+                self.p2_2 = P2[1,:].reshape((4,1))
+                self.p3_2 = P2[2,:].reshape((4,1))
+                
+                self.pt_idx = 0
+                all_M = []
+                M = np.array([1,1,1,1])
+                
+                n = self.pts1_norm.shape[0]
+                for i in range(n):
+                    self.pt_idx = i
+                    min_val = optimize.fmin(self.cost_M, M, disp=False)
+                    x4 = min_val[3]
+                    all_M.append(min_val/x4)
+                    
+                Pw = np.asarray(all_M)
+                print("All Real word points")
+                print(Pw)
+                
+                visualize(pts1, pts2, Pw, both_visible_idx, display)
+                
+    
                              
                              
                     
