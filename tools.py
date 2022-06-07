@@ -2,8 +2,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from feature_crosshair import FeatureCrosshair
-from util.util import feature_absent_dialogue, numFeature_dialogue, estimateKMatrix, normalize, distance_F, visualize
-
+from util.util import feature_absent_dialogue, numFeature_dialogue, estimateKMatrix, normalize, distance_F, visualize, compute_fundamental_normalized
+from util.util import compute_P_from_fundamental, triangulate, compute_parameters, reprojection_error, compute_P_from_essential
 import numpy as np
 from object_panel import ObjectPanel
 import cv2
@@ -62,10 +62,10 @@ class Tools(QObject):
     
     
     def cost_M(self, M):
-        u1 = self.pts1_norm[self.pt_idx, 0]
-        v1 = self.pts1_norm[self.pt_idx, 1]
-        u2 = self.pts2_norm[self.pt_idx, 0]
-        v2 = self.pts2_norm[self.pt_idx, 1]
+        u1 = self.pts1[self.pt_idx, 0]
+        v1 = self.pts1[self.pt_idx, 1]
+        u2 = self.pts2[self.pt_idx, 0]
+        v2 = self.pts2[self.pt_idx, 1]
         
         tmp1 = np.square(u1 - (np.dot(self.p1_1.transpose(), M)/np.dot(self.p3_1.transpose(), M)))
         tmp2 = np.square(v1 - (np.dot(self.p2_1.transpose(), M)/np.dot(self.p3_1.transpose(), M)))
@@ -118,85 +118,102 @@ class Tools(QObject):
                 pts2 = np.zeros((len(both_visible_idx),2), dtype=int)
                 for i,l in enumerate(both_visible_idx):
                     pts1[i,:] = all_locs[0][l]
-                    pts2[i,:] = all_locs[1][l]                    
-                    
+                    pts2[i,:] = all_locs[1][l]
                 
-            
-            # --------------- Estimate Essential Matrix --------------------
-                # print(both_visible_idx)
-                # print(pts1)
-                # print(pts2)
-                self.pts1_norm = np.int32(pts1)
-                self.pts2_norm = np.int32(pts2)
-                
-                F, mask = cv2.findFundamentalMat(self.pts1_norm,self.pts2_norm,cv2.FM_8POINT)
-                # print(F)
-    
                 f = 35
                 K = estimateKMatrix(v.width, v.height, f)
+                # print(K)
+                # K = np.array([[1780.82576, 9.45554554e+00, 6.55296856e+02],
+                #               [0.00000000e+00, 1.77301916e+03, 5.09305248e+02],
+                #               [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+                # Cx = K[0,2]
+                # Cy = K[1,2]
+                # pts1[:,0] = pts1[:,0] - Cx
+                # pts1[:,1] = pts1[:,1] - Cy
+                # pts2[:,0] = pts2[:,0] - Cx
+                # pts2[:,1] = pts2[:,1] - Cy
+                
+                # print(pts1)
+                # print(pts2)
+                
+                self.pts1 = pts1
+                self.pts2 = pts2
+                
+                pts1_norm = (pts1 - np.min(pts1))/(np.max(pts1)-np.min(pts1))
+                pts2_norm = (pts2 - np.min(pts2))/(np.max(pts2)-np.min(pts2))
+                
+
+                F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+                # print(F)
+
+                n = pts1.shape[0]
                 
                 E = np.dot(K.transpose(), np.dot(F, K))
-                w,v = np.linalg.eig(E)
-                # print("Eigen values")
-                # print(w)
-            
-                # print("\n\n\n")
-    
-                minimum = optimize.fmin(self.cost_F, F, disp=False)
-                F = minimum.reshape((3,3))
-                
-                E = np.dot(K.transpose(), np.dot(F, K))
-                w,v = np.linalg.eig(E)
-                # print("Eigen values")
-                # print(w)
-                
-            # ---------------- Compute R and t now ------------------------
-                
+                # print(E)
+                # w, v = np.linalg.eig(E)
+                # # print(w)
                 U, sigma, V_t = np.linalg.svd(E)
+                print(sigma)
+                # w, v = np.linalg.eig(np.diag(sigma))
+                # # print(w)
                 
-                W = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]]) # Francesco's lecture
-                R = np.dot(U, np.dot(W, V_t))
                 
-                t_matrix = np.dot(E, np.linalg.inv(R))
-                t_3, t_2, t_1 = t_matrix[1,0], t_matrix[0, 2], t_matrix[2, 1]
-                t = np.array([[t_1], [t_2], [t_3]])
                 
+                # W = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+                # Z = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 0]])
+                # R = np.dot(U, np.dot(W.transpose(), V_t))
+                # t_matrix = np.dot(U, np.dot(Z, U.transpose()))
+                # print(np.dot(t_matrix, R))
+                
+                # t_3, t_2, t_1 = t_matrix[1,0], t_matrix[0, 2], t_matrix[2, 1]
+                # t = np.array([[t_1], [t_2], [t_3]])
+                
+                G2_list = compute_P_from_essential(E)
                 G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
-                G2 = np.concatenate((R,t), axis=1)
-                # print(G.shape)
                 P1 = np.dot(K, G1)
-                P2 = np.dot(K, G2)
                 
-                # print(P1)
-                # print(P2)
-                
-                
-            # -------------------- Triangulation -------------------------
-                
-                self.p1_1 = P1[0,:].reshape((4,1))
-                self.p2_1 = P1[1,:].reshape((4,1))
-                self.p3_1 = P1[2,:].reshape((4,1))
-                
-                self.p1_2 = P2[0,:].reshape((4,1))
-                self.p2_2 = P2[1,:].reshape((4,1))
-                self.p3_2 = P2[2,:].reshape((4,1))
-                
-                self.pt_idx = 0
-                all_M = []
-                M = np.array([1,1,1,1])
-                
-                n = self.pts1_norm.shape[0]
-                for i in range(n):
-                    self.pt_idx = i
-                    min_val = optimize.fmin(self.cost_M, M, disp=False)
-                    x4 = min_val[3]
-                    all_M.append(min_val/x4)
+                for G2 in G2_list:
+                    P2 = np.dot(K, G2)
+                    # Pw = cv2.triangulatePoints(P1, P2, pts1_norm.transpose(), pts2_norm.transpose())
+                    # Pw = Pw.transpose()
+                    # ww = []
+                    # for i in range(Pw.shape[0]):
+                    #     ww.append(Pw[i,:]/Pw[i,3])
+                    # data = np.asarray(ww)
+                    # # print(data)
+                    # R = G2[:, :3]
+                    # t = G2[:,3].reshape((3,1))
+                    # reprojection_error(P2, R, t, data)
                     
-                Pw = np.asarray(all_M)
-                print("All Real word points")
-                print(Pw)
+                    self.p1_1 = P1[0,:].reshape((4,1))
+                    self.p2_1 = P1[1,:].reshape((4,1))
+                    self.p3_1 = P1[2,:].reshape((4,1))
+                    
+                    self.p1_2 = P2[0,:].reshape((4,1))
+                    self.p2_2 = P2[1,:].reshape((4,1))
+                    self.p3_2 = P2[2,:].reshape((4,1))
+                    
+                    self.pt_idx = 0
+                    all_M = []
+                    M = np.array([1,1,1,1])
+                    
+                    n = self.pts1.shape[0]
+                    for i in range(n):
+                        self.pt_idx = i
+                        min_val = optimize.fmin(self.cost_M, M, disp=False)
+                        x4 = min_val[3]
+                        all_M.append(min_val/x4)
+                        
+                    data = np.asarray(all_M)
+                    # print("All Real word points")
+                    # print(Pw)
+                    
+                    P2 = np.dot(K, G2)
+                    R = G2[:, :3]
+                    t = G2[:,3].reshape((3,1))
+                    projected_pts = reprojection_error(P2, R, t, data)
                 
-                visualize(pts1, pts2, Pw, both_visible_idx, display)
+                    visualize(pts1, projected_pts, data, both_visible_idx, display)
                 
     
                              
@@ -340,6 +357,7 @@ class Tools(QObject):
 
                             
             # Add feature on the scene
+            
 
             self.ctrl_wdg.viewer._scene.addItem(fc)
             self.ctrl_wdg.viewer._scene.addItem(fc.label)

@@ -124,7 +124,7 @@ class Document():
                         else:
                             loccc = self.ctrl_wdg.viewer.obj.locs[k][self.ctrl_wdg.viewer.obj.find_idx(k, j)]
                             
-                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.viewer.obj)
+                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, loccc[0]+10, loccc[1]+10, k+1, self.ctrl_wdg.viewer.obj)
                             v.features_regular[j].append(fc)
                             self.ctrl_wdg.viewer._scene.addItem(fc)
                             self.ctrl_wdg.viewer._scene.addItem(fc.label)
@@ -137,10 +137,9 @@ class Document():
                         if bool_list[k]:
                             fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, 0, 0, k+1, self.ctrl_wdg.viewer.obj)
                             v.features_network[j].append(fc)
-
                         else:
                             loccc = self.ctrl_wdg.viewer.obj.locs[k][self.ctrl_wdg.viewer.obj.find_idx(k, j)]
-                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.viewer.obj)
+                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, loccc[0]+10, loccc[1]+10, k+1, self.ctrl_wdg.viewer.obj)
                             v.features_network[j].append(fc)
                             self.ctrl_wdg.viewer._scene.addItem(fc)
                             self.ctrl_wdg.viewer._scene.addItem(fc.label)
