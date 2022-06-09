@@ -40,10 +40,9 @@ class Tools(QObject):
         self.count_ = 0
         
         self.features_data = {}
-    
         
-    def calibrate(self):
-        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]        
+        
+    def get_correspondent_pts(self, v):
         display = True
         img_indices = []
         all_locs = []
@@ -81,37 +80,45 @@ class Tools(QObject):
                     pts1[i,:] = all_locs[0][l]
                     pts2[i,:] = all_locs[1][l]
                     
-            # ---------------- Triangulation procedure ----------------------
-                
-                f = 35
-                K = estimateKMatrix(v.width, v.height, f)
-                F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
-                E = np.dot(K.transpose(), np.dot(F, K))
-                
-                G2_list = compute_P_from_essential(E)
-                G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
-                P1 = np.dot(K, G1)
-                count_list = []
-                for G2 in G2_list:
-                    P2 = np.dot(K, G2)
-                    Pw = triangulate(P1, pts1, P2, pts2)
-                    pts1_out, pts2_out = project_2d(Pw, P1, P2)
-                    count_list.append(count_positives(pts1_out, pts2_out))
-                
-                # print(count_list)
-                idx = count_list.index(max(count_list))
-                
-                G2 = G2_list[idx]
-                P2 = np.dot(K, G2)
-                Pw = triangulate(P1, pts1, P2, pts2)
-                pts1_out, pts2_out = project_2d(Pw, P1, P2)
-                
-                Pw, projected_pts1, projected_pts2 = convert_homogeneity(Pw, pts1_out, pts2_out)
+        return pts1, pts2, img_indices, both_visible_idx
+        
+    
+        
+    def calibrate(self):
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]        
+        pts1, pts2, img_indices, both_visible_idx = self.get_correspondent_pts(v)
+                    
+        # ---------------- Triangulation procedure ----------------------
+            
+        f = 35
+        K = estimateKMatrix(v.width, v.height, f)
+        F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
+        E = np.dot(K.transpose(), np.dot(F, K))
+        
+        G2_list = compute_P_from_essential(E)
+        G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
+        P1 = np.dot(K, G1)
+        count_list = []
+        for G2 in G2_list:
+            P2 = np.dot(K, G2)
+            Pw = triangulate(P1, pts1, P2, pts2)
+            pts1_out, pts2_out = project_2d(Pw, P1, P2)
+            count_list.append(count_positives(pts1_out, pts2_out))
+        
+        # print(count_list)
+        idx = count_list.index(max(count_list))
+        
+        G2 = G2_list[idx]
+        P2 = np.dot(K, G2)
+        Pw = triangulate(P1, pts1, P2, pts2)
+        pts1_out, pts2_out = project_2d(Pw, P1, P2)
+        
+        Pw, projected_pts1, projected_pts2 = convert_homogeneity(Pw, pts1_out, pts2_out)
 
-                img1 = v.key_frames_regular[img_indices[0]]
-                img2 = v.key_frames_regular[img_indices[1]]                
-                visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, display)
-                visualize3d(Pw, both_visible_idx)
+        img1 = v.key_frames_regular[img_indices[0]]
+        img2 = v.key_frames_regular[img_indices[1]]                
+        visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, display)
+        visualize3d(Pw, both_visible_idx)
         
 
     def add_tool_icons(self):

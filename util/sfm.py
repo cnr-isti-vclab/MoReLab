@@ -149,7 +149,7 @@ def visualize(pts1, pts2, labels, display_bool = True):
         plt.title('2nd image projected points')
         plt.show()
         
-def transform(pts1, pts2):
+def normalize(pts1, pts2):
     pts1_norm = (pts1 - np.min(pts1))/(np.max(pts1)-np.min(pts1))
     pts2_norm = (pts2 - np.min(pts2))/(np.max(pts2)-np.min(pts2))
     
