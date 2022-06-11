@@ -107,17 +107,21 @@ def calc_reprojection_error(pts1, pts1_out, pts2, pts2_out):
     return reprojection_err
 
 
-def visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, display_bool = True):
+def visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, labels, display_bool = True):
     if display_bool:
         for i in range(pts1.shape[0]):
             cv2.circle(img1, (int(pts1[i,0]+10), int(pts1[i,1]+10)), 5, (255, 0, 0), -1)
+            cv2.putText(img1, str(labels[i]+1), (int(pts1[i,0]), int(pts1[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255,0,0), 1, cv2.LINE_AA)
             cv2.circle(img1, (int(projected_pts1[i,0]+10), int(projected_pts1[i,1]+10)), 5, (0, 0, 255), -1)
+            cv2.putText(img1, str(labels[i]+1), (int(projected_pts1[i,0]), int(projected_pts1[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1, cv2.LINE_AA)
             cv2.circle(img2, (int(pts2[i,0]+10), int(pts2[i,1]+10)), 5, (255, 0, 0), -1)
+            cv2.putText(img2, str(labels[i]+1), (int(pts2[i,0]), int(pts2[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255,0,0), 1, cv2.LINE_AA)
             cv2.circle(img2, (int(projected_pts2[i,0]+10), int(projected_pts2[i,1]+10)), 5, (0, 0, 255), -1)
+            cv2.putText(img2, str(labels[i]+1), (int(projected_pts2[i,0]), int(projected_pts2[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1, cv2.LINE_AA)
         cv2.imshow("Image1", img1)
         cv2.imshow("Image2", img2)
-        cv2.imwrite("01.png", img1)
-        cv2.imwrite("02.png", img2)
+        # cv2.imwrite("03.png", img1)
+        # cv2.imwrite("04.png", img2)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
@@ -125,8 +129,10 @@ def visualize3d(pts3d, labels):
     fig2 = plt.figure()
     ax = fig2.add_subplot(111, projection='3d')
     ax.scatter(pts3d[:, 0], pts3d[:, 1], pts3d[:, 2])
+    ax.scatter(0,0,0, color='r', marker='o')
     for i in range(pts3d.shape[0]):
         ax.text(pts3d[i, 0], pts3d[i, 1], pts3d[i, 2], str(labels[i]+1))
+        ax.text(2,2,2, '(0,0,0)', color='r')
     plt.title('Projected 3d Points')
     plt.show()
     

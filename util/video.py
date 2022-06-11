@@ -37,7 +37,12 @@ class Video:
 
 
     def extract_frames_regularly(self, sampling_rate):
-        # print("Extracting frames regularly")
+        self.key_frames_regular = []
+        self.key_frame_indices_regular = []
+        self.n_objects_kf_regular = []
+        self.features_regular = []
+        self.hide_regular = []
+        self.cap = cv2.VideoCapture(self.video_path)
         count = 0
         while self.cap.isOpened():
             success, frame_cv = self.cap.read()
@@ -110,6 +115,12 @@ class Video:
     def cleanSequence(self, shift_threshold = 8):
         # print("Extracting frames by network")
         n = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.cap = cv2.VideoCapture(self.video_path)
+        self.key_frames_network = []
+        self.key_frame_indices_network = []
+        self.n_objects_kf_network = []
+        self.features_network = []
+        self.hide_network = []
         bLoad = True
         j = 0
         lst_m = []

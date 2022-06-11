@@ -79,6 +79,8 @@ class Widget(QWidget):
             row_in_grid_layout += 1
         widget.setLayout(self.grid_layout)
         self.scroll_area.setWidget(widget)
+        self.viewer.obj.wdg_tree.clear()
+        self.viewer.setPhoto()
             
             
     def on_thumbnail_click(self, event, index):
@@ -126,11 +128,11 @@ class Widget(QWidget):
         dlg = KF_dialogue()
         if dlg.exec():
             self.kf_method = dlg.kf_met
-
             kfs = self.find_kfs()
             if len(kfs) >0:
                 b = show_dialogue()
             if b:
+                self.viewer.obj.hide_features(False)
                 v1 = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
                 
                 if self.kf_method == "Regular":
@@ -140,11 +142,25 @@ class Widget(QWidget):
 
                 elif self.kf_method == "Network":
                     v1.cleanSequence()
+                
+                self.populate_scrollbar()
+                self.viewer.obj.labels = []
+                self.viewer.obj.locs = []
+                self.viewer.obj.associated_frames = []
+                self.viewer.obj.associated_videos = []
+                
+                # self.associated_frames2 = [[]]
+                self.viewer.obj.selected_feature_index =-1
+                self.viewer.obj.count_ = 0
+                
+                self.viewer.obj.features_data = {}
 
         else:
             self.kf_method = dlg.kf_met
             
-        self.populate_scrollbar()
+
+        
+
 
             
 

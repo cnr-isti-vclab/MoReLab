@@ -11,7 +11,6 @@ from scipy import optimize
 import matplotlib.pyplot as plt
 
 class Tools(QObject):
-    
     def __init__(self, ctrl_wdg):
         super().__init__(ctrl_wdg)
         self.ctrl_wdg = ctrl_wdg
@@ -61,10 +60,25 @@ class Tools(QObject):
                     img_indices.append(i)
                     all_locs.append(tmp1)
                     visible_labels.append(tmp2)
+        elif self.ctrl_wdg.kf_method == "Network":
+            for i,hr in enumerate(v.hide_network):
+                tmp1, tmp2 = [], []
+                count = 0
+                for j,hide in enumerate(hr):
+                    fc = v.features_network[i][j]
+                    tmp1.append([int(fc.x_loc), int(fc.y_loc)])
+                    if not hide:
+                        tmp2.append(j)
+                        count = count + 1
+                if count > 7:
+                    img_indices.append(i)
+                    all_locs.append(tmp1)
+                    visible_labels.append(tmp2)
 
 
         if len(img_indices) < 2:
             numFeature_dialogue()
+            return np.zeros((1,1)), np.zeros((1,1)), [], []         # Dummy return 
         else:
             both_visible_idx = []
             for l1 in visible_labels[0]:
@@ -73,6 +87,7 @@ class Tools(QObject):
                     
             if len(both_visible_idx) < 8:
                 numFeature_dialogue()
+                return np.zeros((1,1)), np.zeros((1,1)), [], []         # Dummy return
             else:
                 pts1 = np.zeros((len(both_visible_idx),2), dtype=int)
                 pts2 = np.zeros((len(both_visible_idx),2), dtype=int)
@@ -80,45 +95,52 @@ class Tools(QObject):
                     pts1[i,:] = all_locs[0][l]
                     pts2[i,:] = all_locs[1][l]
                     
-        return pts1, pts2, img_indices, both_visible_idx
+                return pts1, pts2, img_indices, both_visible_idx
         
     
         
     def calibrate(self):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]        
         pts1, pts2, img_indices, both_visible_idx = self.get_correspondent_pts(v)
-                    
-        # ---------------- Triangulation procedure ----------------------
+        if len(img_indices) > 0:
+            # ---------------- Triangulation procedure ----------------------
+            display = True 
+            f = 35
+            # K = estimateKMatrix(v.width, v.height, f)
+            # K =  np.array([[1.75072066e+03, 1.58918948e+01, 9.14144351e+02],
+            #                [0.00000000e+00, 1.73909703e+03, 5.01720420e+02],
+            #                [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+            K =  np.array([[1.86014890e+03, 1.38401422e+01, 9.60685274e+02],
+                           [0.00000000e+00, 1.86604482e+03, 4.93265504e+02],
+                           [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+    
+            E = cv2.findEssentialMat(pts1, pts2, K)[0]
             
-        f = 35
-        K = estimateKMatrix(v.width, v.height, f)
-        F, mask = cv2.findFundamentalMat(pts1,pts2,cv2.FM_8POINT)
-        E = np.dot(K.transpose(), np.dot(F, K))
-        
-        G2_list = compute_P_from_essential(E)
-        G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
-        P1 = np.dot(K, G1)
-        count_list = []
-        for G2 in G2_list:
+            G2_list = compute_P_from_essential(E)
+            G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
+            P1 = np.dot(K, G1)
+            count_list = []
+            for G2 in G2_list:
+                P2 = np.dot(K, G2)
+                Pw = triangulate(P1, pts1, P2, pts2)
+                pts1_out, pts2_out = project_2d(Pw, P1, P2)
+                count_list.append(count_positives(pts1_out, pts2_out))
+            
+            # print(count_list)
+            idx = count_list.index(max(count_list))
+            
+            G2 = G2_list[idx]
             P2 = np.dot(K, G2)
             Pw = triangulate(P1, pts1, P2, pts2)
             pts1_out, pts2_out = project_2d(Pw, P1, P2)
-            count_list.append(count_positives(pts1_out, pts2_out))
-        
-        # print(count_list)
-        idx = count_list.index(max(count_list))
-        
-        G2 = G2_list[idx]
-        P2 = np.dot(K, G2)
-        Pw = triangulate(P1, pts1, P2, pts2)
-        pts1_out, pts2_out = project_2d(Pw, P1, P2)
-        
-        Pw, projected_pts1, projected_pts2 = convert_homogeneity(Pw, pts1_out, pts2_out)
-
-        img1 = v.key_frames_regular[img_indices[0]]
-        img2 = v.key_frames_regular[img_indices[1]]                
-        visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, display)
-        visualize3d(Pw, both_visible_idx)
+            
+            Pw, projected_pts1, projected_pts2 = convert_homogeneity(Pw, pts1_out, pts2_out)
+            print(Pw)
+    
+            img1 = v.key_frames_regular[img_indices[0]].copy()
+            img2 = v.key_frames_regular[img_indices[1]].copy()                
+            visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, both_visible_idx, display)
+            visualize3d(Pw, both_visible_idx)
         
 
     def add_tool_icons(self):
