@@ -1,8 +1,8 @@
 import os, glob, json
-import cv2
+import cv2, platform
 import numpy as np
 from util.video import Video
-from util.util import split_path
+from util.util import split_path, adjust_op
 from feature_crosshair import FeatureCrosshair
 
 from PyQt5.QtWidgets import *
@@ -42,6 +42,7 @@ class Document():
         data = {
             "movies" : self.ctrl_wdg.mv_panel.movie_paths,
             "selected_movie" : self.ctrl_wdg.mv_panel.selected_movie_path,
+            "platform" : platform.system(),
             "selected_kf_method" : self.ctrl_wdg.kf_method,
             "cross_hair" : self.ctrl_wdg.viewer.obj.cross_hair,
             "displayIndex": self.ctrl_wdg.selected_thumbnail_index,
@@ -62,6 +63,10 @@ class Document():
             data=json.load(myfile)
             
         mv_paths = data["movies"]
+        # print(mv_paths)
+        op = data["platform"]
+        mv_paths = adjust_op(mv_paths, op)
+        # print(mv_paths)
         self.ctrl_wdg.kf_method = data["selected_kf_method"]
         self.ctrl_wdg.selected_thumbnail_index = data["displayIndex"]
         self.ctrl_wdg.viewer.obj.cross_hair = data["cross_hair"]
@@ -145,7 +150,7 @@ class Document():
                             self.ctrl_wdg.viewer._scene.addItem(fc.label)
                                 
         
-        self.ctrl_wdg.mv_panel.selected_movie_path = data["selected_movie"]
+        self.ctrl_wdg.mv_panel.selected_movie_path = adjust_op([data["selected_movie"]], op)[0]
 
         self.ctrl_wdg.mv_panel.selected_movie_idx = self.ctrl_wdg.mv_panel.movie_paths.index(self.ctrl_wdg.mv_panel.selected_movie_path)
         self.ctrl_wdg.mv_panel.select_movie(self.ctrl_wdg.mv_panel.items[self.ctrl_wdg.mv_panel.selected_movie_idx])

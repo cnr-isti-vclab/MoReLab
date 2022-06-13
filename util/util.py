@@ -100,6 +100,22 @@ def split_path(complete_path):
     return p
 
 
+def adjust_op(mv_paths, op):
+    op_sys = platform.system()
+    new_paths = []
+    if op == "Windows" and op_sys != "Windows":
+        for mv in mv_paths:
+            new_paths.append(mv.replace('\\', '/'))
+    elif op != "Windows" and op_sys == "Windows":
+        for mv in mv_paths:
+            new_paths.append(mv.replace('/', '\\'))
+    else:
+        new_paths = mv_paths
+    return new_paths
+    
+    
+
+
 def numFeature_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("Atleast two frames must have atleast 8 features.")

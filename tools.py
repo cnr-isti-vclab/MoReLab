@@ -135,7 +135,7 @@ class Tools(QObject):
             pts1_out, pts2_out = project_2d(Pw, P1, P2)
             
             Pw, projected_pts1, projected_pts2 = convert_homogeneity(Pw, pts1_out, pts2_out)
-            print(Pw)
+            # print(Pw)
     
             img1 = v.key_frames_regular[img_indices[0]].copy()
             img2 = v.key_frames_regular[img_indices[1]].copy()                
