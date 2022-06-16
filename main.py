@@ -49,8 +49,6 @@ class Window(QMainWindow):
         toolbar = QToolBar("&ToolBar", self)
         self.addToolBar(Qt.TopToolBarArea , toolbar )
 
-        
-        
         # self.om_tool = self.newButton("open_movie.png",     "Open Movie",  flatbuttonstyle1, self.open_movie)
         
         self.widget.viewer.obj.np_tool.clicked.connect(self.new_project)

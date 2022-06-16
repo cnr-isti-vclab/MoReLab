@@ -11,11 +11,9 @@ def getFocalLengthPixels(focal_length_mm, sensor_size_mm, sensor_size_px):
 
 def estimateKMatrix(width_in_pixel, height_in_pixel, focal_length_in_mm = 35, sensor_width_in_mm = 4.8, sensor_height_in_mm = 3.6):
     K = np.zeros((3,3))
-        
     K[0,0] = getFocalLengthPixels(focal_length_in_mm, sensor_width_in_mm, width_in_pixel)
     K[1,1] = getFocalLengthPixels(focal_length_in_mm, sensor_height_in_mm, height_in_pixel)
     K[2,2] = 1.0
-    
     K[0,2] = width_in_pixel // 2
     K[1,2] = height_in_pixel // 2
     return K
@@ -51,16 +49,13 @@ def compute_P_from_essential(E):
     return P2
 
 
-
 def triangulate(P1, pts1, P2, pts2):
     Pw = []
-
     for i in range(pts1.shape[0]):
         A = np.array([   pts1[i,0]*P1[2,:] - P1[0,:] ,
                           pts1[i,1]*P1[2,:] - P1[1,:] ,
                           pts2[i,0]*P2[2,:] - P2[0,:] ,
-                          pts2[i,1]*P2[2,:] - P2[1,:]   ])
-
+                          pts2[i,1]*P2[2,:] - P2[1,:] ])
         u, s, vh = np.linalg.svd(A)
         v = vh.T
         X = v[:,-1]
@@ -120,44 +115,47 @@ def visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, labels, 
             cv2.putText(img2, str(labels[i]+1), (int(projected_pts2[i,0]), int(projected_pts2[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1, cv2.LINE_AA)
         cv2.imshow("Image1", img1)
         cv2.imshow("Image2", img2)
-        # cv2.imwrite("03.png", img1)
-        # cv2.imwrite("04.png", img2)
+        cv2.imwrite("labelled1.png", img1)
+        cv2.imwrite("labelled2.png", img2)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-def visualize3d(pts3d, labels):        
+def visualize3d(pts3d, labels, all_camera_points):        
     fig2 = plt.figure()
     ax = fig2.add_subplot(111, projection='3d')
     ax.scatter(pts3d[:, 0], pts3d[:, 1], pts3d[:, 2])
-    ax.scatter(0,0,0, color='r', marker='o')
-    for i in range(pts3d.shape[0]):
-        ax.text(pts3d[i, 0], pts3d[i, 1], pts3d[i, 2], str(labels[i]+1))
-        ax.text(2,2,2, '(0,0,0)', color='r')
+    # ax.scatter(0,0,0, color='r', marker='o')
+    # for i in range(pts3d.shape[0]):
+    #     ax.text(pts3d[i, 0], pts3d[i, 1], pts3d[i, 2], str(labels[i]+1))
+    #     ax.text(2,2,2, '(0,0,0)', color='r')
+    # ax.set_xlim([-1, 1])
+    # ax.set_ylim([-1, 1])
+    # ax.set_zlim([2, 4])
+    
+    
+    for count,camera_points in enumerate(all_camera_points):
+        x = camera_points[0]
+        y = camera_points[1]
+        z = camera_points[2]
+
+        ax.scatter(x,y,z, color='black', depthshade=False, s=6)
+        ax.text(x, y, z, str(count+1),fontsize=10, color='darkblue')
+        # ax.plot(x, y, z, color='green')
+    
+    ax.set_xlim([-3, 3])
+    ax.set_ylim([-3, 3])
+    ax.set_zlim([-2, 4])
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_aspect('auto','box')
+
     plt.title('Projected 3d Points')
     plt.show()
     
-    
-def visualize(pts1, pts2, labels, display_bool = True):
-    if display_bool:
-        fig1, ax1 = plt.subplots()
-        ax1.scatter(pts1[:, 0], pts1[:, 1], color='b', marker='o')
-        for i in range(pts1.shape[0]):
-            ax1.annotate(str(labels[i]+1), (pts1[i,0], pts1[i,1]))
-            
-        plt.title('1st image projected points')
-        plt.show()
-        
-        fig2, ax2 = plt.subplots()
-        ax2.scatter(pts2[:, 0], pts2[:, 1], color='b', marker='o')
-        for i in range(pts2.shape[0]):
-            ax2.annotate(str(labels[i]+1), (pts2[i,0], pts2[i,1]))
-            
-        plt.title('2nd image projected points')
-        plt.show()
-        
-def normalize(pts1, pts2):
-    pts1_norm = (pts1 - np.min(pts1))/(np.max(pts1)-np.min(pts1))
-    pts2_norm = (pts2 - np.min(pts2))/(np.max(pts2)-np.min(pts2))
-    
-    return pts1_norm, pts2_norm
-    
+
+
+def calc_camera_pos(rotation, translation):
+    camera_points = np.dot(-np.transpose(rotation),translation)
+    print(camera_points)
+    return camera_points

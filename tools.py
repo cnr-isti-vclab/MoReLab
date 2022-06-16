@@ -2,8 +2,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from feature_crosshair import FeatureCrosshair
-from util.util import feature_absent_dialogue, numFeature_dialogue
-from util.sfm import compute_P_from_essential, triangulate, project_2d, count_positives, convert_homogeneity, estimateKMatrix, visualize2d, visualize3d, visualize
+from util.util import feature_absent_dialogue, numFeature_dialogue, write_pointcloud
+from util.sfm import compute_P_from_essential, triangulate, project_2d, count_positives, convert_homogeneity, estimateKMatrix, visualize2d, visualize3d, calc_camera_pos
 import numpy as np
 from object_panel import ObjectPanel
 import cv2
@@ -106,15 +106,18 @@ class Tools(QObject):
             # ---------------- Triangulation procedure ----------------------
             display = True 
             f = 35
-            # K = estimateKMatrix(v.width, v.height, f)
+            K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
+            print(K)
             # K =  np.array([[1.75072066e+03, 1.58918948e+01, 9.14144351e+02],
-            #                [0.00000000e+00, 1.73909703e+03, 5.01720420e+02],
-            #                [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+            #                 [0.00000000e+00, 1.73909703e+03, 5.01720420e+02],
+            #                 [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
             K =  np.array([[1.86014890e+03, 1.38401422e+01, 9.60685274e+02],
-                           [0.00000000e+00, 1.86604482e+03, 4.93265504e+02],
-                           [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+                            [0.00000000e+00, 1.86604482e+03, 4.93265504e+02],
+                            [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
     
-            E = cv2.findEssentialMat(pts1, pts2, K)[0]
+            # F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.FM_8POINT)
+            # E = np.dot(K.transpose(), np.dot(F, K))
+            E = cv2.findEssentialMat(pts1, pts2, K, cv2.FM_RANSAC)[0]
             
             G2_list = compute_P_from_essential(E)
             G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
@@ -130,17 +133,23 @@ class Tools(QObject):
             idx = count_list.index(max(count_list))
             
             G2 = G2_list[idx]
+            all_camera_pos = []
+            all_camera_pos.append(calc_camera_pos(G1[:,:3], G1[:,3]))
+            all_camera_pos.append(calc_camera_pos(G2[:,:3], G2[:,3]))
             P2 = np.dot(K, G2)
             Pw = triangulate(P1, pts1, P2, pts2)
             pts1_out, pts2_out = project_2d(Pw, P1, P2)
-            
             Pw, projected_pts1, projected_pts2 = convert_homogeneity(Pw, pts1_out, pts2_out)
+            
+            ply_pts = np.concatenate((Pw[:,:3].astype(np.float), all_camera_pos[0].reshape(1,3), all_camera_pos[0].reshape(1,3)), axis=0)            
+            # print(ply_pts.shape)
+            write_pointcloud('3d_data2.ply', ply_pts)
             # print(Pw)
     
             img1 = v.key_frames_regular[img_indices[0]].copy()
             img2 = v.key_frames_regular[img_indices[1]].copy()                
             visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, both_visible_idx, display)
-            visualize3d(Pw, both_visible_idx)
+            visualize3d(Pw, both_visible_idx, all_camera_pos)
         
 
     def add_tool_icons(self):
