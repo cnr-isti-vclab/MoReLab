@@ -158,10 +158,3 @@ class Widget(QWidget):
         else:
             self.kf_method = dlg.kf_met
             
-
-        
-
-
-            
-
-                

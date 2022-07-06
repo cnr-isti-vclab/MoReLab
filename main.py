@@ -16,7 +16,7 @@ class Window(QMainWindow):
         self.setWindowTitle('MoReLab')
         self.showMaximized()
         self.widget = Widget()
-        
+        self.save_response = ''
         
         self.create_menu()
         self.create_statusbar()
@@ -56,7 +56,7 @@ class Window(QMainWindow):
         self.widget.viewer.obj.om_tool.clicked.connect(self.open_movie)
         self.widget.viewer.obj.sp_tool.clicked.connect(self.save_project)
         self.widget.viewer.obj.sp_as_tool.clicked.connect(self.save_as_project)
-        self.widget.viewer.obj.ep_tool.clicked.connect(self.exit_project)
+        # self.widget.viewer.obj.ep_tool.clicked.connect(self.exit_project)
         
 
         toolbar.addWidget(self.widget.viewer.obj.np_tool)
@@ -65,7 +65,7 @@ class Window(QMainWindow):
         # toolbar.addWidget(self.widget.viewer.obj.om_tool)
         toolbar.addWidget(self.widget.viewer.obj.sp_tool)
         toolbar.addWidget(self.widget.viewer.obj.sp_as_tool)
-        toolbar.addWidget(self.widget.viewer.obj.ep_tool)
+        # toolbar.addWidget(self.widget.viewer.obj.ep_tool)
         toolbar.addWidget(self.widget.viewer.obj.mv_tool)
         toolbar.addWidget(self.widget.viewer.obj.ft_tool)
         

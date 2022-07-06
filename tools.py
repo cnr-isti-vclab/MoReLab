@@ -3,10 +3,12 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from feature_crosshair import FeatureCrosshair
 from util.util import feature_absent_dialogue, numFeature_dialogue, write_pointcloud
-from util.sfm import compute_P_from_essential, triangulate, project_2d, count_positives, convert_homogeneity, estimateKMatrix, visualize2d, visualize3d, calc_camera_pos
+from util.sfm import *
+from util.bundle_adjustment import bundle_adjustment, prepare_data, plot_camera
+# from bundle_adjustment2 import plot_camera
 import numpy as np
 from object_panel import ObjectPanel
-import cv2
+import cv2, copy
 from scipy import optimize
 import matplotlib.pyplot as plt
 
@@ -39,7 +41,6 @@ class Tools(QObject):
         self.count_ = 0
         
         self.features_data = {}
-        
         
     def get_correspondent_pts(self, v):
         display = True
@@ -75,81 +76,156 @@ class Tools(QObject):
                     all_locs.append(tmp1)
                     visible_labels.append(tmp2)
 
-
         if len(img_indices) < 2:
             numFeature_dialogue()
-            return np.zeros((1,1)), np.zeros((1,1)), [], []         # Dummy return 
+            return np.zeros((1,1)), [], []         # Dummy return 
         else:
+            nn = len(img_indices)
             both_visible_idx = []
             for l1 in visible_labels[0]:
-                if l1 in visible_labels[1]:
+                tmp_bool = True
+                for i,l2_vec in enumerate(visible_labels):
+                    if l1 not in l2_vec:
+                        tmp_bool = False
+                if tmp_bool:
                     both_visible_idx.append(l1)
+                    
+            # print(both_visible_idx)
                     
             if len(both_visible_idx) < 8:
                 numFeature_dialogue()
-                return np.zeros((1,1)), np.zeros((1,1)), [], []         # Dummy return
+                return np.zeros((1,1)), [], []         # Dummy return
             else:
-                pts1 = np.zeros((len(both_visible_idx),2), dtype=int)
-                pts2 = np.zeros((len(both_visible_idx),2), dtype=int)
-                for i,l in enumerate(both_visible_idx):
-                    pts1[i,:] = all_locs[0][l]
-                    pts2[i,:] = all_locs[1][l]
-                    
-                return pts1, pts2, img_indices, both_visible_idx
-        
-    
-        
-    def calibrate(self):
-        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]        
-        pts1, pts2, img_indices, both_visible_idx = self.get_correspondent_pts(v)
-        if len(img_indices) > 0:
-            # ---------------- Triangulation procedure ----------------------
-            display = True 
-            f = 35
-            K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
-            print(K)
-            # K =  np.array([[1.75072066e+03, 1.58918948e+01, 9.14144351e+02],
-            #                 [0.00000000e+00, 1.73909703e+03, 5.01720420e+02],
-            #                 [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
-            K =  np.array([[1.86014890e+03, 1.38401422e+01, 9.60685274e+02],
-                            [0.00000000e+00, 1.86604482e+03, 4.93265504e+02],
-                            [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
-    
-            # F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.FM_8POINT)
-            # E = np.dot(K.transpose(), np.dot(F, K))
-            E = cv2.findEssentialMat(pts1, pts2, K, cv2.FM_RANSAC)[0]
+                all_pts = []
+                for i in range(len(img_indices)):
+                    tmp_pts = np.zeros((len(both_visible_idx),2), dtype=int)
+                    for j,l in enumerate(both_visible_idx):
+                        tmp_pts[j,:] = all_locs[i][l]
+                    all_pts.append(tmp_pts)
+                return all_pts, img_indices, both_visible_idx
+               
             
-            G2_list = compute_P_from_essential(E)
-            G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
-            P1 = np.dot(K, G1)
-            count_list = []
-            for G2 in G2_list:
-                P2 = np.dot(K, G2)
-                Pw = triangulate(P1, pts1, P2, pts2)
-                pts1_out, pts2_out = project_2d(Pw, P1, P2)
-                count_list.append(count_positives(pts1_out, pts2_out))
-            
-            # print(count_list)
-            idx = count_list.index(max(count_list))
-            
-            G2 = G2_list[idx]
-            all_camera_pos = []
-            all_camera_pos.append(calc_camera_pos(G1[:,:3], G1[:,3]))
-            all_camera_pos.append(calc_camera_pos(G2[:,:3], G2[:,3]))
+    def cost_func(self, v):
+        K = np.array([[v[0], 0, v[2]], [0, v[1], v[3]], [0,0,1]])
+        pts1 = self.pts1
+        pts2 = self.pts2
+        E = cv2.findEssentialMat(pts1, pts2, K, cv2.FM_RANSAC)[0]
+        G2_list = compute_P_from_essential(E)
+        G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
+        P1 = np.dot(K, G1)
+        count_list = []
+        for G2 in G2_list:
             P2 = np.dot(K, G2)
             Pw = triangulate(P1, pts1, P2, pts2)
             pts1_out, pts2_out = project_2d(Pw, P1, P2)
-            Pw, projected_pts1, projected_pts2 = convert_homogeneity(Pw, pts1_out, pts2_out)
+            count_list.append(count_positives(pts1_out, pts2_out))
+
+        idx = count_list.index(max(count_list))
+        G2 = G2_list[idx]
+        P2 = np.dot(K, G2)
+        Pw = triangulate(P1, pts1, P2, pts2)
+        pts1_out, pts2_out = project_2d(Pw, P1, P2)
+        Pw, projected_pts1, projected_pts2 = convert_homogeneity(Pw, pts1_out, pts2_out)
+        err = calc_reprojection_error(pts1, projected_pts1, pts2, projected_pts2)
+        # print(err)
+        return err
+             
             
-            ply_pts = np.concatenate((Pw[:,:3].astype(np.float), all_camera_pos[0].reshape(1,3), all_camera_pos[0].reshape(1,3)), axis=0)            
-            # print(ply_pts.shape)
-            write_pointcloud('3d_data2.ply', ply_pts)
-            # print(Pw)
+        
+    def calibrate(self):
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        all_pts, img_indices, both_visible_idx = self.get_correspondent_pts(v)
+        first_list = [0,1,2,1,0]
+        second_list = [2,3,4,4,3]
+        
+        R_set = []
+        C_set = []
+        K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
+        
+        ### Calibrated intrinsic matrix obtained using cv2.calibrateCamera
+        # K = np.array([[1.48150395e+03, 0.00000000e+00, 8.45029052e+02],        
+        #               [0.00000000e+00, 1.52808450e+03, 4.84349661e+02],
+        #               [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+        
+        # focal_lengths = [K[0,0]]
+        if len(img_indices) > 0:
+            for first, second in zip(first_list, second_list):
+                pts1 = all_pts[first]
+                pts2 = all_pts[second]
+                
+                ##### Optimization of Intrinsic matrix
+                # self.pts1 = pts1
+                # self.pts2 = pts2
+                # # print(K)
+                # # K = estimateKMatrix(v.width, v.height, 35)
+                # Vi = [K[0,0], K[1,1], K[0,2], K[1,2]]
+                # v_opt = optimize.fmin(self.cost_func, Vi)
+                # # v_opt = optimize.fmin(self.cost_func, Vi, xtol=1e-30, ftol=1e-30, maxiter=10000)
+                # K = np.array([[v_opt[0], 0, v_opt[2]], [0, v_opt[1], v_opt[3]], [0,0,1]])
+                
+                """ Triangulation Procedure"""
+                # focal_lengths.append(K[0,0])
+                E = cv2.findEssentialMat(pts1, pts2, K, cv2.FM_RANSAC)[0]
+                
+                G2_list = compute_P_from_essential(E)
+                G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
+                P1 = np.dot(K, G1)
+                count_list = []
+                for G2 in G2_list:
+                    P2 = np.dot(K, G2)
+                    Pw = triangulate(P1, pts1, P2, pts2)
+                    pts1_out, pts2_out = project_2d(Pw, P1, P2)
+                    count_list.append(count_positives(pts1_out, pts2_out))
+                
+                # print(count_list)
+                idx = count_list.index(max(count_list))
+                
+                G2 = G2_list[idx]
+                R_set.append(G2[:,:3])
+                C_set.append(G2[:,3])
+                camera1_pos = calc_camera_pos(G1[:,:3], G1[:,3])
+                camera2_pos = calc_camera_pos(G2[:,:3], G2[:,3])
+                # print(camera2_pos)
+                P2 = np.dot(K, G2)
+                Pw = triangulate(P1, pts1, P2, pts2)
+                pts1_out, pts2_out = project_2d(Pw, P1, P2)
+                Pw, projected_pts1, projected_pts2 = convert_homogeneity(Pw, pts1_out, pts2_out)
+                err = calc_reprojection_error(pts1, projected_pts1, pts2, projected_pts2)
+                
+                print(err)
+                
+                # ply_pts = np.concatenate((Pw[:,:3].astype(np.float), camera1_pos.reshape(1,3), camera2_pos.reshape(1,3)), axis=0)
+                # # write_pointcloud('before_BA/data_'+str(first)+'_'+str(second)+'.ply', ply_pts)
+                # write_pointcloud('3d_data.ply', ply_pts)
     
-            img1 = v.key_frames_regular[img_indices[0]].copy()
-            img2 = v.key_frames_regular[img_indices[1]].copy()                
-            visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, both_visible_idx, display)
-            visualize3d(Pw, both_visible_idx, all_camera_pos)
+                # display = True
+                # if self.ctrl_wdg.kf_method == "Regular":
+                #     img1 = v.key_frames_regular[img_indices[first]].copy()
+                #     img2 = v.key_frames_regular[img_indices[second]].copy() 
+                # elif self.ctrl_wdg.kf_method == "Network":
+                #     img1 = v.key_frames_network[img_indices[first]].copy()
+                #     img2 = v.key_frames_network[img_indices[second]].copy() 
+                   
+                # visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, both_visible_idx, display)
+                # # visualize3d(Pw, both_visible_idx, [camera1_pos, camera2_pos])
+                
+
+            """  Bundle adjustment  """
+            camera_params, camera_indices, point_indices, points_2d = prepare_data(Pw, all_pts, R_set, C_set)
+            new_camera_params, new_points_3d = bundle_adjustment(camera_params, Pw, camera_indices, point_indices, points_2d, K)                
+            
+            camera_poses = []
+            for i in range(new_camera_params.shape[0]):
+                R = new_camera_params[i,:9].reshape(3,3)
+                t = camera_params[i,9:].reshape(3,1)
+                camera_poses.append(calc_camera_pos(R, t))
+
+            camera_poses = np.asarray(camera_poses)[:,:,0]
+            print(camera_poses)
+            ply_pts = np.concatenate((new_points_3d, camera_poses), axis=0)
+            plot_camera(camera_poses)
+            
+            write_pointcloud('after_BA.ply', ply_pts) 
         
 
     def add_tool_icons(self):

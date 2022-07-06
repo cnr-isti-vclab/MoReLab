@@ -2,7 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy import *
 from scipy import linalg
-import cv2
+from scipy.sparse import lil_matrix
+import cv2, time
+from scipy.spatial.transform import Rotation 
+from scipy.optimize import least_squares
   
   
 def getFocalLengthPixels(focal_length_mm, sensor_size_mm, sensor_size_px):
@@ -17,6 +20,14 @@ def estimateKMatrix(width_in_pixel, height_in_pixel, focal_length_in_mm = 35, se
     K[0,2] = width_in_pixel // 2
     K[1,2] = height_in_pixel // 2
     return K
+
+def getRotation(Q, type_ = 'q'):
+    if type_ == 'q':
+        R = Rotation.from_quat(Q)
+        return R.as_matrix()
+    elif type_ == 'e':
+        R = Rotation.from_rotvec(Q)
+        return R.as_matrix()
 
 
 def skew(a):
@@ -63,9 +74,12 @@ def triangulate(P1, pts1, P2, pts2):
         Pw.append(X)
 
     return np.asarray(Pw)
-    
+
 
 def project_2d(Pw, P1, P2):
+    # print("Let's check")
+    # print(P1.shape)
+    # print(Pw.shape)
     pts1_out = np.matmul(P1, Pw.T )
     pts2_out = np.matmul(P2, Pw.T )
     pts1_out = pts1_out.T
@@ -105,18 +119,18 @@ def calc_reprojection_error(pts1, pts1_out, pts2, pts2_out):
 def visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, labels, display_bool = True):
     if display_bool:
         for i in range(pts1.shape[0]):
-            cv2.circle(img1, (int(pts1[i,0]+10), int(pts1[i,1]+10)), 5, (255, 0, 0), -1)
-            cv2.putText(img1, str(labels[i]+1), (int(pts1[i,0]), int(pts1[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255,0,0), 1, cv2.LINE_AA)
-            cv2.circle(img1, (int(projected_pts1[i,0]+10), int(projected_pts1[i,1]+10)), 5, (0, 0, 255), -1)
-            cv2.putText(img1, str(labels[i]+1), (int(projected_pts1[i,0]), int(projected_pts1[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1, cv2.LINE_AA)
-            cv2.circle(img2, (int(pts2[i,0]+10), int(pts2[i,1]+10)), 5, (255, 0, 0), -1)
-            cv2.putText(img2, str(labels[i]+1), (int(pts2[i,0]), int(pts2[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255,0,0), 1, cv2.LINE_AA)
-            cv2.circle(img2, (int(projected_pts2[i,0]+10), int(projected_pts2[i,1]+10)), 5, (0, 0, 255), -1)
-            cv2.putText(img2, str(labels[i]+1), (int(projected_pts2[i,0]), int(projected_pts2[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1, cv2.LINE_AA)
+            cv2.circle(img1, (int(pts1[i,0]+10), int(pts1[i,1]+10)), 7, (255, 0, 0), -1)
+            cv2.putText(img1, str(labels[i]+1), (int(pts1[i,0]), int(pts1[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 1, cv2.LINE_AA)
+            cv2.circle(img1, (int(projected_pts1[i,0]+10), int(projected_pts1[i,1]+10)), 4, (0, 0, 255), -1)
+            cv2.putText(img1, str(labels[i]+1), (int(projected_pts1[i,0]), int(projected_pts1[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1, cv2.LINE_AA)
+            cv2.circle(img2, (int(pts2[i,0]+10), int(pts2[i,1]+10)), 7, (255, 0, 0), -1)
+            cv2.putText(img2, str(labels[i]+1), (int(pts2[i,0]), int(pts2[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 1, cv2.LINE_AA)
+            cv2.circle(img2, (int(projected_pts2[i,0]+10), int(projected_pts2[i,1]+10)), 4, (0, 0, 255), -1)
+            cv2.putText(img2, str(labels[i]+1), (int(projected_pts2[i,0]), int(projected_pts2[i,1])), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1, cv2.LINE_AA)
         cv2.imshow("Image1", img1)
         cv2.imshow("Image2", img2)
-        cv2.imwrite("labelled1.png", img1)
-        cv2.imwrite("labelled2.png", img2)
+        cv2.imwrite("2d_labelled1.jpeg", img1)
+        cv2.imwrite("2d_labelled2.jpeg", img2)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
@@ -124,23 +138,12 @@ def visualize3d(pts3d, labels, all_camera_points):
     fig2 = plt.figure()
     ax = fig2.add_subplot(111, projection='3d')
     ax.scatter(pts3d[:, 0], pts3d[:, 1], pts3d[:, 2])
-    # ax.scatter(0,0,0, color='r', marker='o')
-    # for i in range(pts3d.shape[0]):
-    #     ax.text(pts3d[i, 0], pts3d[i, 1], pts3d[i, 2], str(labels[i]+1))
-    #     ax.text(2,2,2, '(0,0,0)', color='r')
-    # ax.set_xlim([-1, 1])
-    # ax.set_ylim([-1, 1])
-    # ax.set_zlim([2, 4])
-    
-    
     for count,camera_points in enumerate(all_camera_points):
         x = camera_points[0]
         y = camera_points[1]
         z = camera_points[2]
-
         ax.scatter(x,y,z, color='black', depthshade=False, s=6)
         ax.text(x, y, z, str(count+1),fontsize=10, color='darkblue')
-        # ax.plot(x, y, z, color='green')
     
     ax.set_xlim([-3, 3])
     ax.set_ylim([-3, 3])
@@ -152,10 +155,11 @@ def visualize3d(pts3d, labels, all_camera_points):
 
     plt.title('Projected 3d Points')
     plt.show()
-    
-
 
 def calc_camera_pos(rotation, translation):
     camera_points = np.dot(-np.transpose(rotation),translation)
-    print(camera_points)
     return camera_points
+
+def getEuler(R2):
+    euler = Rotation.from_matrix(R2)
+    return euler.as_rotvec()

@@ -149,7 +149,7 @@ def write_pointcloud(filename,xyz_points,rgb_points=None):
                                         rgb_points[i,2].tostring())))
     fid.close()
     
-    # m = pymeshlab.Mesh(arr, np.array([]))
-    # ms = pymeshlab.MeshSet()
-    # ms.add_mesh(m, "cube_mesh")
-    # ms.save_current_mesh(output_path + "saved_cube_from_array.ply")
+def point_line_distance(line, point):
+    numer = abs(np.sum(np.multiply(line, point)))
+    denom = np.sqrt(np.square(point[0]) + np.square(point[1]))
+    return numer/denom
