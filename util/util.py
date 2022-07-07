@@ -94,6 +94,7 @@ def numFeature_dialogue():
     msgBox.setStandardButtons(QMessageBox.Ok)                 
     returnValue = msgBox.exec()
     
+    
 
 def split_path(complete_path):
     op_sys = platform.system()
@@ -153,3 +154,9 @@ def point_line_distance(line, point):
     numer = abs(np.sum(np.multiply(line, point)))
     denom = np.sqrt(np.square(point[0]) + np.square(point[1]))
     return numer/denom
+
+
+def save_feature_locs(all_pts):
+    pts_arr = np.concatenate(all_pts, axis=0)
+    print(pts_arr.shape)
+    np.save('extra_past_results/4_images_feature_locs.npy', pts_arr)

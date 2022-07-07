@@ -1,18 +1,28 @@
 # Files and folders to be ignored.
+
+
 __pycache__/
 util/__pycache__/
 .DS_Store
+
+
 *.pyc
-extracted_images/*.png
+*.ply
+*.json
+*.jpeg
+
 experiment.py
 .python-version
-*.json
+
+
+extracted_images/*.png
 test1/
 test2/
 test3/
 test4/
 test5/
 test2_6_images/
+test3_4_images/
 
 before_BA/
 epri_test4/

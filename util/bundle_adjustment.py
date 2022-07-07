@@ -8,10 +8,6 @@ import matplotlib.pyplot as plt
 
 
 
-
-
-
-
 def prepare_data(points_3d, all_pts, R_set, C_set):
     assert len(all_pts) == len(R_set)
     camera_params = []
@@ -35,6 +31,23 @@ def prepare_data(points_3d, all_pts, R_set, C_set):
     point_indices = np.asarray(point_indices) 
     
     return camera_params, camera_indices, point_indices, points_2d
+
+
+def local_to_global(R_local, t_local, last_R_global, last_t_global, Pw):
+    R_global = np.dot(last_R_global, R_local)
+    t_global = np.add(last_t_global, t_local.reshape((3,1)))
+
+    X_3d = []
+    for i in range(Pw.shape[0]):
+        pt3d = Pw[i,:].reshape((1,3))
+        new_pt = np.add(np.dot(pt3d, R_global), t_global.transpose())
+        X_3d.append(new_pt)
+    
+    X_3d = np.vstack(X_3d)
+    # print(X_3d.shape)
+    # print(X_3d)
+    return X_3d, R_global, t_global
+    
 
 
 
@@ -122,9 +135,9 @@ def plot_camera(camera_poses):
         ax.scatter(x,y,z, color='black', depthshade=False, s=6)
         ax.text(x, y, z, str(i+1),fontsize=10, color='darkblue')
     
-    ax.set_xlim([0, 1.7])
-    ax.set_ylim([0, 0.5])
-    ax.set_zlim([0, 0.5])
+    ax.set_xlim([0, 2])
+    ax.set_ylim([0, 2])
+    ax.set_zlim([0, 2])
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')

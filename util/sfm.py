@@ -80,8 +80,8 @@ def project_2d(Pw, P1, P2):
     # print("Let's check")
     # print(P1.shape)
     # print(Pw.shape)
-    pts1_out = np.matmul(P1, Pw.T )
-    pts2_out = np.matmul(P2, Pw.T )
+    pts1_out = np.matmul(P1, Pw.T)
+    pts2_out = np.matmul(P2, Pw.T)
     pts1_out = pts1_out.T
     pts2_out = pts2_out.T
 
@@ -158,7 +158,7 @@ def visualize3d(pts3d, labels, all_camera_points):
 
 def calc_camera_pos(rotation, translation):
     camera_points = np.dot(-np.transpose(rotation),translation)
-    return camera_points
+    return camera_points.transpose()
 
 def getEuler(R2):
     euler = Rotation.from_matrix(R2)
