@@ -10,8 +10,10 @@ util/__pycache__/
 *.ply
 *.json
 *.jpeg
+*.zip
 
 experiment.py
+exp2.py
 .python-version
 
 
@@ -21,8 +23,7 @@ test2/
 test3/
 test4/
 test5/
-test2_6_images/
-test3_4_images/
+test6/
 
 before_BA/
 epri_test4/

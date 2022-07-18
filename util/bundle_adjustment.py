@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 
 
-def prepare_data(points_3d, all_pts, R_set, C_set):
+def prepare_data(n_3d_pts, all_pts, R_set, C_set):
     assert len(all_pts) == len(R_set)
     camera_params = []
     points_2d = []
@@ -19,7 +19,7 @@ def prepare_data(points_3d, all_pts, R_set, C_set):
         RC = [R[0,0], R[0,1], R[0,2], R[1,0], R[1,1], R[1,2], R[2,0], R[2,1], R[2,2], C[0], C[1], C[2]]
         camera_params.append(RC)
             
-    for i in range(points_3d.shape[0]):
+    for i in range(n_3d_pts):
         for j in range(len(all_pts)):
             points_2d.append(all_pts[j][i])
             point_indices.append(i)
@@ -35,7 +35,7 @@ def prepare_data(points_3d, all_pts, R_set, C_set):
 
 def local_to_global(R_local, t_local, last_R_global, last_t_global, Pw):
     R_global = np.dot(last_R_global, R_local)
-    t_global = np.add(last_t_global, t_local.reshape((3,1)))
+    t_global = np.add(last_t_global, t_local)
 
     X_3d = []
     for i in range(Pw.shape[0]):
@@ -49,6 +49,21 @@ def local_to_global(R_local, t_local, last_R_global, last_t_global, Pw):
     return X_3d, R_global, t_global
     
 
+def calc_ratio(R_2i, t_2i, R_1i, t_1i, R_12, t_12):
+    # aa = np.cross(t_2i, t_1i)
+    # bb = np.cross(t_2i, np.dot(R_2i, t_12))
+    # numer = np.dot(aa.transpose(), bb)
+    # denom = np.square(np.linalg.norm(np.cross(t_2i, t_1i)))
+    # scaling_ratio = numer/denom
+    
+    aa = np.cross(np.dot(R_12, t_2i), t_1i)
+    bb = np.cross(np.dot(R_12, t_2i), t_12)
+    numer = np.dot(aa.transpose(), bb)
+    denom = np.square(np.linalg.norm(bb))
+    scaling_ratio = numer/denom
+    
+    
+    return scaling_ratio
 
 
 def bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices):
@@ -135,9 +150,9 @@ def plot_camera(camera_poses):
         ax.scatter(x,y,z, color='black', depthshade=False, s=6)
         ax.text(x, y, z, str(i+1),fontsize=10, color='darkblue')
     
-    ax.set_xlim([0, 2])
-    ax.set_ylim([0, 2])
-    ax.set_zlim([0, 2])
+    ax.set_xlim([-1, 2])
+    ax.set_ylim([-1, 2])
+    ax.set_zlim([-1, 2])
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')

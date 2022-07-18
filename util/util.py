@@ -159,4 +159,4 @@ def point_line_distance(line, point):
 def save_feature_locs(all_pts):
     pts_arr = np.concatenate(all_pts, axis=0)
     print(pts_arr.shape)
-    np.save('extra_past_results/4_images_feature_locs.npy', pts_arr)
+    np.save('extra_past_results/too_many_images_feature_locs.npy', pts_arr)
