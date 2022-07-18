@@ -5,8 +5,7 @@ from feature_crosshair import FeatureCrosshair
 from util.util import feature_absent_dialogue, numFeature_dialogue, write_pointcloud, save_feature_locs
 from util.sfm import *
 from util.optimize_K import find_optimized_K
-from util.bundle_adjustment import bundle_adjustment, prepare_data, plot_camera, local_to_global
-# from bundle_adjustment2 import plot_camera
+from util.bundle_adjustment import bundle_adjustment, prepare_data, plot_camera, local_to_global, calc_ratio
 import numpy as np
 from object_panel import ObjectPanel
 import cv2, copy
