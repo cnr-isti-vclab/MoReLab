@@ -159,6 +159,7 @@ class Window(QMainWindow):
             filter = file_types
         )
         if response[0] != '':
+            self.save_response = response
             project_path = response[0]
             
             name_project = os.path.relpath(project_path, os.getcwd())

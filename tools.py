@@ -5,7 +5,7 @@ from feature_crosshair import FeatureCrosshair
 from util.util import feature_absent_dialogue, numFeature_dialogue, write_pointcloud, save_feature_locs
 from util.sfm import *
 from util.optimize_K import find_optimized_K
-from util.bundle_adjustment import bundle_adjustment, prepare_data, plot_camera, local_to_global, calc_ratio
+from util.bundle_adjustment import bundle_adjustment
 import numpy as np
 from object_panel import ObjectPanel
 import cv2, copy
@@ -108,121 +108,36 @@ class Tools(QObject):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         all_pts, img_indices, both_visible_idx = self.get_correspondent_pts(v)
         # save_feature_locs(all_pts)
-        first_list = [i for i in range(len(all_pts)-1)]
-        second_list = [i for i in range(1, len(all_pts))]
-        
-        R_set = [np.eye(3)]
-        C_set = [np.zeros((3,))]
-        
-        # R_2_global = [np.eye(3)]
-        # t_2_global = [np.zeros((3,))]
-        # cnt = 2
-        
+
         K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
-        K = find_optimized_K(all_pts, K, '2')
+        # K = estimateKMatrix(v.width, v.height, 35)
+        # K = find_optimized_K(all_pts, K, '2')
 
         if len(img_indices) > 0:
-            for first, second in zip(first_list, second_list):
-                pts1 = all_pts[first]
-                pts2 = all_pts[second]
-                                
-                """ Triangulation Procedure"""
-                E = cv2.findEssentialMat(pts1, pts2, K, cv2.FM_RANSAC)[0]
-                
-                G2_list = compute_P_from_essential(E)
-                G1 = np.concatenate((np.eye(3), np.zeros((3,1))), axis=1)
-                P1 = np.dot(K, G1)
-                count_list = []
-                for G2 in G2_list:
-                    P2 = np.dot(K, G2)
-                    Pw = triangulate(P1, pts1, P2, pts2)
-                    pts1_out, pts2_out = project_2d(Pw, P1, P2)
-                    count_list.append(count_positives(pts1_out, pts2_out))
-                
-                # print(count_list)
-                idx = count_list.index(max(count_list))
-                
-                G2 = G2_list[idx]
-                P2 = np.dot(K, G2)
-                Pw = triangulate(P1, pts1, P2, pts2)
-                pts1_out, pts2_out = project_2d(Pw, P1, P2)
-                Pw, projected_pts1, projected_pts2 = convert_homogeneity(Pw, pts1_out, pts2_out)
-                err = calc_reprojection_error(pts1, projected_pts1, pts2, projected_pts2)
-                print(err)
-
-
-                
-                Pw_global, R_global, t_global = local_to_global(G2[:,:3], G2[:,3], R_set[-1], C_set[-1], Pw)
-
-                """Uncomment the next 3 lines to get rid of global transformations"""
-                # R_global = G2[:,:3]
-                # t_global = G2[:,3]
-                # Pw_global = Pw
-                
-                """Uncomment next few lines for translation synchronization"""
-                # if cnt == 2:
-                #     R_12 = G2[:,:3]
-                #     t_12 = G2[:,3]
-                #     scaling_ratio = 1
-                # else:
-                #     R_2i = np.dot(R_2_global[-1], R_local)
-                #     t_2i = np.add(t_2_global[-1], t_local)
-                    
-                #     scaling_ratio = calc_ratio(R_2i, t_2i, R_global, t_global, R_12, t_12)
-                    
-                #     R_2_global.append(R_2i)
-                #     t_2_global.append(t_2i)
-                    
-                    
-                # cnt = cnt + 1
-                
-                # print(scaling_ratio)
-                # t_global = scaling_ratio*t_global
-
-                
-
-                R_set.append(R_global)
-                C_set.append(t_global)
-                camera1_pos = calc_camera_pos(G1[:,:3], G1[:,3])
-                camera2_pos = calc_camera_pos(R_global, t_global)
-                # print(camera2_pos)
-                
-                
-                ply_pts = np.concatenate((Pw_global, camera1_pos.reshape((1,3)), camera2_pos.reshape((1,3))), axis=0)
-                write_pointcloud('before_BA/data_'+str(first)+'_'+str(second)+'.ply', ply_pts)
- 
-                # display = True
-                # if self.ctrl_wdg.kf_method == "Regular":
-                #     img1 = v.key_frames_regular[img_indices[first]].copy()
-                #     img2 = v.key_frames_regular[img_indices[second]].copy() 
-                # elif self.ctrl_wdg.kf_method == "Network":
-                #     img1 = v.key_frames_network[img_indices[first]].copy()
-                #     img2 = v.key_frames_network[img_indices[second]].copy() 
-                   
-                # visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, both_visible_idx, display)
-                # # visualize3d(Pw, both_visible_idx, [camera1_pos, camera2_pos])
-                
-
-            """  Bundle adjustment  """
-            n_3d_pts = Pw.shape[0]    
-            camera_params, camera_indices, point_indices, points_2d = prepare_data(n_3d_pts, all_pts, R_set, C_set)
-            new_camera_params, new_points_3d = bundle_adjustment(camera_params, Pw_global, camera_indices, point_indices, points_2d, K)                
-            
+            """
+            ***** Bundle Adjustment *****
+            Assumption
+            - All cameras have the same and known camera matrix
+            - All points are visible on all camera views
+            """
+            opt_cameras, opt_points = bundle_adjustment(all_pts, K)                
             camera_poses = []
-            for i in range(new_camera_params.shape[0]):
-                R = new_camera_params[i,:9].reshape(3,3)
-                t = camera_params[i,9:].reshape(3,1)
+            for i in range(opt_cameras.shape[0]):
+                R = getRotation(opt_cameras[i,:3], 'e')
+                t = opt_cameras[i,3:].reshape((3,1))
                 cm = calc_camera_pos(R, t)
                 # print(cm)
                 camera_poses.append([cm[0,0], cm[0,1], cm[0,2]])
-
+            
+            
             camera_poses = np.asarray(camera_poses)
             print(camera_poses)
             # print(camera_poses.shape)
-            ply_pts = np.concatenate((new_points_3d, camera_poses), axis=0)
+            ply_pts = np.concatenate((opt_points, camera_poses), axis=0)
             # plot_camera(camera_poses)
             
-            write_pointcloud('after_BA.ply', ply_pts) 
+            write_pointcloud('after_BA_epri.ply', ply_pts) 
+
         
 
     def add_tool_icons(self):

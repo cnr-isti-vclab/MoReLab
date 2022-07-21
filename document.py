@@ -186,7 +186,7 @@ class Document():
                     
                 for j, img in enumerate(self.ctrl_wdg.mv_panel.movie_caps[i].key_frames_regular):
                     # img_path = os.path.join(path_regular, self.ctrl_wdg.mv_panel.movie_caps[i].key_frame_indices_regular[j] +'.png')
-                    img_path = os.path.join(path_regular, str(j).zfill(6)+'.png')
+                    img_path = os.path.join(path_regular, str(j).zfill(6)+'.jpeg')
                     cv2.imwrite(img_path, img)
                     
             if len(self.ctrl_wdg.mv_panel.movie_caps[i].key_frames_network) > 0:
@@ -195,6 +195,6 @@ class Document():
                     os.makedirs(path_network)
                 for j, img in enumerate(self.ctrl_wdg.mv_panel.movie_caps[i].key_frames_network):
                     # img_path = os.path.join(path_network, self.ctrl_wdg.mv_panel.movie_caps[i].key_frame_indices_network[j] +'.png')
-                    img_path = os.path.join(path_network, str(j).zfill(6)+'.png')
+                    img_path = os.path.join(path_network, str(j).zfill(6)+'.jpeg')
                     cv2.imwrite(img_path, img)
                     

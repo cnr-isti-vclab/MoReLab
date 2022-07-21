@@ -8,135 +8,88 @@ import matplotlib.pyplot as plt
 
 
 
-def prepare_data(n_3d_pts, all_pts, R_set, C_set):
-    assert len(all_pts) == len(R_set)
-    camera_params = []
-    points_2d = []
-    point_indices = []
-    camera_indices = []
-    for i,R in enumerate(R_set):
-        C = C_set[i]
-        RC = [R[0,0], R[0,1], R[0,2], R[1,0], R[1,1], R[1,2], R[2,0], R[2,1], R[2,2], C[0], C[1], C[2]]
-        camera_params.append(RC)
-            
-    for i in range(n_3d_pts):
-        for j in range(len(all_pts)):
-            points_2d.append(all_pts[j][i])
-            point_indices.append(i)
-            camera_indices.append(j)
-    
-    camera_params = np.asarray(camera_params)
-    camera_indices = np.asarray(camera_indices)
-    points_2d = np.asarray(points_2d)
-    point_indices = np.asarray(point_indices) 
-    
-    return camera_params, camera_indices, point_indices, points_2d
-
-
-def local_to_global(R_local, t_local, last_R_global, last_t_global, Pw):
-    R_global = np.dot(last_R_global, R_local)
-    t_global = np.add(last_t_global, t_local)
-
-    X_3d = []
-    for i in range(Pw.shape[0]):
-        pt3d = Pw[i,:].reshape((1,3))
-        new_pt = np.add(np.dot(pt3d, R_global), t_global.transpose())
-        X_3d.append(new_pt)
-    
-    X_3d = np.vstack(X_3d)
-    # print(X_3d.shape)
-    # print(X_3d)
-    return X_3d, R_global, t_global
-    
-
-def calc_ratio(R_2i, t_2i, R_1i, t_1i, R_12, t_12):
-    # aa = np.cross(t_2i, t_1i)
-    # bb = np.cross(t_2i, np.dot(R_2i, t_12))
-    # numer = np.dot(aa.transpose(), bb)
-    # denom = np.square(np.linalg.norm(np.cross(t_2i, t_1i)))
-    # scaling_ratio = numer/denom
-    
-    aa = np.cross(np.dot(R_12, t_2i), t_1i)
-    bb = np.cross(np.dot(R_12, t_2i), t_12)
-    numer = np.dot(aa.transpose(), bb)
-    denom = np.square(np.linalg.norm(bb))
-    scaling_ratio = numer/denom
-    
-    
-    return scaling_ratio
-
 
 def bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices):
     m = camera_indices.size * 2
-    n = n_cameras * 12 + n_points * 3
+    n = n_cameras * 6 + n_points * 3
     A = lil_matrix((m, n), dtype=int)
 
     i = np.arange(camera_indices.size)
-    for s in range(12):
-        A[2 * i, camera_indices * 12 + s] = 1
-        A[2 * i + 1, camera_indices * 12 + s] = 1
+    for s in range(6):
+        A[2 * i, camera_indices * 6 + s] = 1
+        A[2 * i + 1, camera_indices * 6 + s] = 1
 
     for s in range(3):
-        A[2 * i, n_cameras * 12 + point_indices * 3 + s] = 1
-        A[2 * i + 1, n_cameras * 12 + point_indices * 3 + s] = 1
+        A[2 * i, n_cameras * 6 + point_indices * 3 + s] = 1
+        A[2 * i + 1, n_cameras * 6 + point_indices * 3 + s] = 1
 
     return A
 
-def project(points, camera_params, K):
-    points_proj = []
-    Pw = np.concatenate((points, np.ones((points.shape[0], 1))), axis=1)
-    for idx in range(len(camera_params)): # idx applies to both points and cam_params, they are = length vectors
-        R = camera_params[idx][:9].reshape(3,3)
-        t = camera_params[idx][9:].reshape(3,1)
-        P2 = np.dot(K, np.concatenate((R, t), axis=1))
-        pt4d = Pw[idx, :].reshape(4,1)
-        pt2d = np.matmul(P2, pt4d)
-        pt2d = pt2d/pt2d[2,0]
-        points_proj.append(pt2d[:-1, 0])
-
-    points_proj = np.asarray(points_proj)
-    return points_proj
-
-def fun(params, n_cameras, n_points, camera_indices, point_indices, points_2d, K):
-    camera_params = params[:n_cameras * 12].reshape((n_cameras, 12))
-    points_3d = params[n_cameras * 12:].reshape((n_points, 3))
-    points_proj = project(points_3d[point_indices], camera_params[camera_indices], K)
-    return (points_proj - points_2d).ravel()
-    # reprojection_err = 0
-    # for i in range(points_proj.shape[0]):
-    #     reprojection_err = reprojection_err  + np.linalg.norm( points_2d[i,:] - points_proj[i,:] )**2
-    # return reprojection_err
-
-
-
-
-def bundle_adjustment(camera_params, points_3d, camera_indices, point_indices, points_2d, K):
-    n_cameras = camera_params.shape[0]
-    n_points = points_3d.shape[0]
-
-    n = 12 * n_cameras + 3 * n_points
-    m = 2 * points_2d.shape[0]
-
-    print("n_cameras: {}".format(n_cameras))
-    print("n_points: {}".format(n_points))
-    print("Total number of parameters: {}".format(n))
-    print("Total number of residuals: {}".format(m))
-    x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
-    f0 = fun(x0, n_cameras, n_points, camera_indices, point_indices, points_2d, K)
-    # print("+++++++++++++++++++++++++++++++++++++++++++")
-    # print(f0.shape)
-
-    A = bundle_adjustment_sparsity(n_cameras, n_points, camera_indices, point_indices)
-    t0 = time.time()
-    res = least_squares(fun, x0, jac_sparsity=A, verbose=2, x_scale='jac', method='trf', args=(n_cameras, n_points, camera_indices, point_indices, points_2d, K))
-    t1 = time.time()
-    print("Optimization took {0:.0f} seconds".format(t1 - t0))
-    print("Final cost after BA : "+str(res['cost']))
+def project(points, cam_trans, K):
+    """Get R and t then project points"""
+    rot_vecs = cam_trans[:, :3] # 
+    t_vecs = cam_trans[:, 3:]
+    theta = np.linalg.norm(rot_vecs, axis=1)[:, np.newaxis]
+    with np.errstate(invalid='ignore'):
+        v = rot_vecs / theta
+        v = np.nan_to_num(v)
+    dot = np.sum(points * v, axis=1)[:, np.newaxis]
+    cos_theta = np.cos(theta)
+    sin_theta = np.sin(theta)
+    points_proj = cos_theta * points + sin_theta * np.cross(v, points) + dot * (1 - cos_theta) * v
+    points_proj += t_vecs # points num 
+    points_proj = points_proj @ K.T 
+    points_proj /= points_proj[:, 2, np.newaxis] # 
     
-    sol = res.x
-    new_camera_params = sol[0:n_cameras*12].reshape((n_cameras, 12))
-    new_points_3d = sol[n_cameras*12:].reshape((n_points, 3))
-    return new_camera_params, new_points_3d
+    return points_proj[:, :2].ravel()
+
+def func2(params, points_2d, n_cameras, n_points, camera_indices, point_indices, K):
+    camera_params = params[:n_cameras * 6].reshape((n_cameras, 6))
+    points_3d = params[n_cameras * 6:].reshape((n_points, 3))        
+    points_proj = project(points_3d[point_indices], camera_params[camera_indices], K) # 둘의 개수를 맞춰줬다! 적절한 index로 2d points의 개수를 파악하자.
+    result = (points_2d - points_proj).ravel()
+    return result
+
+
+
+
+def bundle_adjustment(xs, K):
+    xs = np.array(xs)
+
+    n_cameras = xs.shape[0]
+    n_points = xs.shape[1]
+
+
+    
+    # Matching index for cam & 3d points
+    cam_indices = np.array([])
+    length_c_ind = np.arange(n_points, dtype=int)
+    for i in range(n_cameras):
+        cam_indices = np.hstack((cam_indices, np.full_like(length_c_ind, i))) # 0x28, 1x28, ...
+
+    point_indices = np.array([])
+    # length_p_ind = np.arange(n_cameras, dtype=int)
+    for i in range(n_cameras):
+        point_indices = np.hstack((point_indices, np.linspace(0, n_points-1, n_points, dtype=int))) # (0 ~ 28) * 5
+        # point_indices = np.hstack((point_indices, np.full_like(length_p_ind, i))) # 0x5, 1x5, 2x5, ..., 28x5
+    
+    cam_indices = cam_indices.astype(int)
+    point_indices = point_indices.astype(int)
+
+    # Initialize cameras and 3D points
+    cameras = np.zeros((xs.shape[0], 6)) # rotation and translation
+    cameras[:,2] = 1 # watching forward 
+    Xs = np.full((xs.shape[1], xs.shape[2]+1), np.array([[0, 0, 5.5]])) # 3d points initial num & pose 
+    x0 = np.hstack((cameras.ravel(), Xs.ravel())) # camera pose and 3d points
+    xs = xs.ravel()
+
+    J = bundle_adjustment_sparsity(n_cameras=n_cameras, n_points=n_points, camera_indices=cam_indices, point_indices=point_indices)
+    res = least_squares(func2, x0, verbose=2, ftol=1e-15, method='trf', jac_sparsity=J, args=(xs, n_cameras, n_points, cam_indices, point_indices, K))
+
+    opt_cameras = res.x[:n_cameras * 6].reshape((n_cameras, 6)) # rotation and translation
+    opt_points = res.x[n_cameras * 6: ].reshape((n_points, 3))  # 3d points
+    
+    return opt_cameras, opt_points
 
 
 def plot_camera(camera_poses):
