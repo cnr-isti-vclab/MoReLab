@@ -11,10 +11,14 @@ util/__pycache__/
 *.json
 *.jpeg
 *.zip
+*.bz2
 
 experiment.py
 exp2.py
+exp3.py
+exp4.py
 .python-version
+Li1R19_Feedwater Bracket  3D Mapping Project _.5.MP4
 
 
 extracted_images/*.png

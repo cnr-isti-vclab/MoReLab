@@ -47,80 +47,71 @@ class Tools(QObject):
         img_indices = []
         all_locs = []
         visible_labels = []
+        all_pts = []
         if self.ctrl_wdg.kf_method == "Regular":
             for i,hr in enumerate(v.hide_regular):
+                tmp1, tmp2, tmp3 = [], [], []
+                count = 0
+                for j,hide in enumerate(hr):
+                    fc = v.features_regular[i][j]
+                    tmp1.append([int(fc.x_loc), int(fc.y_loc)])
+                    if not hide:
+                        tmp3.append([int(fc.x_loc), int(fc.y_loc)])
+                        tmp2.append(j)
+                        count = count + 1
+                if count > 7:
+                    img_indices.append(i)
+                    all_locs.append(tmp1)
+                    a = np.asarray(tmp2)
+                    # print(a.shape)
+                    visible_labels.append(a)
+                    tmp_arr = np.zeros((len(tmp3), 2), dtype=float)
+                    for cnt in range(len(tmp3)):
+                        tmp_arr[cnt, :] = tmp3[cnt]
+                    # print(tmp_arr.shape)
+                    all_pts.append(tmp_arr)
+        elif self.ctrl_wdg.kf_method == "Network":
+            for i,hr in enumerate(v.hide_network):
                 tmp1, tmp2 = [], []
                 count = 0
                 for j,hide in enumerate(hr):
                     fc = v.features_regular[i][j]
                     tmp1.append([int(fc.x_loc), int(fc.y_loc)])
                     if not hide:
+                        tmp3.append([int(fc.x_loc), int(fc.y_loc)])
                         tmp2.append(j)
                         count = count + 1
                 if count > 7:
                     img_indices.append(i)
                     all_locs.append(tmp1)
-                    visible_labels.append(tmp2)
-        elif self.ctrl_wdg.kf_method == "Network":
-            for i,hr in enumerate(v.hide_network):
-                tmp1, tmp2 = [], []
-                count = 0
-                for j,hide in enumerate(hr):
-                    fc = v.features_network[i][j]
-                    tmp1.append([int(fc.x_loc), int(fc.y_loc)])
-                    if not hide:
-                        tmp2.append(j)
-                        count = count + 1
-                if count > 7:
-                    img_indices.append(i)
-                    all_locs.append(tmp1)
-                    visible_labels.append(tmp2)
-
+                    a = np.asarray(tmp2)
+                    visible_labels.append(a)
+                    tmp_arr = np.zeros((len(tmp3), 2), dtype=float)
+                    for cnt in range(len(tmp3)):
+                        tmp_arr[cnt, :] = tmp3[cnt]
+                    # print(tmp_arr.shape)
+                    all_pts.append(tmp_arr)
+        # for i in range
         if len(img_indices) < 2:
             numFeature_dialogue()
             return np.zeros((1,1)), [], []         # Dummy return 
         else:
-            nn = len(img_indices)
-            both_visible_idx = []
-            for l1 in visible_labels[0]:
-                tmp_bool = True
-                for i,l2_vec in enumerate(visible_labels):
-                    if l1 not in l2_vec:
-                        tmp_bool = False
-                if tmp_bool:
-                    both_visible_idx.append(l1)
-                    
-            # print(both_visible_idx)
-                    
-            if len(both_visible_idx) < 8:
-                numFeature_dialogue()
-                return np.zeros((1,1)), [], []         # Dummy return
-            else:
-                all_pts = []
-                for i in range(len(img_indices)):
-                    tmp_pts = np.zeros((len(both_visible_idx),2), dtype=int)
-                    for j,l in enumerate(both_visible_idx):
-                        tmp_pts[j,:] = all_locs[i][l]
-                    all_pts.append(tmp_pts)
-                return all_pts, img_indices, both_visible_idx
+            return all_pts, img_indices, visible_labels
+
         
     def calibrate(self):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
-        all_pts, img_indices, both_visible_idx = self.get_correspondent_pts(v)
-        # save_feature_locs(all_pts)
+        all_pts, img_indices, visible_labels = self.get_correspondent_pts(v)
+
+        # save_feature_locs(all_pts, visible_labels)
 
         K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
         # K = estimateKMatrix(v.width, v.height, 35)
-        # K = find_optimized_K(all_pts, K, '2')
+        # K = find_optimized_K(all_pts, K, '1')
 
         if len(img_indices) > 0:
-            """
-            ***** Bundle Adjustment *****
-            Assumption
-            - All cameras have the same and known camera matrix
-            - All points are visible on all camera views
-            """
-            opt_cameras, opt_points = bundle_adjustment(all_pts, K)                
+
+            opt_cameras, opt_points = bundle_adjustment(all_pts, visible_labels, K)                
             camera_poses = []
             for i in range(opt_cameras.shape[0]):
                 R = getRotation(opt_cameras[i,:3], 'e')
@@ -134,9 +125,8 @@ class Tools(QObject):
             print(camera_poses)
             # print(camera_poses.shape)
             ply_pts = np.concatenate((opt_points, camera_poses), axis=0)
-            # plot_camera(camera_poses)
             
-            write_pointcloud('after_BA_epri.ply', ply_pts) 
+            write_pointcloud('after_BA.ply', ply_pts) 
 
         
 

@@ -111,10 +111,11 @@ class Document():
             for j,mv in enumerate(movie_dirs):
                 if movie_name.split('.')[0] == mv:
                     movie_dirr = os.path.join(a, mv)
-                    img_names_regular = sorted(glob.glob(movie_dirr+'/Regular/*.png'))
+                    img_names_regular = sorted(glob.glob(movie_dirr+'/Regular/*'))
+                    # print(len(img_names_regular))
                     v.key_frames_regular = [cv2.imread(x) for x in img_names_regular]
                     
-                    img_names_network = sorted(glob.glob(movie_dirr+'/Network/*.png'))
+                    img_names_network = sorted(glob.glob(movie_dirr+'/Network/*'))
                     v.key_frames_network = [cv2.imread(x) for x in img_names_network]          
 
             for j, val in enumerate(v.n_objects_kf_regular):

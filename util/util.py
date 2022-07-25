@@ -156,7 +156,8 @@ def point_line_distance(line, point):
     return numer/denom
 
 
-def save_feature_locs(all_pts):
+def save_feature_locs(all_pts, visible_labels):
     for i, pts in enumerate(all_pts):
-        np.save('features'+str(i)+'.npy', pts)
+        np.save('test4_features'+str(i)+'.npy', pts)
+        np.save('test4_labels'+str(i)+'.npy', visible_labels[i])
     
