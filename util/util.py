@@ -1,8 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-import platform, pymeshlab, struct
-import open3d as o3d
+import platform, struct
 import numpy as np
 
 
@@ -160,4 +159,22 @@ def save_feature_locs(all_pts, visible_labels):
     for i, pts in enumerate(all_pts):
         np.save('test4_features'+str(i)+'.npy', pts)
         np.save('test4_labels'+str(i)+'.npy', visible_labels[i])
+        
+
+def deleteItemsOfLayout(layout):
+    if layout is not None:
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.setParent(None)
+            else:
+                deleteItemsOfLayout(item.layout())
+                
+def empty_gui(layout):
+    for i in range(3):
+        item = layout.takeAt(0)
+        deleteItemsOfLayout(item)
+        layout.removeItem(item)
     
+    return layout

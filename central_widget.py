@@ -7,6 +7,7 @@ from util.kf_dialogue import KF_dialogue
 from util.util import show_dialogue
 from document import Document
 from movie_panel import MoviePanel
+from GL_widget_viewer import GL_Widget
 
 import json, os, glob
 import cv2
@@ -20,6 +21,7 @@ class Widget(QWidget):
             
         self.selected_thumbnail_index = -1
         self.viewer = PhotoViewer(self)
+        
         self.doc = Document(self)
         self.mv_panel = MoviePanel(self)
         
@@ -31,7 +33,6 @@ class Widget(QWidget):
         self.kf_method = ""
         
         self.create_wdg1()
-        # self.create_wdg4()
         self.create_scroll_area()
 
         
@@ -39,6 +40,18 @@ class Widget(QWidget):
     def create_wdg1(self):
         self.btn_kf = QPushButton("Extract Key-frames")
         self.btn_kf.clicked.connect(self.extract)
+        
+        
+        self.gl_viewer = GL_Widget()
+        self.sliderX = QSlider(Qt.Horizontal)
+        self.sliderX.valueChanged.connect(lambda val: self.gl_viewer.setRotX(val))
+
+        self.sliderY = QSlider(Qt.Horizontal)
+        self.sliderY.valueChanged.connect(lambda val: self.gl_viewer.setRotY(val))
+
+        self.sliderZ = QSlider(Qt.Horizontal)
+        self.sliderZ.valueChanged.connect(lambda val: self.gl_viewer.setRotZ(val))
+
         
 
             
@@ -110,6 +123,7 @@ class Widget(QWidget):
         # print(img_file.shape)
         p = self.viewer.convert_cv_qt(img_file, img_file.shape[1] , img_file.shape[0] )
         self.viewer.setPhoto(p)
+        self.viewer.obj.display_data()
         if not self.viewer.importing:
             self.viewer.fitInView()
 

@@ -2,7 +2,7 @@ import numpy as np
 import cv2, time
 from scipy.optimize import least_squares
 from scipy.sparse import lil_matrix
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 

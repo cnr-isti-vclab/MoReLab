@@ -3,7 +3,8 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import sys, os, sip, json, glob, cv2
 from central_widget import Widget
-from util.util import movie_dialogue, split_path
+from util.util import movie_dialogue, split_path, empty_gui
+from GL_widget_viewer import GL_Widget
 
 from util.video import Video
 from tools import Tools
@@ -12,37 +13,82 @@ from tools import Tools
 
 class Window(QMainWindow):
     def __init__(self):
-        super(QMainWindow, self).__init__()
+        QMainWindow.__init__(self)    # call the init for the parent class
+        # super(QMainWindow, self).__init__()
         self.setWindowTitle('MoReLab')
         self.showMaximized()
         self.widget = Widget()
+        self.start = True
+        
         self.save_response = ''
         
         self.create_menu()
         self.create_statusbar()
         self.create_toolbar()
+        
 
 
-    def create_layout(self):
+    def create_layout(self, disp='photo_view'):
+        if self.start == True:
+            self.hboxLayout = QHBoxLayout()
+            self.widget.setLayout(self.hboxLayout)
+            self.setCentralWidget(self.widget)
+            self.start = False
+        
+        self.on_display = disp
+        
         self.vboxLayout3 = QVBoxLayout()
         self.vboxLayout3.addWidget(self.widget.mv_panel)
         self.vboxLayout3.addWidget(self.widget.btn_kf)
         
         self.vboxLayout2 = QVBoxLayout()
         self.vboxLayout2.addWidget(self.widget.scroll_area, 1)
-        self.vboxLayout2.addWidget(self.widget.viewer , 5)
+        self.vboxLayout2.addWidget(self.widget.viewer,5)
         
-        vert1 = QVBoxLayout()
-        vert1.addWidget(self.widget.viewer.obj.wdg_tree)
-        vert1.addWidget(self.widget.viewer.obj.cam_btn)
         
-        self.hboxLayout = QHBoxLayout()
+        self.gl_layout = QVBoxLayout()
+        self.gl_layout.addWidget(self.widget.gl_viewer, 5)
+        self.gl_layout.addWidget(self.widget.sliderX , 1)
+        self.gl_layout.addWidget(self.widget.sliderY , 1)
+        self.gl_layout.addWidget(self.widget.sliderZ , 1)
+
+        
+        self.vert1 = QVBoxLayout()
+        self.vert1.addWidget(self.widget.viewer.obj.wdg_tree)
+        self.vert1.addWidget(self.widget.viewer.obj.cam_btn)
+        self.btn_toggle = QPushButton("Toggle")
+        self.btn_toggle.clicked.connect(self.change_view)
+        self.vert1.addWidget(self.btn_toggle)
+
+        
         self.hboxLayout.addLayout(self.vboxLayout3, 1 )
-        self.hboxLayout.addLayout(self.vboxLayout2, 4)
-        self.hboxLayout.addLayout(vert1, 2)
         
-        self.widget.setLayout(self.hboxLayout)
-        self.setCentralWidget(self.widget)
+        if disp == 'photo_view':
+            self.hboxLayout.addLayout(self.vboxLayout2, 4)
+        elif disp == 'gl_view':
+            self.hboxLayout.addLayout(self.gl_layout, 4)
+            
+        self.hboxLayout.addLayout(self.vert1, 2)
+        
+        
+        timer = QTimer(self)
+        timer.setInterval(20)   # period, in milliseconds
+        timer.timeout.connect(self.widget.gl_viewer.updateGL)
+        timer.start()
+        
+        
+        
+    def change_view(self):
+        if self.on_display == 'photo_view':
+            self.hboxLayout = empty_gui(self.hboxLayout)
+            self.create_layout('gl_view')
+            self.on_display = 'gl_view'
+            
+        elif self.on_display == 'gl_view':
+            self.hboxLayout = empty_gui(self.hboxLayout)
+            self.create_layout('photo_view')
+            self.on_display = 'photo_view'
+
         
         
     def create_toolbar(self):
@@ -141,10 +187,12 @@ class Window(QMainWindow):
         
     def new_project(self):
         self.ask_save_dialogue()
-
         self.widget = Widget()
+        self.start = True
+        # self.hboxLayout = QHBoxLayout()
+        # self.widget.setLayout(self.hboxLayout)
         # self.widget.viewer.obj = Tools(self.widget)
-        self.setCentralWidget(self.widget)
+        self.setCentralWidget(QWidget())
         self.project_name_label.setText("untitled.json")
         
     def exit_project(self):
@@ -159,6 +207,13 @@ class Window(QMainWindow):
             filter = file_types
         )
         if response[0] != '':
+            # self.widget = Widget()
+            # # self.widget.viewer.obj = Tools(self.widget)
+            # self.setCentralWidget(self.widget)
+            self.widget = Widget()
+            self.gl_viewer = GL_Widget()
+            self.start = True
+            
             self.save_response = response
             project_path = response[0]
             

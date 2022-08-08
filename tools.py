@@ -6,11 +6,12 @@ from util.util import feature_absent_dialogue, numFeature_dialogue, write_pointc
 from util.sfm import *
 from util.optimize_K import find_optimized_K
 from util.bundle_adjustment import bundle_adjustment
+# from GL_widget_viewer import display_3d
 import numpy as np
 from object_panel import ObjectPanel
 import cv2, copy
 from scipy import optimize
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 class Tools(QObject):
     def __init__(self, ctrl_wdg):
@@ -103,8 +104,6 @@ class Tools(QObject):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         all_pts, img_indices, visible_labels = self.get_correspondent_pts(v)
 
-        # save_feature_locs(all_pts, visible_labels)
-
         K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
         # K = estimateKMatrix(v.width, v.height, 35)
         # K = find_optimized_K(all_pts, K, '1')
@@ -120,13 +119,14 @@ class Tools(QObject):
                 # print(cm)
                 camera_poses.append([cm[0,0], cm[0,1], cm[0,2]])
             
-            
             camera_poses = np.asarray(camera_poses)
             print(camera_poses)
             # print(camera_poses.shape)
             ply_pts = np.concatenate((opt_points, camera_poses), axis=0)
             
             write_pointcloud('after_BA.ply', ply_pts) 
+            
+
 
         
 
@@ -246,10 +246,6 @@ class Tools(QObject):
                 self.associated_videos[self.selected_feature_index].append(m_idx)
                 self.locs[self.selected_feature_index].append([fc.x_loc, fc.y_loc])
 
-                            
-            # Add feature on the scene
-            
-
             self.ctrl_wdg.viewer._scene.addItem(fc)
             self.ctrl_wdg.viewer._scene.addItem(fc.label)
             
@@ -283,6 +279,7 @@ class Tools(QObject):
             
             
     def hide_features(self, current=True):
+        # print("Index : "+str(self.ctrl_wdg.mv_panel.selected_movie_idx))
         t = self.ctrl_wdg.selected_thumbnail_index            
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         

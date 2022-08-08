@@ -74,5 +74,6 @@ class MoviePanel(QTreeWidget):
         self.ctrl_wdg.populate_scrollbar()
         
         self.ctrl_wdg.viewer.setPhoto()
+        # self.ctrl_wdg.viewer.obj.display_data()
         
     
