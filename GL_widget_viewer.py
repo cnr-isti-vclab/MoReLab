@@ -21,7 +21,7 @@ class GL_Widget(QGLWidget):
         self.setPhoto()
         self.obj = Tools(parent)
         self.feature_icon = "icons/small_crosshair.png"
-        self.feature_texture(self.feature_icon)
+        self.get_feature_texture(self.feature_icon)
         self._zoom = 0
         
         timer = QTimer(self)
@@ -93,7 +93,7 @@ class GL_Widget(QGLWidget):
             image.close()
             self.texture_id = textureID
             
-    def feature_texture(self, filename):
+    def get_feature_texture(self, filename):
         image = Image.open(filename)
         self.feature_width = image.size[0]
         self.feature_height = image.size[1]
