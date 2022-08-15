@@ -73,7 +73,7 @@ class MoviePanel(QTreeWidget):
         self.items[self.selected_movie_idx].setSelected(True)
         self.ctrl_wdg.populate_scrollbar()
         
-        self.ctrl_wdg.viewer.setPhoto()
+        self.ctrl_wdg.gl_viewer.setPhoto()
         # self.ctrl_wdg.viewer.obj.display_data()
         
     

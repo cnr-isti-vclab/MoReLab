@@ -125,6 +125,12 @@ class Tools(QObject):
             ply_pts = np.concatenate((opt_points, camera_poses), axis=0)
             
             write_pointcloud('after_BA.ply', ply_pts) 
+
+            # high = np.max(opt_points)
+            # low = np.min(opt_points)
+            # normalized = (opt_points-low)/(high - low)
+            # self.ctrl_wdg.viewer.setPhoto()
+            # self.ctrl_wdg.viewer.gl_viewer.display(normalized)
             
 
 

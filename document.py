@@ -159,6 +159,7 @@ class Document():
 
         
         if self.ctrl_wdg.selected_thumbnail_index != -1:
+            print("Thumnail should be displayed .. ")
             self.ctrl_wdg.displayThumbnail(self.ctrl_wdg.selected_thumbnail_index)
 
         self.ctrl_wdg.viewer.obj.selected_feature_index = data["selected_feature"]            

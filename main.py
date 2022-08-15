@@ -28,7 +28,7 @@ class Window(QMainWindow):
         
 
 
-    def create_layout(self, disp='photo_view'):
+    def create_layout(self, disp='gl_view'):
         if self.start == True:
             self.hboxLayout = QHBoxLayout()
             self.widget.setLayout(self.hboxLayout)
@@ -43,51 +43,22 @@ class Window(QMainWindow):
         
         self.vboxLayout2 = QVBoxLayout()
         self.vboxLayout2.addWidget(self.widget.scroll_area, 1)
-        self.vboxLayout2.addWidget(self.widget.viewer,5)
+        if disp == 'photo_view':
+            self.vboxLayout2.addWidget(self.widget, 5)
+        elif disp == 'gl_view':
+            self.vboxLayout2.addWidget(self.widget.gl_viewer, 5)
         
-        
-        self.gl_layout = QVBoxLayout()
-        self.gl_layout.addWidget(self.widget.gl_viewer, 5)
-        self.gl_layout.addWidget(self.widget.sliderX , 1)
-        self.gl_layout.addWidget(self.widget.sliderY , 1)
-        self.gl_layout.addWidget(self.widget.sliderZ , 1)
-
         
         self.vert1 = QVBoxLayout()
         self.vert1.addWidget(self.widget.viewer.obj.wdg_tree)
         self.vert1.addWidget(self.widget.viewer.obj.cam_btn)
-        self.btn_toggle = QPushButton("Toggle")
-        self.btn_toggle.clicked.connect(self.change_view)
-        self.vert1.addWidget(self.btn_toggle)
 
-        
         self.hboxLayout.addLayout(self.vboxLayout3, 1 )
-        
-        if disp == 'photo_view':
-            self.hboxLayout.addLayout(self.vboxLayout2, 4)
-        elif disp == 'gl_view':
-            self.hboxLayout.addLayout(self.gl_layout, 4)
-            
+        self.hboxLayout.addLayout(self.vboxLayout2, 4)
         self.hboxLayout.addLayout(self.vert1, 2)
         
         
-        timer = QTimer(self)
-        timer.setInterval(20)   # period, in milliseconds
-        timer.timeout.connect(self.widget.gl_viewer.updateGL)
-        timer.start()
-        
-        
-        
-    def change_view(self):
-        if self.on_display == 'photo_view':
-            self.hboxLayout = empty_gui(self.hboxLayout)
-            self.create_layout('gl_view')
-            self.on_display = 'gl_view'
-            
-        elif self.on_display == 'gl_view':
-            self.hboxLayout = empty_gui(self.hboxLayout)
-            self.create_layout('photo_view')
-            self.on_display = 'photo_view'
+
 
         
         

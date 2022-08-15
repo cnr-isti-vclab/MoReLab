@@ -21,6 +21,7 @@ class Widget(QWidget):
             
         self.selected_thumbnail_index = -1
         self.viewer = PhotoViewer(self)
+        self.gl_viewer = GL_Widget()
         
         self.doc = Document(self)
         self.mv_panel = MoviePanel(self)
@@ -41,20 +42,7 @@ class Widget(QWidget):
         self.btn_kf = QPushButton("Extract Key-frames")
         self.btn_kf.clicked.connect(self.extract)
         
-        
-        self.gl_viewer = GL_Widget()
-        self.sliderX = QSlider(Qt.Horizontal)
-        self.sliderX.valueChanged.connect(lambda val: self.gl_viewer.setRotX(val))
-
-        self.sliderY = QSlider(Qt.Horizontal)
-        self.sliderY.valueChanged.connect(lambda val: self.gl_viewer.setRotY(val))
-
-        self.sliderZ = QSlider(Qt.Horizontal)
-        self.sliderZ.valueChanged.connect(lambda val: self.gl_viewer.setRotZ(val))
-
-        
-
-            
+       
     def find_kfs(self):
         if self.kf_method == "Regular":
             kfs = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_regular
@@ -90,10 +78,10 @@ class Widget(QWidget):
             thumbnail.addWidget(text_label)
             self.grid_layout.addLayout(thumbnail)
             row_in_grid_layout += 1
+            
         widget.setLayout(self.grid_layout)
         self.scroll_area.setWidget(widget)
         self.viewer.obj.wdg_tree.clear()
-        self.viewer.setPhoto()
             
             
     def on_thumbnail_click(self, event, index):
@@ -121,11 +109,11 @@ class Widget(QWidget):
             img_file = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_network[self.selected_thumbnail_index]
         
         # print(img_file.shape)
-        p = self.viewer.convert_cv_qt(img_file, img_file.shape[1] , img_file.shape[0] )
-        self.viewer.setPhoto(p)
-        self.viewer.obj.display_data()
-        if not self.viewer.importing:
-            self.viewer.fitInView()
+        self.gl_viewer.setPhoto(img_file)
+
+        # self.viewer.obj.display_data()
+        # if not self.viewer.importing:
+        #     self.viewer.fitInView()
 
         
 
