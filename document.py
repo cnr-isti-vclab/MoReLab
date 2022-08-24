@@ -69,21 +69,21 @@ class Document():
         # print(mv_paths)
         self.ctrl_wdg.kf_method = data["selected_kf_method"]
         self.ctrl_wdg.selected_thumbnail_index = data["displayIndex"]
-        self.ctrl_wdg.viewer.obj.cross_hair = data["cross_hair"]
+        self.ctrl_wdg.gl_viewer.obj.cross_hair = data["cross_hair"]
         
-        self.ctrl_wdg.viewer.importing = True
+        self.ctrl_wdg.gl_viewer.importing = True
         for j,f in enumerate(data["frames"]):
-            self.ctrl_wdg.viewer.obj.labels.append(int(data["labels"][j]))
+            self.ctrl_wdg.gl_viewer.obj.labels.append(int(data["labels"][j]))
             # print(f)
             # print(f[0])
-            self.ctrl_wdg.viewer.obj.associated_frames.append([int(x) for x in f])
-            self.ctrl_wdg.viewer.obj.associated_videos.append([int(x) for x in data["videos"][j]])
+            self.ctrl_wdg.gl_viewer.obj.associated_frames.append([int(x) for x in f])
+            self.ctrl_wdg.gl_viewer.obj.associated_videos.append([int(x) for x in data["videos"][j]])
             
             ab = []
             for k,e in enumerate(data["locations"][j]):
                 a = [int(x) for x in e]
                 ab.append(a)
-            self.ctrl_wdg.viewer.obj.locs.append(ab)
+            self.ctrl_wdg.gl_viewer.obj.locs.append(ab)
         
         feature_data_list = data["feature_dict"]
 
@@ -124,16 +124,15 @@ class Document():
                     bool_list = v.hide_regular[j]
                     for k in range(val):
                         if bool_list[k]:
-                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, 0, 0, k+1, self.ctrl_wdg.viewer.obj)
+                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, 0, 0, k+1, self.ctrl_wdg.gl_viewer.obj)
                             v.features_regular[j].append(fc)
 
                         else:
-                            loccc = self.ctrl_wdg.viewer.obj.locs[k][self.ctrl_wdg.viewer.obj.find_idx(k, j)]
+                            loccc = self.ctrl_wdg.gl_viewer.obj.locs[k][self.ctrl_wdg.gl_viewer.obj.find_idx(k, j)]
                             
-                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, loccc[0]+10, loccc[1]+10, k+1, self.ctrl_wdg.viewer.obj)
+                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, loccc[0]+10, loccc[1]+10, k+1, self.ctrl_wdg.gl_viewer.obj)
                             v.features_regular[j].append(fc)
-                            self.ctrl_wdg.viewer._scene.addItem(fc)
-                            self.ctrl_wdg.viewer._scene.addItem(fc.label)
+
 
             for j, val in enumerate(v.n_objects_kf_network):
                 v.features_network.append([])
@@ -141,14 +140,12 @@ class Document():
                     bool_list = v.hide_network[j]
                     for k in range(val):
                         if bool_list[k]:
-                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, 0, 0, k+1, self.ctrl_wdg.viewer.obj)
+                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, 0, 0, k+1, self.ctrl_wdg.gl_viewer.obj)
                             v.features_network[j].append(fc)
                         else:
-                            loccc = self.ctrl_wdg.viewer.obj.locs[k][self.ctrl_wdg.viewer.obj.find_idx(k, j)]
-                            fc = FeatureCrosshair(self.ctrl_wdg.viewer.obj.feature_pixmap, loccc[0]+10, loccc[1]+10, k+1, self.ctrl_wdg.viewer.obj)
+                            loccc = self.ctrl_wdg.gl_viewer.obj.locs[k][self.ctrl_wdg.gl_viewer.obj.find_idx(k, j)]
+                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, loccc[0]+10, loccc[1]+10, k+1, self.ctrl_wdg.gl_viewer.obj)
                             v.features_network[j].append(fc)
-                            self.ctrl_wdg.viewer._scene.addItem(fc)
-                            self.ctrl_wdg.viewer._scene.addItem(fc.label)
                                 
         
         self.ctrl_wdg.mv_panel.selected_movie_path = adjust_op([data["selected_movie"]], op)[0]
@@ -162,12 +159,11 @@ class Document():
             print("Thumnail should be displayed .. ")
             self.ctrl_wdg.displayThumbnail(self.ctrl_wdg.selected_thumbnail_index)
 
-        self.ctrl_wdg.viewer.obj.selected_feature_index = data["selected_feature"]            
-        self.ctrl_wdg.viewer.importing = False
-        if self.ctrl_wdg.viewer.obj.cross_hair:
-            self.ctrl_wdg.viewer.obj.feature_tool()
+        self.ctrl_wdg.gl_viewer.obj.selected_feature_index = data["selected_feature"]            
+        if self.ctrl_wdg.gl_viewer.obj.cross_hair:
+            self.ctrl_wdg.gl_viewer.obj.feature_tool()
         else:
-            self.ctrl_wdg.viewer.obj.move_tool()
+            self.ctrl_wdg.gl_viewer.obj.move_tool()
 
 
 

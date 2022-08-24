@@ -8,14 +8,14 @@ class FeatureCrosshair(QGraphicsPixmapItem):
     def __init__(self, p, x, y, num_str, parent):
         super().__init__(p)
         self.l = 20
-        self.setPos(x-int(self.l/2), y-int(self.l/2))
+        self.setPos(x, y)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setVisible(True)
-        self.x_loc = x-int(self.l/2)
-        self.y_loc = y-int(self.l/2)
+        self.x_loc = x
+        self.y_loc = y
         self.parent = parent
-        self.label = Label(x-int(self.l/2), y-int((3*self.l)/2), num_str, parent, self)
+        self.label = Label(x, y-self.l, num_str, parent, self)
         
      
     def mousePressEvent(self, event):

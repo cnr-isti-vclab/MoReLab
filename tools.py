@@ -30,6 +30,7 @@ class Tools(QObject):
         self.add_tool_icons()
         self.cam_btn = QPushButton("Camera Calibration")
         self.cam_btn.clicked.connect(self.calibrate)
+        print("Being initialized")
         self.cross_hair = False
         
         self.labels = []
@@ -199,27 +200,25 @@ class Tools(QObject):
         self.hide_features(True)
         # self.hide_features(False)
         self.display_data()
-        self.ctrl_wdg.viewer.setScrolDragMode()
-        self.ctrl_wdg.viewer.setCursor(QCursor(Qt.ArrowCursor))
+        # self.ctrl_wdg.viewer.setScrolDragMode()
+        self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
         
     def feature_tool(self):
         # print('feature')
         self.mv_tool.setStyleSheet(self.tool_btn_style)
         self.ft_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
-        self.ctrl_wdg.viewer.setCursor(QCursor(Qt.CrossCursor))
-        self.ctrl_wdg.viewer.setNoDragMode()
+        self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
+        # self.ctrl_wdg.gl_viewer.setNoDragMode()
         self.cross_hair = True
         self.hide_features(True)
         self.display_data()
 
     
     def add_feature(self, x, y):
-        # print(self.selected_feature_index)
         if self.cross_hair:
             t = self.ctrl_wdg.selected_thumbnail_index
             v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
             m_idx = self.ctrl_wdg.mv_panel.selected_movie_idx
-            
             if self.ctrl_wdg.kf_method == "Regular":
                 v.n_objects_kf_regular[t] += 1
                 label = v.n_objects_kf_regular[t]
@@ -252,8 +251,8 @@ class Tools(QObject):
                 self.associated_videos[self.selected_feature_index].append(m_idx)
                 self.locs[self.selected_feature_index].append([fc.x_loc, fc.y_loc])
 
-            self.ctrl_wdg.viewer._scene.addItem(fc)
-            self.ctrl_wdg.viewer._scene.addItem(fc.label)
+            # self.ctrl_wdg.viewer._scene.addItem(fc)
+            # self.ctrl_wdg.viewer._scene.addItem(fc.label)
             
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t].append(fc)
@@ -286,7 +285,7 @@ class Tools(QObject):
             
     def hide_features(self, current=True):
         # print("Index : "+str(self.ctrl_wdg.mv_panel.selected_movie_idx))
-        t = self.ctrl_wdg.selected_thumbnail_index            
+        t = self.ctrl_wdg.selected_thumbnail_index
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         
         for v1 in self.ctrl_wdg.mv_panel.movie_caps:
@@ -385,6 +384,35 @@ class Tools(QObject):
                 self.display_data()
             else:
                 feature_absent_dialogue()
+                
+                
+    def move_feature(self, updated_cursor_x, updated_cursor_y, fc):
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        f = self.selected_feature_index
+        t = self.ctrl_wdg.selected_thumbnail_index
+
+        if self.cross_hair:
+            move = False
+    
+            if self.ctrl_wdg.kf_method == "Regular":
+                if not v.hide_regular[t][f] and f == (int(fc.label.label) - 1):
+                    move = True
+                
+            elif self.ctrl_wdg.kf_method == "Network":
+                if not v.hide_network[t][f] and f == (int(fc.label.label) - 1):
+                    move = True
+                                    
+            if move:                
+                fc.x_loc = int(updated_cursor_x)
+                fc.y_loc = int(updated_cursor_y)
+                
+                self.selected_feature_index = int(fc.label.label) - 1
+                
+                pic_idx = self.find_idx(f,t)
+                self.locs[f][pic_idx][0] = fc.x_loc
+                self.locs[f][pic_idx][1] = fc.y_loc
+                
+                self.display_data()
 
 
  

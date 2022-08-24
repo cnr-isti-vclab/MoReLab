@@ -19,7 +19,6 @@ class Window(QMainWindow):
         self.showMaximized()
         self.widget = Widget()
         self.start = True
-        
         self.save_response = ''
         
         self.create_menu()
@@ -28,30 +27,29 @@ class Window(QMainWindow):
         
 
 
-    def create_layout(self, disp='gl_view'):
+    def create_layout(self):
         if self.start == True:
             self.hboxLayout = QHBoxLayout()
             self.widget.setLayout(self.hboxLayout)
             self.setCentralWidget(self.widget)
             self.start = False
-        
-        self.on_display = disp
-        
+                
         self.vboxLayout3 = QVBoxLayout()
         self.vboxLayout3.addWidget(self.widget.mv_panel)
         self.vboxLayout3.addWidget(self.widget.btn_kf)
         
         self.vboxLayout2 = QVBoxLayout()
         self.vboxLayout2.addWidget(self.widget.scroll_area, 1)
-        if disp == 'photo_view':
-            self.vboxLayout2.addWidget(self.widget, 5)
-        elif disp == 'gl_view':
-            self.vboxLayout2.addWidget(self.widget.gl_viewer, 5)
+        self.vboxLayout2.addWidget(self.widget.gl_viewer, 5)
         
         
         self.vert1 = QVBoxLayout()
-        self.vert1.addWidget(self.widget.viewer.obj.wdg_tree)
-        self.vert1.addWidget(self.widget.viewer.obj.cam_btn)
+        self.vert1.addWidget(self.widget.gl_viewer.obj.wdg_tree)
+        self.vert1.addWidget(self.widget.radiobutton)
+        self.vert1.addWidget(self.widget.sliderX)
+        self.vert1.addWidget(self.widget.sliderY)
+        self.vert1.addWidget(self.widget.sliderZ)
+        self.vert1.addWidget(self.widget.gl_viewer.obj.cam_btn)
 
         self.hboxLayout.addLayout(self.vboxLayout3, 1 )
         self.hboxLayout.addLayout(self.vboxLayout2, 4)
@@ -68,23 +66,23 @@ class Window(QMainWindow):
 
         # self.om_tool = self.newButton("open_movie.png",     "Open Movie",  flatbuttonstyle1, self.open_movie)
         
-        self.widget.viewer.obj.np_tool.clicked.connect(self.new_project)
-        self.widget.viewer.obj.op_tool.clicked.connect(self.open_project)
-        self.widget.viewer.obj.om_tool.clicked.connect(self.open_movie)
-        self.widget.viewer.obj.sp_tool.clicked.connect(self.save_project)
-        self.widget.viewer.obj.sp_as_tool.clicked.connect(self.save_as_project)
-        # self.widget.viewer.obj.ep_tool.clicked.connect(self.exit_project)
+        self.widget.gl_viewer.obj.np_tool.clicked.connect(self.new_project)
+        self.widget.gl_viewer.obj.op_tool.clicked.connect(self.open_project)
+        self.widget.gl_viewer.obj.om_tool.clicked.connect(self.open_movie)
+        self.widget.gl_viewer.obj.sp_tool.clicked.connect(self.save_project)
+        self.widget.gl_viewer.obj.sp_as_tool.clicked.connect(self.save_as_project)
+        # self.widget.gl_viewer.obj.ep_tool.clicked.connect(self.exit_project)
         
 
-        toolbar.addWidget(self.widget.viewer.obj.np_tool)
-        toolbar.addWidget(self.widget.viewer.obj.op_tool)
-        toolbar.addWidget(self.widget.viewer.obj.om_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.np_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.op_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.om_tool)
         # toolbar.addWidget(self.widget.viewer.obj.om_tool)
-        toolbar.addWidget(self.widget.viewer.obj.sp_tool)
-        toolbar.addWidget(self.widget.viewer.obj.sp_as_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.sp_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.sp_as_tool)
         # toolbar.addWidget(self.widget.viewer.obj.ep_tool)
-        toolbar.addWidget(self.widget.viewer.obj.mv_tool)
-        toolbar.addWidget(self.widget.viewer.obj.ft_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.mv_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.ft_tool)
         
         self.addToolBarBreak(Qt.TopToolBarArea) 
 
@@ -148,7 +146,6 @@ class Window(QMainWindow):
         msgBox.setText("Do you want to save your current project ?")
         msgBox.setWindowTitle("Save project")
         msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        # msgBox.buttonClicked.connect(msgButtonClick)
          
         returnValue = msgBox.exec()
         if returnValue == QMessageBox.Yes:
