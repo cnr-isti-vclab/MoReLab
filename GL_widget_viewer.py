@@ -16,21 +16,18 @@ from PIL import Image
 class GL_Widget(QOpenGLWidget):
     def __init__(self, parent=None):
         QOpenGLWidget.__init__(self, parent)
-        QGLWidget.__init__(self, parent)
-        self.setPhoto()
-        self.obj = Tools(parent)
-        self.feature_icon = "icons/small_crosshair.png"
-        self.get_feature_texture(self.feature_icon)
-        self._zoom = 0
-        timer = QTimer(self)
-        timer.setInterval(10)   # period, in milliseconds
-        timer.timeout.connect(self.update)
-        timer.start()
+
         self.setPhoto()
         self.setFocusPolicy(Qt.StrongFocus)
         self.obj = Tools(parent)
         self.feature_locs = []
         self._zoom = 0
+
+        
+        timer = QTimer(self)
+        timer.setInterval(10)   # period, in milliseconds
+        timer.timeout.connect(self.update)
+        timer.start()
 
         
     def initializeGL(self):
@@ -172,26 +169,6 @@ class GL_Widget(QOpenGLWidget):
             
             image.close()
             self.texture_id = textureID
-            
-
-    def get_feature_texture(self, filename):
-        image = Image.open(filename)
-        self.feature_width = image.size[0]
-        self.feature_height = image.size[1]
-        imageData = np.array(list(image.getdata()), np.uint8)
-        f_textureID = glGenTextures(1)
-        # glPixelStorei(GL_UNPACK_ALIGNMENT, 4)
-        glBindTexture(GL_TEXTURE_2D, f_textureID)
-        glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-        glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-        glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-        glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.feature_width, self.feature_height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData)
-        
-        image.close()
-        self.feature_texture = f_textureID
         
         
         
