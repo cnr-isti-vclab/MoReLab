@@ -13,7 +13,7 @@ class Label(QGraphicsTextItem):
         
         
     def create_label(self, x, y):
-        self.setPos(x, y)
+        # self.setPos(x, y)
         self.setFlag(QGraphicsItem.ItemIsMovable)            
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         # self.setFlag(QGraphicsItem.ItemIsFocusable)

@@ -20,8 +20,8 @@ class Widget(QWidget):
         super().__init__()
             
         self.selected_thumbnail_index = -1
-        self.viewer = PhotoViewer(self)
-        self.gl_viewer = GL_Widget()
+        # self.viewer = PhotoViewer(self)
+        self.gl_viewer = GL_Widget(self)
         
         self.doc = Document(self)
         self.mv_panel = MoviePanel(self)
@@ -42,6 +42,20 @@ class Widget(QWidget):
         self.btn_kf = QPushButton("Extract Key-frames")
         self.btn_kf.clicked.connect(self.extract)
         
+        self.radiobutton = QRadioButton("Display 3D model")
+        self.radiobutton.setChecked(True)
+        # self.radiobutton.toggled.connect(self.onClicked)
+        
+        self.sliderX = QSlider(Qt.Horizontal)
+        self.sliderX.valueChanged.connect(lambda val: self.gl_viewer.setRotX(val))
+
+        self.sliderY = QSlider(Qt.Horizontal)
+        self.sliderY.valueChanged.connect(lambda val: self.gl_viewer.setRotY(val))
+
+        self.sliderZ = QSlider(Qt.Horizontal)
+        self.sliderZ.valueChanged.connect(lambda val: self.gl_viewer.setRotZ(val))
+        
+
        
     def find_kfs(self):
         if self.kf_method == "Regular":
@@ -50,7 +64,6 @@ class Widget(QWidget):
             kfs = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_network
         else:
             kfs = []
-            
         return kfs
             
             
@@ -67,7 +80,7 @@ class Widget(QWidget):
             text_label.setAlignment(Qt.AlignCenter)
             text_label.setFont(QFont("Sanserif", 10))
             text_label.setStyleSheet(self.thumbnail_text_stylesheet)
-            pixmap_scaled = self.viewer.convert_cv_qt(img, self.thumbnail_width, self.thumbnail_height)
+            pixmap_scaled = self.gl_viewer.convert_cv_qt(img, self.thumbnail_width, self.thumbnail_height)
             img_label.setPixmap(pixmap_scaled)
 
             img_label.mousePressEvent = lambda e, index=row_in_grid_layout, file_img=img: \
@@ -81,7 +94,7 @@ class Widget(QWidget):
             
         widget.setLayout(self.grid_layout)
         self.scroll_area.setWidget(widget)
-        self.viewer.obj.wdg_tree.clear()
+        self.gl_viewer.obj.wdg_tree.clear()
             
             
     def on_thumbnail_click(self, event, index):
@@ -90,7 +103,7 @@ class Widget(QWidget):
         
     def displayThumbnail(self, index):
         self.selected_thumbnail_index = index
-        self.viewer.obj.hide_features(True)
+        # self.viewer.obj.hide_features(True)
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)
@@ -111,7 +124,7 @@ class Widget(QWidget):
         # print(img_file.shape)
         self.gl_viewer.setPhoto(img_file)
 
-        # self.viewer.obj.display_data()
+        self.gl_viewer.obj.display_data()
         # if not self.viewer.importing:
         #     self.viewer.fitInView()
 
@@ -134,7 +147,6 @@ class Widget(QWidget):
             if len(kfs) >0:
                 b = show_dialogue()
             if b:
-                self.viewer.obj.hide_features(False)
                 v1 = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
                 
                 if self.kf_method == "Regular":
@@ -146,16 +158,16 @@ class Widget(QWidget):
                     v1.cleanSequence()
                 
                 self.populate_scrollbar()
-                self.viewer.obj.labels = []
-                self.viewer.obj.locs = []
-                self.viewer.obj.associated_frames = []
-                self.viewer.obj.associated_videos = []
+                self.gl_viewer.obj.labels = []
+                self.gl_viewer.obj.locs = []
+                self.gl_viewer.obj.associated_frames = []
+                self.gl_viewer.obj.associated_videos = []
                 
                 # self.associated_frames2 = [[]]
-                self.viewer.obj.selected_feature_index =-1
-                self.viewer.obj.count_ = 0
+                self.gl_viewer.obj.selected_feature_index =-1
+                self.gl_viewer.obj.count_ = 0
                 
-                self.viewer.obj.features_data = {}
+                self.gl_viewer.obj.features_data = {}
 
         else:
             self.kf_method = dlg.kf_met

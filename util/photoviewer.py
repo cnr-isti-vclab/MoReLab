@@ -1,3 +1,4 @@
+
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -17,6 +18,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self.importing = False
         self._scene = QtWidgets.QGraphicsScene(self)
         self._photo = QtWidgets.QGraphicsPixmapItem()
+        self.pixmap = QtGui.QPixmap()
         self._scene.addItem(self._photo)
         self.setScene(self._scene)
         self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
@@ -25,7 +27,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(200, 200, 200)))
         self.setFrameShape(QtWidgets.QFrame.NoFrame)
-        self.obj = Tools(parent)
+        # self.obj = Tools(parent)
 
  
 
@@ -50,13 +52,11 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                 self.scale(factor, factor)
             self._zoom = 0
 
-    def setPhoto(self, pixmap=None):
-        self._zoom = 0
-        if pixmap and not pixmap.isNull():
-            self._empty = False
-            if not self.obj.cross_hair:    
-                self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
-            self._photo.setPixmap(pixmap)
+    def setPhoto(self, img=None):
+        if img is not None:    
+            self.pixmap = self.convert_cv_qt(img, img.shape[1],img.shape[0])
+            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+            self._photo.setPixmap(self.pixmap)
         else:
             self._empty = True
             self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
@@ -75,10 +75,14 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                 self._zoom -= 1
             if self._zoom > 0:
                 self.scale(factor, factor)
-            elif self._zoom == 0:
-                self.fitInView()
-            else:
-                self._zoom = 0
+        self._zoom = 0
+        
+        if self.pixmap and not self.pixmap.isNull():
+            self._empty = False
+        elif self._zoom == 0:
+            self.fitInView()
+        else:
+            self._zoom = 0
 
         
                 
@@ -124,11 +128,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             
         super(PhotoViewer, self).mouseDoubleClickEvent(event)
         
-    def keyPressEvent(self, event):
-        # super(PhotoViewer, self).keyPressEvent(event)
-        # print(event.key())
-        if event.key() in (QtCore.Qt.Key_Delete, QtCore.Qt.Key_Backspace):
-            self.obj.delete_feature()
+
 
         
     # def mouseMoveEvent(self, event):

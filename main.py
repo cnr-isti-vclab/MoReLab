@@ -42,13 +42,12 @@ class Window(QMainWindow):
         self.vboxLayout2.addWidget(self.widget.scroll_area, 1)
         self.vboxLayout2.addWidget(self.widget.gl_viewer, 5)
         
-        
         self.vert1 = QVBoxLayout()
         self.vert1.addWidget(self.widget.gl_viewer.obj.wdg_tree)
-        self.vert1.addWidget(self.widget.radiobutton)
-        self.vert1.addWidget(self.widget.sliderX)
-        self.vert1.addWidget(self.widget.sliderY)
-        self.vert1.addWidget(self.widget.sliderZ)
+        # self.vert1.addWidget(self.widget.radiobutton)
+        # self.vert1.addWidget(self.widget.sliderX)
+        # self.vert1.addWidget(self.widget.sliderY)
+        # self.vert1.addWidget(self.widget.sliderZ)
         self.vert1.addWidget(self.widget.gl_viewer.obj.cam_btn)
 
         self.hboxLayout.addLayout(self.vboxLayout3, 1 )
@@ -157,9 +156,6 @@ class Window(QMainWindow):
         self.ask_save_dialogue()
         self.widget = Widget()
         self.start = True
-        # self.hboxLayout = QHBoxLayout()
-        # self.widget.setLayout(self.hboxLayout)
-        # self.widget.viewer.obj = Tools(self.widget)
         self.setCentralWidget(QWidget())
         self.project_name_label.setText("untitled.json")
         
@@ -175,9 +171,6 @@ class Window(QMainWindow):
             filter = file_types
         )
         if response[0] != '':
-            # self.widget = Widget()
-            # # self.widget.viewer.obj = Tools(self.widget)
-            # self.setCentralWidget(self.widget)
             self.widget = Widget()
             self.gl_viewer = GL_Widget()
             self.start = True
@@ -248,7 +241,7 @@ class Window(QMainWindow):
         
     def open_movie(self):
         # file_types = "Video files (*.asf *.mp4 *.mov)"
-        file_types = "Supported Video files (*.asf *.mp4 *.mov);; MP4 (*.mp4);; ASF (*.asf);; MOV(*.mov)"
+        file_types = "Supported Video files (*.asf *.mp4 *.mov *.MP4 *.MOV *.ASF);; MP4 (*.mp4);; ASF (*.asf);; MOV(*.mov)"
         response = QFileDialog.getOpenFileName(
            parent = self,
            caption = 'Select movie file.',
