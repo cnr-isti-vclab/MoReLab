@@ -29,7 +29,6 @@ class GL_Widget(QOpenGLWidget):
         
         self.obj = Tools(parent)
 
-        self.start = True
         self._zoom = 1
         self.offset_x = 0
         self.offset_y = 0
@@ -55,11 +54,7 @@ class GL_Widget(QOpenGLWidget):
         glMatrixMode(GL_MODELVIEW)
 
     def paintGL(self):
-        # glClearDepth(1.0)
-        # glClearColor(0.8, 0.8, 0.8, 1)
-        # glEnable(GL_DEPTH_TEST)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
-                GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT)
         
         glPushMatrix()
 
@@ -98,8 +93,7 @@ class GL_Widget(QOpenGLWidget):
                         if not v.hide_network[t][i]:
                             painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
                             painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(
-                                fc.x_loc - 5, fc.y_loc - 18, str(fc.label.label))
+                            painter.drawText(fc.x_loc - 5, fc.y_loc - 18, str(fc.label.label))
             painter.end()
         
         glPopMatrix()
@@ -120,7 +114,7 @@ class GL_Widget(QOpenGLWidget):
 
     def set_default_view_param(self):
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-
+        print(self.width(), self.height())
         if self.aspect_image > self.aspect_widget:
             self.w1 = 0
             self.w2 = self.width()

@@ -44,14 +44,14 @@ class Document():
             "selected_movie" : self.ctrl_wdg.mv_panel.selected_movie_path,
             "platform" : platform.system(),
             "selected_kf_method" : self.ctrl_wdg.kf_method,
-            "cross_hair" : self.ctrl_wdg.viewer.obj.cross_hair,
+            "cross_hair" : self.ctrl_wdg.gl_viewer.obj.cross_hair,
             "displayIndex": self.ctrl_wdg.selected_thumbnail_index,
             "labels" : labels,
             "frames" : frames,
             "videos" : videos,
             "locations" : loccs,
             "feature_dict" : data_movies,
-            "selected_feature" : self.ctrl_wdg.viewer.obj.selected_feature_index
+            "selected_feature" : self.ctrl_wdg.gl_viewer.obj.selected_feature_index
             }
         return data
 
@@ -71,7 +71,6 @@ class Document():
         self.ctrl_wdg.selected_thumbnail_index = data["displayIndex"]
         self.ctrl_wdg.gl_viewer.obj.cross_hair = data["cross_hair"]
         
-        self.ctrl_wdg.gl_viewer.importing = True
         for j,f in enumerate(data["frames"]):
             self.ctrl_wdg.gl_viewer.obj.labels.append(int(data["labels"][j]))
             # print(f)
@@ -152,18 +151,6 @@ class Document():
 
         self.ctrl_wdg.mv_panel.selected_movie_idx = self.ctrl_wdg.mv_panel.movie_paths.index(self.ctrl_wdg.mv_panel.selected_movie_path)
         self.ctrl_wdg.mv_panel.select_movie(self.ctrl_wdg.mv_panel.items[self.ctrl_wdg.mv_panel.selected_movie_idx])
-        
-
-        
-        if self.ctrl_wdg.selected_thumbnail_index != -1:
-            print("Thumnail should be displayed .. ")
-            self.ctrl_wdg.displayThumbnail(self.ctrl_wdg.selected_thumbnail_index)
-
-        self.ctrl_wdg.gl_viewer.obj.selected_feature_index = data["selected_feature"]            
-        if self.ctrl_wdg.gl_viewer.obj.cross_hair:
-            self.ctrl_wdg.gl_viewer.obj.feature_tool()
-        else:
-            self.ctrl_wdg.gl_viewer.obj.move_tool()
 
 
 

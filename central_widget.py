@@ -121,7 +121,7 @@ class Widget(QWidget):
         elif self.kf_method == "Network":
             img_file = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_network[self.selected_thumbnail_index]
         
-        # print(img_file.shape)
+        print(img_file.shape)
         self.gl_viewer.setPhoto(img_file)
 
         self.gl_viewer.obj.display_data()

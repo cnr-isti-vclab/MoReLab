@@ -18,7 +18,7 @@ class Window(QMainWindow):
         self.setWindowTitle('MoReLab')
         self.showMaximized()
         self.widget = Widget()
-        self.start = True
+        
         self.save_response = ''
         
         self.create_menu()
@@ -28,11 +28,9 @@ class Window(QMainWindow):
 
 
     def create_layout(self):
-        if self.start == True:
-            self.hboxLayout = QHBoxLayout()
-            self.widget.setLayout(self.hboxLayout)
-            self.setCentralWidget(self.widget)
-            self.start = False
+
+            
+
                 
         self.vboxLayout3 = QVBoxLayout()
         self.vboxLayout3.addWidget(self.widget.mv_panel)
@@ -50,11 +48,17 @@ class Window(QMainWindow):
         # self.vert1.addWidget(self.widget.sliderZ)
         self.vert1.addWidget(self.widget.gl_viewer.obj.cam_btn)
 
+
+        self.hboxLayout = QHBoxLayout()
+        
+        
+
         self.hboxLayout.addLayout(self.vboxLayout3, 1 )
         self.hboxLayout.addLayout(self.vboxLayout2, 4)
         self.hboxLayout.addLayout(self.vert1, 2)
         
-        
+        self.widget.setLayout(self.hboxLayout)
+        self.setCentralWidget(self.widget)
 
 
         
@@ -155,7 +159,6 @@ class Window(QMainWindow):
     def new_project(self):
         self.ask_save_dialogue()
         self.widget = Widget()
-        self.start = True
         self.setCentralWidget(QWidget())
         self.project_name_label.setText("untitled.json")
         
@@ -171,10 +174,6 @@ class Window(QMainWindow):
             filter = file_types
         )
         if response[0] != '':
-            self.widget = Widget()
-            self.gl_viewer = GL_Widget()
-            self.start = True
-            
             self.save_response = response
             project_path = response[0]
             
@@ -184,6 +183,16 @@ class Window(QMainWindow):
             
             self.widget.doc.load_data(project_path)
             self.create_layout() 
+            
+            if self.widget.selected_thumbnail_index != -1:
+                print("Thumbnail should be displayed .. ")
+                self.widget.displayThumbnail(self.widget.selected_thumbnail_index)
+
+            self.widget.gl_viewer.obj.selected_feature_index = data["selected_feature"]            
+            if self.widget.gl_viewer.obj.cross_hair:
+                self.widget.gl_viewer.obj.feature_tool()
+            else:
+                self.widget.gl_viewer.obj.move_tool()
             
             display_msg = "Opened "+split_path(project_path)
             self.statusBar.showMessage(display_msg, 2000)

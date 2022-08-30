@@ -30,7 +30,6 @@ class Tools(QObject):
         self.add_tool_icons()
         self.cam_btn = QPushButton("Camera Calibration")
         self.cam_btn.clicked.connect(self.calibrate)
-        print("Being initialized")
         self.cross_hair = False
         
         self.labels = []
