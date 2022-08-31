@@ -21,15 +21,7 @@ class ObjectPanel(QTreeWidget):
             locs = data["Locations"]
             self.items = []
             
-            # print(len(labels))
-            # print(labels)
-            # print(videos)
-            # print(feature_idx)
             selected_label = labels[feature_idx]
-            # print("Treeeeeeeeee")
-            # print(labels)
-            # print(self.label_index)
-            # print(feature_idx)
             count = 0
             for i,f in enumerate(frames):
                 if labels[i] != -1:

@@ -26,7 +26,7 @@ class GL_Widget(QOpenGLWidget):
 
         self.setPhoto()
         self.setFocusPolicy(Qt.StrongFocus)
-        
+        self.showMaximized()
         self.obj = Tools(parent)
 
         self._zoom = 1
@@ -35,9 +35,11 @@ class GL_Widget(QOpenGLWidget):
         self.press_loc = (self.width()/2, self.height()/2)
         self.release_loc = (self.width()/2, self.height()/2)
         self.mv_pix = 10
-
+        
+        
+        
         self.aspect_image = 0
-        self.aspect_widget = 0
+        self.aspect_widget = self.width()/self.height()
 
     def initializeGL(self):
         glClearDepth(1.0)
@@ -114,7 +116,7 @@ class GL_Widget(QOpenGLWidget):
 
     def set_default_view_param(self):
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        print(self.width(), self.height())
+        self.aspect_widget = self.width()/self.height()
         if self.aspect_image > self.aspect_widget:
             self.w1 = 0
             self.w2 = self.width()

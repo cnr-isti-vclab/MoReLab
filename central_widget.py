@@ -121,12 +121,8 @@ class Widget(QWidget):
         elif self.kf_method == "Network":
             img_file = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_network[self.selected_thumbnail_index]
         
-        print(img_file.shape)
         self.gl_viewer.setPhoto(img_file)
-
         self.gl_viewer.obj.display_data()
-        # if not self.viewer.importing:
-        #     self.viewer.fitInView()
 
         
 
@@ -148,7 +144,6 @@ class Widget(QWidget):
                 b = show_dialogue()
             if b:
                 v1 = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
-                
                 if self.kf_method == "Regular":
                     rate_str = dlg.e1.text()
                     sampling_rate = int(rate_str)
@@ -156,7 +151,7 @@ class Widget(QWidget):
 
                 elif self.kf_method == "Network":
                     v1.cleanSequence()
-                
+
                 self.populate_scrollbar()
                 self.gl_viewer.obj.labels = []
                 self.gl_viewer.obj.locs = []

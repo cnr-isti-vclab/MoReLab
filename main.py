@@ -3,7 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import sys, os, sip, json, glob, cv2
 from central_widget import Widget
-from util.util import movie_dialogue, split_path, empty_gui
+from util.util import movie_dialogue, split_path, empty_gui, adjust_op
 from GL_widget_viewer import GL_Widget
 
 from util.video import Video
@@ -28,10 +28,6 @@ class Window(QMainWindow):
 
 
     def create_layout(self):
-
-            
-
-                
         self.vboxLayout3 = QVBoxLayout()
         self.vboxLayout3.addWidget(self.widget.mv_panel)
         self.vboxLayout3.addWidget(self.widget.btn_kf)
@@ -48,10 +44,7 @@ class Window(QMainWindow):
         # self.vert1.addWidget(self.widget.sliderZ)
         self.vert1.addWidget(self.widget.gl_viewer.obj.cam_btn)
 
-
         self.hboxLayout = QHBoxLayout()
-        
-        
 
         self.hboxLayout.addLayout(self.vboxLayout3, 1 )
         self.hboxLayout.addLayout(self.vboxLayout2, 4)
@@ -182,13 +175,12 @@ class Window(QMainWindow):
             self.project_name_label.setText(disp_name_project)
             
             self.widget.doc.load_data(project_path)
-            self.create_layout() 
-            
+            self.create_layout()
+            v = self.widget.mv_panel.movie_caps[self.widget.mv_panel.selected_movie_idx]
             if self.widget.selected_thumbnail_index != -1:
-                print("Thumbnail should be displayed .. ")
+                self.widget.gl_viewer.setMinimumSize(1042, 728)
                 self.widget.displayThumbnail(self.widget.selected_thumbnail_index)
 
-            self.widget.gl_viewer.obj.selected_feature_index = data["selected_feature"]            
             if self.widget.gl_viewer.obj.cross_hair:
                 self.widget.gl_viewer.obj.feature_tool()
             else:
@@ -200,6 +192,7 @@ class Window(QMainWindow):
     
     def implement_save(self, p):
         name_project = os.path.relpath(p, os.getcwd())
+        print(name_project)
         
         disp_name_project = split_path(name_project)
         
@@ -210,7 +203,7 @@ class Window(QMainWindow):
         
         data = self.widget.doc.get_data()
         json_object = json.dumps(data, indent = 4)
-        with open(name_project, "w") as outfile:
+        with open(name_project+'.json', "w") as outfile:
             outfile.write(json_object)        
     
     
@@ -268,7 +261,7 @@ class Window(QMainWindow):
                 self.widget.mv_panel.add_movie(movie_path)
                 
                 if len(self.widget.mv_panel.movie_paths) == 1:
-                    self.create_layout()      
+                    self.create_layout()
 
         
     def create_statusbar(self):

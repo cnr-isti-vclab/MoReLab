@@ -29,13 +29,13 @@ class Document():
         frames = []
         videos = []
         loccs = []
-        for j,f in enumerate(self.ctrl_wdg.viewer.obj.associated_frames):
-            labels.append(str(self.ctrl_wdg.viewer.obj.labels[j]))
+        for j,f in enumerate(self.ctrl_wdg.gl_viewer.obj.associated_frames):
+            labels.append(str(self.ctrl_wdg.gl_viewer.obj.labels[j]))
             frames.append([str(x) for x in f])
-            videos.append([str(x) for x in self.ctrl_wdg.viewer.obj.associated_videos[j]])
+            videos.append([str(x) for x in self.ctrl_wdg.gl_viewer.obj.associated_videos[j]])
             ab = []
-            for k,e in enumerate(self.ctrl_wdg.viewer.obj.locs[j]):
-                a = [str(x) for x in e]
+            for k,e in enumerate(self.ctrl_wdg.gl_viewer.obj.locs[j]):
+                a = [str(int(x)) for x in e]
                 ab.append(a)
             loccs.append(ab)     
         
@@ -73,8 +73,6 @@ class Document():
         
         for j,f in enumerate(data["frames"]):
             self.ctrl_wdg.gl_viewer.obj.labels.append(int(data["labels"][j]))
-            # print(f)
-            # print(f[0])
             self.ctrl_wdg.gl_viewer.obj.associated_frames.append([int(x) for x in f])
             self.ctrl_wdg.gl_viewer.obj.associated_videos.append([int(x) for x in data["videos"][j]])
             
@@ -94,9 +92,11 @@ class Document():
         a = os.path.join(project_path.split('.')[0], 'extracted_frames')
         movie_dirs = os.listdir(a)
         count = 0
+        
         for i,p in enumerate(mv_paths):
             movie_name = split_path(p)
             self.ctrl_wdg.mv_panel.add_movie(p)
+
             self.ctrl_wdg.mv_panel.selected_movie_idx = i
             v = self.ctrl_wdg.mv_panel.movie_caps[i]
             video_data = feature_data_list[i]            
@@ -129,7 +129,7 @@ class Document():
                         else:
                             loccc = self.ctrl_wdg.gl_viewer.obj.locs[k][self.ctrl_wdg.gl_viewer.obj.find_idx(k, j)]
                             
-                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, loccc[0]+10, loccc[1]+10, k+1, self.ctrl_wdg.gl_viewer.obj)
+                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.gl_viewer.obj)
                             v.features_regular[j].append(fc)
 
 
@@ -143,14 +143,15 @@ class Document():
                             v.features_network[j].append(fc)
                         else:
                             loccc = self.ctrl_wdg.gl_viewer.obj.locs[k][self.ctrl_wdg.gl_viewer.obj.find_idx(k, j)]
-                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, loccc[0]+10, loccc[1]+10, k+1, self.ctrl_wdg.gl_viewer.obj)
+                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.gl_viewer.obj)
                             v.features_network[j].append(fc)
-                                
-        
+                            
+                            
         self.ctrl_wdg.mv_panel.selected_movie_path = adjust_op([data["selected_movie"]], op)[0]
-
         self.ctrl_wdg.mv_panel.selected_movie_idx = self.ctrl_wdg.mv_panel.movie_paths.index(self.ctrl_wdg.mv_panel.selected_movie_path)
-        self.ctrl_wdg.mv_panel.select_movie(self.ctrl_wdg.mv_panel.items[self.ctrl_wdg.mv_panel.selected_movie_idx])
+        self.ctrl_wdg.mv_panel.select_movie(self.ctrl_wdg.mv_panel.items[self.ctrl_wdg.mv_panel.selected_movie_idx])                                
+        self.ctrl_wdg.gl_viewer.obj.selected_feature_index = data["selected_feature"]  
+
 
 
 
