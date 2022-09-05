@@ -30,14 +30,13 @@ class GL_Widget(QOpenGLWidget):
         self.obj = Tools(parent)
 
         self._zoom = 1
+        self.painter = QPainter()
+        
         self.offset_x = 0
         self.offset_y = 0
         self.press_loc = (self.width()/2, self.height()/2)
         self.release_loc = (self.width()/2, self.height()/2)
-        self.mv_pix = 10
-        
-        
-        
+        self.mv_pix = 1
         self.aspect_image = 0
         self.aspect_widget = self.width()/self.height()
 
@@ -58,36 +57,32 @@ class GL_Widget(QOpenGLWidget):
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT)
         
-        glPushMatrix()
+        self.painter.begin(self)
+        self.painter.setPen(QPen(QColor(0, 0, 0)))
+        self.painter.setFont(self.painter.font())
 
         t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
         
-        
         if self.img_file is not None:
-            painter = QPainter()
-            painter.begin(self)
-    
-            painter.setPen(QPen(QColor(0, 0, 0)))
-            painter.setFont(painter.font())
-    
             if self._zoom >=1:
-                # Zoom the scene
-                painter.translate(self.width()/2, self.height()/2)
-                painter.scale(self._zoom, self._zoom)
-                painter.translate(-self.width()/2, -self.height()/2)
                 # Pan the scene
-                painter.translate(self.offset_x, self.offset_y)
+                self.painter.translate(self.offset_x, self.offset_y)
+                # Zoom the scene
+                self.painter.translate(self.width()/2, self.height()/2)
+                self.painter.scale(self._zoom, self._zoom)
+                self.painter.translate(-self.width()/2, -self.height()/2)
+                
     
-            painter.drawImage(self.w1, self.h1, self.img_file)
-            
+            self.painter.drawImage(self.w1, self.h1, self.img_file)
+
             if self.obj.ctrl_wdg.kf_method == "Regular":
                 if len(v.features_regular) > 0:
                     for i, fc in enumerate(v.features_regular[t]):
                         if not v.hide_regular[t][i]:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 5, fc.y_loc - 18, str(fc.label.label))
+                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
+                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 10, str(fc.label.label))
     
             elif self.obj.ctrl_wdg.kf_method == "Network":
                 if len(v.features_network) > 0:
@@ -95,10 +90,12 @@ class GL_Widget(QOpenGLWidget):
                         if not v.hide_network[t][i]:
                             painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
                             painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 5, fc.y_loc - 18, str(fc.label.label))
-            painter.end()
+                            painter.drawText(fc.x_loc - 4, fc.y_loc - 10, str(fc.label.label))
+
+
+        self.painter.end()
+            
         
-        glPopMatrix()
 
     def setPhoto(self, image=None):
         if image is None:
@@ -132,13 +129,14 @@ class GL_Widget(QOpenGLWidget):
 
 
     def mouseDoubleClickEvent(self, event):
-        # # a = self.mapToParent(event.pos())
         a = event.pos()
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
         if self.img_file is not None:
-            x = a.x() - self.offset_x  
-            y = a.y() - self.offset_y 
-            self.obj.add_feature(x, y)
+            if a.x() > 0 and a.y() > 0:
+                x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
+                y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
+                if x > self.w1 and y > self.h1 and x < self.w2 and y < self.h2:
+                    self.obj.add_feature(x, y)
 
         super(GL_Widget, self).mouseDoubleClickEvent(event)
 
@@ -177,7 +175,7 @@ class GL_Widget(QOpenGLWidget):
                 self._zoom += 0.1
             else:
                 self._zoom -= 0.1
-
+            # print(self.width()/2)
             if self._zoom < 1:
                 self._zoom = 1
                 self.offset_x = 0
@@ -196,8 +194,8 @@ class GL_Widget(QOpenGLWidget):
         a = event.pos()
         self.release_loc = (a.x(), a.y())
         if self._zoom >= 1:
-            self.offset_x += (self.release_loc[0] - self.press_loc[0])/2
-            self.offset_y += (self.release_loc[1] - self.press_loc[1])/2
+            self.offset_x += (self.release_loc[0] - self.press_loc[0])
+            self.offset_y += (self.release_loc[1] - self.press_loc[1])
                     
                     
                     

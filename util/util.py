@@ -94,6 +94,14 @@ def numFeature_dialogue():
     returnValue = msgBox.exec()
     
     
+def after_BA_dialogue(filename):
+    msgBox = QMessageBox()
+    msgBox.setText("3D structure has been computed and saved as "+str(filename))
+    msgBox.setWindowTitle("3D structure")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    returnValue = msgBox.exec()
+    
+    
 
 def split_path(complete_path):
     op_sys = platform.system()

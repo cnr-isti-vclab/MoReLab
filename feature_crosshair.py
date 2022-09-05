@@ -7,7 +7,7 @@ from label import Label
 class FeatureCrosshair(QGraphicsPixmapItem):
     def __init__(self, p, x, y, num_str, parent):
         super().__init__(p)
-        self.l = 20
+        self.l = 10
         self.setPos(x, y)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)

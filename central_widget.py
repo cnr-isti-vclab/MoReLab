@@ -40,6 +40,10 @@ class Widget(QWidget):
         
     def create_wdg1(self):
         self.btn_kf = QPushButton("Extract Key-frames")
+        self.btn_kf.setStyleSheet("""
+                                  QPushButton:hover   { background-color: rgb(145,224,255)}
+                                  QPushButton {background-color: rgb(230,230,230); border-radius: 20px; padding: 15px; border: 1px solid black; color:black; font-size: 15px;}
+                                  """)
         self.btn_kf.clicked.connect(self.extract)
         
         self.radiobutton = QRadioButton("Display 3D model")

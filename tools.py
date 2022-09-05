@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from feature_crosshair import FeatureCrosshair
-from util.util import feature_absent_dialogue, numFeature_dialogue, write_pointcloud, save_feature_locs
+from util.util import feature_absent_dialogue, numFeature_dialogue, write_pointcloud, save_feature_locs, after_BA_dialogue
 from util.sfm import *
 from util.optimize_K import find_optimized_K
 from util.bundle_adjustment import bundle_adjustment
@@ -25,10 +25,13 @@ class Tools(QObject):
         # print(self.ctrl_wdg.selected_movie_idx)
         self.wdg_tree = ObjectPanel(self)
         self.feature_pixmap = QPixmap("icons/small_crosshair.png")
-        # print(type(self.feature_pixmap.size()))
-        # print(self.feature_pixmap.size())
+        self.output_name = '3d_output.ply'
         self.add_tool_icons()
         self.cam_btn = QPushButton("Camera Calibration")
+        self.cam_btn.setStyleSheet("""
+                                  QPushButton:hover   { background-color: rgb(145,224,255)}
+                                  QPushButton {background-color: rgb(230,230,230); border-radius: 20px; padding: 15px; border: 1px solid black; color:black; font-size: 15px;}
+                                  """)
         self.cam_btn.clicked.connect(self.calibrate)
         self.cross_hair = False
         
@@ -124,8 +127,8 @@ class Tools(QObject):
             # print(camera_poses.shape)
             ply_pts = np.concatenate((opt_points, camera_poses), axis=0)
             
-            write_pointcloud('after_BA.ply', ply_pts) 
-
+            write_pointcloud(self.output_name, ply_pts) 
+            after_BA_dialogue(self.output_name)
             # high = np.max(opt_points)
             # low = np.min(opt_points)
             # normalized = (opt_points-low)/(high - low)
