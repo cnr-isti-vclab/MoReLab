@@ -19,10 +19,16 @@ class Video:
         self.n_objects_kf_regular = []
         self.features_regular = []
         self.hide_regular = []
+        self.init_zoom_regular = []
+        self.init_x_offset_regular = []
+        self.init_y_offset_regular = []
         
         self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
+        self.init_zoom_network = []
+        self.init_x_offset_network = []
+        self.init_y_offset_network = []
         
         self.summary = ""
 
@@ -42,6 +48,10 @@ class Video:
         self.n_objects_kf_regular = []
         self.features_regular = []
         self.hide_regular = []
+        self.init_zoom_regular = []
+        self.init_x_offset_regular = []
+        self.init_y_offset_regular = []
+        
         self.cap = cv2.VideoCapture(self.video_path)
         count = 0
         while self.cap.isOpened():
@@ -62,6 +72,9 @@ class Video:
             self.n_objects_kf_regular.append(0)
             self.features_regular.append([])
             self.hide_regular.append([])
+            self.init_zoom_regular.append([])
+            self.init_x_offset_regular.append([])
+            self.init_y_offset_regular.append([])
     
             
     def fromVideoFrameToNP(self, frame):
@@ -121,6 +134,9 @@ class Video:
         self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
+        self.init_zoom_network = []
+        self.init_x_offset_network = []
+        self.init_y_offset_network = []
         bLoad = True
         j = 0
         lst_m = []
@@ -191,6 +207,8 @@ class Video:
             self.n_objects_kf_network.append(0)
             self.features_network.append([])
             self.hide_network.append([])
-    
+            self.init_zoom_network.append([])
+            self.init_x_offset_network.append([])
+            self.init_y_offset_network.append([])
 
 

@@ -20,7 +20,8 @@ class Widget(QWidget):
         super().__init__()
             
         self.selected_thumbnail_index = -1
-        # self.viewer = PhotoViewer(self)
+        self.create_wdg1()
+        self.create_scroll_area()
         self.gl_viewer = GL_Widget(self)
         
         self.doc = Document(self)
@@ -32,9 +33,14 @@ class Widget(QWidget):
         self.thumbnail_height = 96
         self.thumbnail_width = 120
         self.kf_method = ""
+        self.last_x = 0
+        self.last_y = 0
+        self.last_z = 0
+        self.last_transx = 0
+        self.last_transy = 0
+        self.last_transz = 0
         
-        self.create_wdg1()
-        self.create_scroll_area()
+
 
         
         
@@ -46,9 +52,13 @@ class Widget(QWidget):
                                   """)
         self.btn_kf.clicked.connect(self.extract)
         
-        self.radiobutton = QRadioButton("Display 3D model")
+        self.radiobutton = QCheckBox("Display image and features")
         self.radiobutton.setChecked(True)
         # self.radiobutton.toggled.connect(self.onClicked)
+        
+        self.radiobutton2 = QCheckBox("Stop rotation")
+        self.radiobutton2.setChecked(False)
+        self.radiobutton2.stateChanged.connect(self.on_Clicked)
         
         self.sliderX = QSlider(Qt.Horizontal)
         self.sliderX.valueChanged.connect(lambda val: self.gl_viewer.setRotX(val))
@@ -59,7 +69,39 @@ class Widget(QWidget):
         self.sliderZ = QSlider(Qt.Horizontal)
         self.sliderZ.valueChanged.connect(lambda val: self.gl_viewer.setRotZ(val))
         
+        self.slider_transX = QSlider(Qt.Horizontal)
+        self.slider_transX.valueChanged.connect(lambda val: self.gl_viewer.setTransX(val))
 
+        self.slider_transY = QSlider(Qt.Horizontal)
+        self.slider_transY.valueChanged.connect(lambda val: self.gl_viewer.setTransY(val))
+
+        self.slider_transZ = QSlider(Qt.Horizontal)
+        self.slider_transZ.valueChanged.connect(lambda val: self.gl_viewer.setTransZ(val))
+        
+        
+    def on_Clicked(self):
+        if self.radiobutton2.isChecked():
+            self.last_x = self.gl_viewer.rotX
+            self.last_y = self.gl_viewer.rotY
+            self.last_z = self.gl_viewer.rotZ
+            self.last_transx = self.gl_viewer.transX
+            self.last_transy = self.gl_viewer.transY
+            self.last_transz = self.gl_viewer.transZ
+            self.gl_viewer.rotX = 0
+            self.gl_viewer.rotY = 0
+            self.gl_viewer.rotZ = 0
+            self.gl_viewer.transX = 0
+            self.gl_viewer.transY = 0
+            self.gl_viewer.transZ = 0
+        else:
+            self.gl_viewer.rotX = self.last_x
+            self.gl_viewer.rotY = self.last_y
+            self.gl_viewer.rotZ = self.last_z
+            self.gl_viewer.transX = self.last_transx
+            self.gl_viewer.transY = self.last_transy
+            self.gl_viewer.transZ = self.last_transz
+
+    
        
     def find_kfs(self):
         if self.kf_method == "Regular":
@@ -107,7 +149,6 @@ class Widget(QWidget):
         
     def displayThumbnail(self, index):
         self.selected_thumbnail_index = index
-        # self.viewer.obj.hide_features(True)
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)

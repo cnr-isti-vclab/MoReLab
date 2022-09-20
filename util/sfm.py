@@ -29,10 +29,9 @@ def getRotation(Q, type_ = 'q'):
         R = Rotation.from_rotvec(Q)
         return R.as_matrix()
 
-
-def skew(a):
-    """ Skew matrix A such that a x v = Av for any v. """
-    return array([[0,-a[2],a[1]],[a[2],0,-a[0]],[-a[1],a[0],0]])
+def getEuler(R2):
+    euler = Rotation.from_matrix(R2)
+    return euler.as_rotvec()
 
 
 def compute_P_from_essential(E):
@@ -134,32 +133,16 @@ def visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, labels, 
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-def visualize3d(pts3d, labels, all_camera_points):        
-    fig2 = plt.figure()
-    ax = fig2.add_subplot(111, projection='3d')
-    ax.scatter(pts3d[:, 0], pts3d[:, 1], pts3d[:, 2])
-    for count,camera_points in enumerate(all_camera_points):
-        x = camera_points[0]
-        y = camera_points[1]
-        z = camera_points[2]
-        ax.scatter(x,y,z, color='black', depthshade=False, s=6)
-        ax.text(x, y, z, str(count+1),fontsize=10, color='darkblue')
-    
-    ax.set_xlim([-3, 3])
-    ax.set_ylim([-3, 3])
-    ax.set_zlim([-2, 4])
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.set_aspect('auto','box')
-
-    plt.title('Projected 3d Points')
-    plt.show()
-
 def calc_camera_pos(rotation, translation):
     camera_points = np.dot(-np.transpose(rotation),translation)
     return camera_points.transpose()
 
-def getEuler(R2):
-    euler = Rotation.from_matrix(R2)
-    return euler.as_rotvec()
+
+def scale_data(w1, w2, h1, h2, X):
+    X_std = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0))
+    scaled_x = X_std[:,0] * (w2 - w1) + w1
+    scaled_y = X_std[:,1] * (h2 - h1) + h1
+    scaled_z = X_std[:,2] * (h2 - h1) + 0
+    
+    scaled_data = np.vstack((scaled_x, scaled_y, scaled_z)).T
+    return scaled_data

@@ -7,12 +7,13 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.arrays import vbo
 from tools import Tools
-
+import open3d as o3d
 import cv2
 import sys
 import numpy as np
 from PIL import Image
 from PIL.ImageQt import ImageQt 
+from util.sfm import scale_data
 
 
 class GL_Widget(QOpenGLWidget):
@@ -31,7 +32,7 @@ class GL_Widget(QOpenGLWidget):
 
         self._zoom = 1
         self.painter = QPainter()
-        
+        self.setAutoFillBackground(False) 
         self.offset_x = 0
         self.offset_y = 0
         self.press_loc = (self.width()/2, self.height()/2)
@@ -44,27 +45,70 @@ class GL_Widget(QOpenGLWidget):
         glClearDepth(1.0)
         glClearColor(0.8, 0.8, 0.8, 1)
         glEnable(GL_DEPTH_TEST)
+        
+        
+        # glEnable(GL_LIGHT0)
+        # glEnable(GL_LIGHTING)
+        # glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
+        # glEnable(GL_COLOR_MATERIAL)
+        
+        
+        # self.initGeometryPC()
+        self.transX = 0.0
+        self.transY = 0.0
+        self.transZ = 0.0
+        self.rotX = 0.0
+        self.rotY = 0.0
+        self.rotZ = 0.0
+    
+
+    
+    def setRotX(self, val):
+        self.rotX = val*(np.pi/16)
+    
+    def setRotY(self, val):
+        self.rotY = val*(np.pi/16)
+    
+    def setRotZ(self, val):
+        self.rotZ = val*(np.pi/16)
+        
+    def setTransX(self, val):
+        self.transX = val
+    
+    def setTransY(self, val):
+        self.transY = val
+    
+    def setTransZ(self, val):
+        self.transZ = val
 
     def resizeGL(self, width, height):
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
         glViewport(0, 0, width, height)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        self.aspect_widget = width / float(height)
-        glOrtho(0, v.width, v.height, 0, 0, 100)
+        aspect = float(width) / float(height)
+        # gluPerspective(45.0, aspect, 0.1, 1000.0)
+        # glLoadMatrix()
+        glOrtho(0, width, height, 0, -1000, 1000)
         glMatrixMode(GL_MODELVIEW)
 
-    def paintGL(self):
+    def paintGL(self):        
+        glClearDepth(1.0)
+        glEnable(GL_DEPTH_TEST)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT)
         
-        self.painter.begin(self)
-        self.painter.setPen(QPen(QColor(0, 0, 0)))
-        self.painter.setFont(self.painter.font())
+        # gluLookAt(-5,5,5,0,0,0,0,1,0)
 
         t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
         
-        if self.img_file is not None:
+        if self.img_file is not None and self.obj.ctrl_wdg.radiobutton.isChecked():
+            self.painter.begin(self)
+            pen = QPen(QColor(0, 0, 0))
+            pen.setWidth(2)
+            self.painter.setPen(pen)
+            self.painter.setFont(self.painter.font())
+            
             if self._zoom >=1:
                 # Pan the scene
                 self.painter.translate(self.offset_x, self.offset_y)
@@ -82,18 +126,51 @@ class GL_Widget(QOpenGLWidget):
                         if not v.hide_regular[t][i]:
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 10, str(fc.label.label))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
     
             elif self.obj.ctrl_wdg.kf_method == "Network":
                 if len(v.features_network) > 0:
                     for i, fc in enumerate(v.features_network[t]):
                         if not v.hide_network[t][i]:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 10, str(fc.label.label))
+                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
+                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
 
+            self.painter.end()
+        
+        
+        if len(self.obj.ply_pts) > 0:
+            # m = self.obj.camera_projection_mat[-3]
+            # glLoadMatrixd(m)
+            data = self.obj.camera_projection_mat[0]
+            colors = np.zeros(shape=(data.shape[0], 3))
+            
+            data2 = self.obj.camera_projection_mat[1]
+            colors2 = np.ones(shape=(data2.shape[0], 3))
+            
+            
+            
+            
+            glRotate(self.rotX, 1.0, 0.0, 0.0)
+            glRotate(self.rotY, 0.0, 1.0, 0.0)
+            glRotate(self.rotZ, 0.0, 0.0, 1.0)
+            
+            glTranslate(self.transX, self.transY, self.transZ)
+            
+            self.rotX, self.rotY, self.rotZ = 0, 0, 0
+            self.transX, self.transY, self.transZ = 0, 0, 0
 
-        self.painter.end()
+            # glPushMatrix()
+            glPointSize(5)
+            glBegin(GL_POINTS)
+            
+            for i in range(data.shape[0]):
+                glColor3f(colors[i,0], colors[i,1], colors[i,2])
+                glVertex3f(data[i,0], data[i,1], data[i,2])
+                glColor3f(colors2[i,0], colors2[i,1], colors2[i,2])
+                glVertex3f(data2[i,0], data2[i,1], data2[i,2])
+            glEnd()
+            # glPopMatrix()
             
         
 
@@ -102,13 +179,16 @@ class GL_Widget(QOpenGLWidget):
             self.img_file = None
         else:
             self.aspect_image = image.shape[1]/image.shape[0]
+            self.aspect_widget = self.width()/self.height()
+            print("Aspect ratio : "+str(self.aspect_image))
+            print("Widget ratio : "+str(self.aspect_widget))
             self.set_default_view_param()
             w = int(self.w2-self.w1)
             h = int(self.h2-self.h1)
             image = cv2.resize(image, (w, h), interpolation = cv2.INTER_AREA)
+            print("Image size after resizing: Width: "+str(image.shape[1])+ " , Height: "+str(image.shape[0]))
             PIL_image = self.toImgPIL(image).convert('RGB')
             self.img_file = ImageQt(PIL_image)
-            self.update()
             
 
     def set_default_view_param(self):
@@ -132,6 +212,7 @@ class GL_Widget(QOpenGLWidget):
         a = event.pos()
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
         if self.img_file is not None:
+            # print(a.x(), a.y())
             if a.x() > 0 and a.y() > 0:
                 x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
                 y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)

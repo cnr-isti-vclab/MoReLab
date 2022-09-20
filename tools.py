@@ -22,12 +22,11 @@ class Tools(QObject):
                 QPushButton {border:none; padding: 10px;}
                 QToolTip { background-color: white; color: black); }
                 """
-        # print(self.ctrl_wdg.selected_movie_idx)
         self.wdg_tree = ObjectPanel(self)
         self.feature_pixmap = QPixmap("icons/small_crosshair.png")
         self.output_name = '3d_output.ply'
         self.add_tool_icons()
-        self.cam_btn = QPushButton("Camera Calibration")
+        self.cam_btn = QPushButton("Compute SfM")
         self.cam_btn.setStyleSheet("""
                                   QPushButton:hover   { background-color: rgb(145,224,255)}
                                   QPushButton {background-color: rgb(230,230,230); border-radius: 20px; padding: 15px; border: 1px solid black; color:black; font-size: 15px;}
@@ -39,6 +38,8 @@ class Tools(QObject):
         self.locs = []
         self.associated_frames = []
         self.associated_videos = []
+        self.ply_pts = []
+        self.camera_projection_mat = []
         
         # self.associated_frames2 = [[]]
         self.selected_feature_index =-1
@@ -113,30 +114,47 @@ class Tools(QObject):
 
         if len(img_indices) > 0:
 
-            opt_cameras, opt_points = bundle_adjustment(all_pts, visible_labels, K)                
+            opt_cameras, opt_points = bundle_adjustment(all_pts, visible_labels, K)
+            opt_points_ext = np.concatenate((opt_points, np.zeros((opt_points.shape[0], 1))), axis=1)             
             camera_poses = []
+
+            # left_ply = (3*self.ctrl_wdg.gl_viewer.h1 + self.ctrl_wdg.gl_viewer.h2)/4
+            # right_ply = (self.ctrl_wdg.gl_viewer.h1 + 3*self.ctrl_wdg.gl_viewer.h2)/4
+            top_ply = (3*self.ctrl_wdg.gl_viewer.h1 + self.ctrl_wdg.gl_viewer.h2)/4
+            bottom_ply = (self.ctrl_wdg.gl_viewer.h1 + 3*self.ctrl_wdg.gl_viewer.h2)/4
+
             for i in range(opt_cameras.shape[0]):
                 R = getRotation(opt_cameras[i,:3], 'e')
                 t = opt_cameras[i,3:].reshape((3,1))
+                print(R)
+                print(t)
+                cam_ext = np.concatenate((R, t), axis=1)
+                
+                P_dash = np.dot( opt_points, np.dot(K,cam_ext))
+                # P_dash = P_dash.transpose()
+
+                # print(P_dash)
+                P_dash_3d = P_dash[:, :-1]
+                write_pointcloud(str(i)+'.ply', P_dash_3d) 
+                # P_dash_3d = scale_data(top_ply , bottom_ply, top_ply , bottom_ply, P_dash_3d)
+
+                self.camera_projection_mat.append(P_dash_3d)
+
+
+
+
+                
                 cm = calc_camera_pos(R, t)
                 # print(cm)
                 camera_poses.append([cm[0,0], cm[0,1], cm[0,2]])
             
             camera_poses = np.asarray(camera_poses)
             print(camera_poses)
-            # print(camera_poses.shape)
             ply_pts = np.concatenate((opt_points, camera_poses), axis=0)
-            
             write_pointcloud(self.output_name, ply_pts) 
-            after_BA_dialogue(self.output_name)
-            # high = np.max(opt_points)
-            # low = np.min(opt_points)
-            # normalized = (opt_points-low)/(high - low)
-            # self.ctrl_wdg.viewer.setPhoto()
-            # self.ctrl_wdg.viewer.gl_viewer.display(normalized)
-            
+            # after_BA_dialogue(self.output_name)
 
-
+            self.ply_pts.append(opt_points)
         
 
     def add_tool_icons(self):
@@ -259,11 +277,18 @@ class Tools(QObject):
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t].append(fc)
                 v.hide_regular[t].append(False)
-                # v.locs_regular[t].append()
+                # v.init_zoom_regular[t].append(self.ctrl_wdg.gl_viewer._zoom)
+                # v.init_x_offset_regular[t].append(self.ctrl_wdg.gl_viewer.offset_x)
+                # v.init_y_offset_regular[t].append(self.ctrl_wdg.gl_viewer.offset_y)
+                
                 
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(fc)
                 v.hide_network[t].append(False)
+                # v.init_zoom_network[t].append(self.ctrl_wdg.gl_viewer._zoom)
+                # v.init_x_offset_network[t].append(self.ctrl_wdg.gl_viewer.offset_x)
+                # v.init_y_offset_network[t].append(self.ctrl_wdg.gl_viewer.offset_y)
+
                 
             self.display_data()
             

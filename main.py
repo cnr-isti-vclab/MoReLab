@@ -38,10 +38,15 @@ class Window(QMainWindow):
         
         self.vert1 = QVBoxLayout()
         self.vert1.addWidget(self.widget.gl_viewer.obj.wdg_tree)
-        # self.vert1.addWidget(self.widget.radiobutton)
-        # self.vert1.addWidget(self.widget.sliderX)
-        # self.vert1.addWidget(self.widget.sliderY)
-        # self.vert1.addWidget(self.widget.sliderZ)
+        self.vert1.addWidget(self.widget.slider_transX)
+        self.vert1.addWidget(self.widget.slider_transY)
+        self.vert1.addWidget(self.widget.slider_transZ)
+
+        # self.vert1.addWidget(self.widget.radiobutton2)
+        self.vert1.addWidget(self.widget.radiobutton)
+        self.vert1.addWidget(self.widget.sliderX)
+        self.vert1.addWidget(self.widget.sliderY)
+        self.vert1.addWidget(self.widget.sliderZ)
         self.vert1.addWidget(self.widget.gl_viewer.obj.cam_btn)
 
         self.hboxLayout = QHBoxLayout()
@@ -178,7 +183,7 @@ class Window(QMainWindow):
             self.create_layout()
             v = self.widget.mv_panel.movie_caps[self.widget.mv_panel.selected_movie_idx]
             if self.widget.selected_thumbnail_index != -1:
-                self.widget.gl_viewer.setMinimumSize(1042, 728)
+                self.widget.gl_viewer.setMinimumSize(1077, 800)
                 self.widget.displayThumbnail(self.widget.selected_thumbnail_index)
 
             if self.widget.gl_viewer.obj.cross_hair:

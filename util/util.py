@@ -85,20 +85,19 @@ def movie_dialogue():
     msgBox.setStandardButtons(QMessageBox.Ok)                 
     returnValue = msgBox.exec()
     
+def after_BA_dialogue(filename):
+    msgBox = QMessageBox()
+    msgBox.setText("3D structure has been computed and saved as "+str(filename))
+    msgBox.setWindowTitle("3D structure")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    returnValue = msgBox.exec()
+    
 
 def numFeature_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("Atleast two frames must have atleast 8 features.")
     msgBox.setWindowTitle("Number of Features")
     msgBox.setStandardButtons(QMessageBox.Ok)                 
-    returnValue = msgBox.exec()
-    
-    
-def after_BA_dialogue(filename):
-    msgBox = QMessageBox()
-    msgBox.setText("3D structure has been computed and saved as "+str(filename))
-    msgBox.setWindowTitle("3D structure")
-    msgBox.setStandardButtons(QMessageBox.Ok)
     returnValue = msgBox.exec()
     
     
