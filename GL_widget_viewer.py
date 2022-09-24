@@ -35,6 +35,10 @@ class GL_Widget(QOpenGLWidget):
         self.setAutoFillBackground(False) 
         self.offset_x = 0
         self.offset_y = 0
+        self.near = -100
+        self.far = 100
+        self.opengl_intrinsics = np.eye(4)
+        self.opengl_extrinsics = np.eye(4)
         self.press_loc = (self.width()/2, self.height()/2)
         self.release_loc = (self.width()/2, self.height()/2)
         self.mv_pix = 1
@@ -46,17 +50,12 @@ class GL_Widget(QOpenGLWidget):
         glClearColor(0.8, 0.8, 0.8, 1)
         glEnable(GL_DEPTH_TEST)
         
-        
-        # glEnable(GL_LIGHT0)
-        # glEnable(GL_LIGHTING)
-        # glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
-        # glEnable(GL_COLOR_MATERIAL)
-        
-        
-        # self.initGeometryPC()
         self.transX = 0.0
         self.transY = 0.0
         self.transZ = 0.0
+        self.last_transX = 0.0
+        self.last_transY = 0.0
+        self.last_transZ = 0.0
         self.rotX = 0.0
         self.rotY = 0.0
         self.rotZ = 0.0
@@ -73,31 +72,32 @@ class GL_Widget(QOpenGLWidget):
         self.rotZ = val*(np.pi/16)
         
     def setTransX(self, val):
-        self.transX = val
+        self.transX = val - self.last_transX
+        self.last_transX = val
     
     def setTransY(self, val):
-        self.transY = val
+        self.transY = val - self.last_transY
+        self.last_transY = val
     
     def setTransZ(self, val):
-        self.transZ = val
+        self.transZ = val - self.last_transZ
+        self.last_transZ = val
 
-    def resizeGL(self, width, height):
-        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        glViewport(0, 0, width, height)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        aspect = float(width) / float(height)
-        # gluPerspective(45.0, aspect, 0.1, 1000.0)
-        # glLoadMatrix()
-        glOrtho(0, width, height, 0, -1000, 1000)
-        glMatrixMode(GL_MODELVIEW)
+    # def resizeGL(self, width, height):
+    #     v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
+    #     glViewport(0, 0, width, height)
+    #     glMatrixMode(GL_PROJECTION)
+    #     # glLoadIdentity()
+    #     aspect = float(width) / float(height)
+    #     # gluPerspective(45.0, aspect, 0.1, 10000.0)
+    #     # glOrtho(0, width, height, 0, self.near, self.far)
+    #     glMatrixMode(GL_MODELVIEW)
 
     def paintGL(self):        
         glClearDepth(1.0)
         glEnable(GL_DEPTH_TEST)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT)
         
-        # gluLookAt(-5,5,5,0,0,0,0,1,0)
 
         t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
@@ -139,38 +139,38 @@ class GL_Widget(QOpenGLWidget):
             self.painter.end()
         
         
-        if len(self.obj.ply_pts) > 0:
-            # m = self.obj.camera_projection_mat[-3]
-            # glLoadMatrixd(m)
-            data = self.obj.camera_projection_mat[0]
-            colors = np.zeros(shape=(data.shape[0], 3))
-            
-            data2 = self.obj.camera_projection_mat[1]
-            colors2 = np.ones(shape=(data2.shape[0], 3))
-            
-            
-            
-            
-            glRotate(self.rotX, 1.0, 0.0, 0.0)
-            glRotate(self.rotY, 0.0, 1.0, 0.0)
-            glRotate(self.rotZ, 0.0, 0.0, 1.0)
-            
-            glTranslate(self.transX, self.transY, self.transZ)
-            
-            self.rotX, self.rotY, self.rotZ = 0, 0, 0
-            self.transX, self.transY, self.transZ = 0, 0, 0
-
-            # glPushMatrix()
-            glPointSize(5)
-            glBegin(GL_POINTS)
-            
-            for i in range(data.shape[0]):
-                glColor3f(colors[i,0], colors[i,1], colors[i,2])
-                glVertex3f(data[i,0], data[i,1], data[i,2])
-                glColor3f(colors2[i,0], colors2[i,1], colors2[i,2])
-                glVertex3f(data2[i,0], data2[i,1], data2[i,2])
-            glEnd()
-            # glPopMatrix()
+        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
+            for j, tup in enumerate(self.obj.camera_projection_mat):
+                if tup[0] == t:
+                    self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1], self.w2-self.w1, self.h2-self.h1)
+                    
+                    load_mat = self.opengl_extrinsics
+                    print(load_mat)
+                    glMatrixMode(GL_PROJECTION)
+                    glLoadMatrixf(load_mat)
+                    glMatrixMode(GL_MODELVIEW)
+                    
+                    data = self.obj.ply_pts[0]
+                    colors = np.zeros(shape=(data.shape[0], 3))
+                    
+                    glRotate(self.rotX, 1.0, 0.0, 0.0)
+                    glRotate(self.rotY, 0.0, 1.0, 0.0)
+                    glRotate(self.rotZ, 0.0, 0.0, 1.0)
+                    
+                    glTranslate(self.transX, self.transY, self.transZ)
+                    
+                    self.rotX, self.rotY, self.rotZ = 0, 0, 0
+                    self.transX, self.transY, self.transZ = 0, 0, 0
+        
+                    glPushMatrix()
+                    glPointSize(5)
+                    glBegin(GL_POINTS)
+                    
+                    for i in range(data.shape[0]):
+                        glColor3f(colors[i,0], colors[i,1], colors[i,2])
+                        glVertex3f(data[i,0], data[i,1], data[i,2])
+                    glEnd()
+                    glPopMatrix()
             
         
 
@@ -180,13 +180,13 @@ class GL_Widget(QOpenGLWidget):
         else:
             self.aspect_image = image.shape[1]/image.shape[0]
             self.aspect_widget = self.width()/self.height()
-            print("Aspect ratio : "+str(self.aspect_image))
-            print("Widget ratio : "+str(self.aspect_widget))
+            # print("Aspect ratio : "+str(self.aspect_image))
+            # print("Widget ratio : "+str(self.aspect_widget))
             self.set_default_view_param()
             w = int(self.w2-self.w1)
             h = int(self.h2-self.h1)
             image = cv2.resize(image, (w, h), interpolation = cv2.INTER_AREA)
-            print("Image size after resizing: Width: "+str(image.shape[1])+ " , Height: "+str(image.shape[0]))
+            # print("Image size after resizing: Width: "+str(image.shape[1])+ " , Height: "+str(image.shape[0]))
             PIL_image = self.toImgPIL(image).convert('RGB')
             self.img_file = ImageQt(PIL_image)
             
@@ -295,5 +295,29 @@ class GL_Widget(QOpenGLWidget):
         if imgOpenCV is None:
             return imgOpenCV
         else:
-            # print(imgOpenCV.shape)
             return Image.fromarray(cv2.cvtColor(imgOpenCV, cv2.COLOR_BGR2RGB))
+        
+        
+    def computeOpenGL_fromCV(self, K, Rt, cols=960, rows=1280):
+        
+        perspective = np.array([[-K[0,0],         0,            K[0,2]-cols,                    0],
+                                [       0,      -K[1,1],        K[1,2]-rows,                    0],
+                                [       0,          0,      -(self.near+self.far),      self.near*self.far],
+                                [       0,          0,                 1,                   0]])
+        
+        
+        NDC = np.array([[   -2.0/cols,      0,              0,                      1],
+                        [       0,       2.0/rows,          0,                      -1],
+                        [       0,          0,      -2.0/(self.far - self.near),    -(self.far+self.near)/(self.far-self.near)],
+                        [       0,          0,              0,                         1]])
+        
+        
+        
+        conversionT = np.array([[cols/2.0,      0,      0,      cols/2.0],
+                                [ 0,        rows/2.0,   0,      rows/2.0],
+                                [ 0,        0,         0,       1],
+                                [ 0,        0,          0,      1]])
+
+        
+        self.opengl_intrinsics = np.dot(NDC, perspective)
+        self.opengl_extrinsics = np.dot(self.opengl_intrinsics, Rt)

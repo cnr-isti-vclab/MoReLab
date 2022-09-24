@@ -183,7 +183,7 @@ class Window(QMainWindow):
             self.create_layout()
             v = self.widget.mv_panel.movie_caps[self.widget.mv_panel.selected_movie_idx]
             if self.widget.selected_thumbnail_index != -1:
-                self.widget.gl_viewer.setMinimumSize(1077, 800)
+                self.widget.gl_viewer.setMinimumSize(1077, 804)
                 self.widget.displayThumbnail(self.widget.selected_thumbnail_index)
 
             if self.widget.gl_viewer.obj.cross_hair:

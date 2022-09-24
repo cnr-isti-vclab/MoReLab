@@ -40,6 +40,8 @@ class Tools(QObject):
         self.associated_videos = []
         self.ply_pts = []
         self.camera_projection_mat = []
+        self.camera_poses = []
+        self.K = np.eye(3)
         
         # self.associated_frames2 = [[]]
         self.selected_feature_index =-1
@@ -108,52 +110,31 @@ class Tools(QObject):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         all_pts, img_indices, visible_labels = self.get_correspondent_pts(v)
 
-        K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
-        # K = estimateKMatrix(v.width, v.height, 35)
-        # K = find_optimized_K(all_pts, K, '1')
-
+        self.K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
+    
         if len(img_indices) > 0:
 
-            opt_cameras, opt_points = bundle_adjustment(all_pts, visible_labels, K)
-            opt_points_ext = np.concatenate((opt_points, np.zeros((opt_points.shape[0], 1))), axis=1)             
-            camera_poses = []
+            opt_cameras, opt_points = bundle_adjustment(all_pts, visible_labels, self.K)
+            opt_points_ext = np.concatenate((opt_points, np.ones((opt_points.shape[0], 1))), axis=1)             
 
-            # left_ply = (3*self.ctrl_wdg.gl_viewer.h1 + self.ctrl_wdg.gl_viewer.h2)/4
-            # right_ply = (self.ctrl_wdg.gl_viewer.h1 + 3*self.ctrl_wdg.gl_viewer.h2)/4
-            top_ply = (3*self.ctrl_wdg.gl_viewer.h1 + self.ctrl_wdg.gl_viewer.h2)/4
-            bottom_ply = (self.ctrl_wdg.gl_viewer.h1 + 3*self.ctrl_wdg.gl_viewer.h2)/4
-
+            cam_pos_list = []
             for i in range(opt_cameras.shape[0]):
                 R = getRotation(opt_cameras[i,:3], 'e')
                 t = opt_cameras[i,3:].reshape((3,1))
-                print(R)
-                print(t)
-                cam_ext = np.concatenate((R, t), axis=1)
-                
-                P_dash = np.dot( opt_points, np.dot(K,cam_ext))
-                # P_dash = P_dash.transpose()
+                cam_ext = np.concatenate((np.concatenate((R, t), axis=1), np.array([0,0,0,1]).reshape((1,4))), axis=0)
+                # print(cam_ext)
 
-                # print(P_dash)
-                P_dash_3d = P_dash[:, :-1]
-                write_pointcloud(str(i)+'.ply', P_dash_3d) 
-                # P_dash_3d = scale_data(top_ply , bottom_ply, top_ply , bottom_ply, P_dash_3d)
-
-                self.camera_projection_mat.append(P_dash_3d)
-
-
-
-
-                
+                self.camera_projection_mat.append((img_indices[i], cam_ext))                
                 cm = calc_camera_pos(R, t)
-                # print(cm)
-                camera_poses.append([cm[0,0], cm[0,1], cm[0,2]])
+                self.camera_poses.append(cm)
+                cam_pos_list.append([cm[0,0], cm[0,1], cm[0,2]])
             
-            camera_poses = np.asarray(camera_poses)
-            print(camera_poses)
-            ply_pts = np.concatenate((opt_points, camera_poses), axis=0)
-            write_pointcloud(self.output_name, ply_pts) 
+            array_camera_poses = np.asarray(cam_pos_list)
+            # ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
+            # write_pointcloud(self.output_name, ply_pts) 
             # after_BA_dialogue(self.output_name)
-
+            
+            # opt_points = scale_data(-1 , 1, -1 , 1, opt_points)
             self.ply_pts.append(opt_points)
         
 
@@ -277,17 +258,11 @@ class Tools(QObject):
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t].append(fc)
                 v.hide_regular[t].append(False)
-                # v.init_zoom_regular[t].append(self.ctrl_wdg.gl_viewer._zoom)
-                # v.init_x_offset_regular[t].append(self.ctrl_wdg.gl_viewer.offset_x)
-                # v.init_y_offset_regular[t].append(self.ctrl_wdg.gl_viewer.offset_y)
                 
                 
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(fc)
                 v.hide_network[t].append(False)
-                # v.init_zoom_network[t].append(self.ctrl_wdg.gl_viewer._zoom)
-                # v.init_x_offset_network[t].append(self.ctrl_wdg.gl_viewer.offset_x)
-                # v.init_y_offset_network[t].append(self.ctrl_wdg.gl_viewer.offset_y)
 
                 
             self.display_data()
@@ -404,10 +379,6 @@ class Tools(QObject):
                     
                 self.wdg_tree.label_index = 0
                 self.selected_feature_index = int(self.wdg_tree.items[self.wdg_tree.label_index].child(0).text(1)) - 1
-                # print(self.associated_frames)
-                # print(self.labels)
-                # print("Feature Index : "+str(self.selected_feature_index))
-                # print("Label Index : "+str(self.wdg_tree.label_index))
                 self.display_data()
             else:
                 feature_absent_dialogue()
