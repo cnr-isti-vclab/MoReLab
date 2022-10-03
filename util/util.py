@@ -185,3 +185,5 @@ def empty_gui(layout):
         layout.removeItem(item)
     
     return layout
+
+

@@ -11,6 +11,7 @@ import numpy as np
 from object_panel import ObjectPanel
 import cv2, copy
 from scipy import optimize
+from scipy.spatial import distance
 # import matplotlib.pyplot as plt
 
 class Tools(QObject):
@@ -40,6 +41,7 @@ class Tools(QObject):
         self.associated_videos = []
         self.ply_pts = []
         self.camera_projection_mat = []
+        self.near_far = []
         self.camera_poses = []
         self.K = np.eye(3)
         
@@ -61,9 +63,9 @@ class Tools(QObject):
                 count = 0
                 for j,hide in enumerate(hr):
                     fc = v.features_regular[i][j]
-                    tmp1.append([int(fc.x_loc), int(fc.y_loc)])
+                    tmp1.append([self.wdg_tree.transform_x(fc.x_loc), self.wdg_tree.transform_y(fc.y_loc)])
                     if not hide:
-                        tmp3.append([int(fc.x_loc), int(fc.y_loc)])
+                        tmp3.append([self.wdg_tree.transform_x(fc.x_loc), self.wdg_tree.transform_y(fc.y_loc)])
                         tmp2.append(j)
                         count = count + 1
                 if count > 7:
@@ -83,9 +85,9 @@ class Tools(QObject):
                 count = 0
                 for j,hide in enumerate(hr):
                     fc = v.features_regular[i][j]
-                    tmp1.append([int(fc.x_loc), int(fc.y_loc)])
+                    tmp1.append([self.wdg_tree.transform_x(fc.x_loc), self.wdg_tree.transform_y(fc.y_loc)])
                     if not hide:
-                        tmp3.append([int(fc.x_loc), int(fc.y_loc)])
+                        tmp3.append([self.wdg_tree.transform_x(fc.x_loc), self.wdg_tree.transform_y(fc.y_loc)])
                         tmp2.append(j)
                         count = count + 1
                 if count > 7:
@@ -110,10 +112,14 @@ class Tools(QObject):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         all_pts, img_indices, visible_labels = self.get_correspondent_pts(v)
 
+        # print(all_pts)
+
         self.K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
+        # self.K[0,2] = self.K[0,2] + self.ctrl_wdg.mv_panel.width()
+        # self.K[1,2] = self.K[1,2] + self.ctrl_wdg.scroll_area.height()
     
         if len(img_indices) > 0:
-
+            print("Performing Bundle adjustment")
             opt_cameras, opt_points = bundle_adjustment(all_pts, visible_labels, self.K)
             opt_points_ext = np.concatenate((opt_points, np.ones((opt_points.shape[0], 1))), axis=1)             
 
@@ -122,20 +128,48 @@ class Tools(QObject):
                 R = getRotation(opt_cameras[i,:3], 'e')
                 t = opt_cameras[i,3:].reshape((3,1))
                 cam_ext = np.concatenate((np.concatenate((R, t), axis=1), np.array([0,0,0,1]).reshape((1,4))), axis=0)
-                # print(cam_ext)
+                # ppm =np.concatenate((np.matmul(self.K, (np.concatenate((R, t), axis=1))), np.array([0,0,0,1]).reshape((1,4))), axis=0)
+                
 
                 self.camera_projection_mat.append((img_indices[i], cam_ext))                
                 cm = calc_camera_pos(R, t)
+                self.near_far.append(self.calc_near_far(cm, opt_points))
                 self.camera_poses.append(cm)
                 cam_pos_list.append([cm[0,0], cm[0,1], cm[0,2]])
             
+            # print(self.near_far)
+            print("K")
+            print(self.K)
             array_camera_poses = np.asarray(cam_pos_list)
-            # ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
-            # write_pointcloud(self.output_name, ply_pts) 
-            # after_BA_dialogue(self.output_name)
+            ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
+            write_pointcloud(self.output_name, ply_pts) 
+            after_BA_dialogue(self.output_name)
             
             # opt_points = scale_data(-1 , 1, -1 , 1, opt_points)
             self.ply_pts.append(opt_points)
+            
+
+            # print("Width of central widget: "+str(self.ctrl_wdg.width()))
+            # print("Width of movie panel: "+str(self.ctrl_wdg.mv_panel.width()))
+            # print("Width of GL Viewer: "+str(self.ctrl_wdg.gl_viewer.width()))
+            # print("Width of feature panel: "+str(self.wdg_tree.width()))
+
+            # print("Width of central widget: "+str(self.ctrl_wdg.height()))
+            # print("Width of movie panel: "+str(self.ctrl_wdg.mv_panel.height()))
+            # print("Width of GL Viewer: "+str(self.ctrl_wdg.gl_viewer.height()))
+            # print("Width of feature panel: "+str(self.wdg_tree.height()))
+
+            
+            
+    def calc_near_far(self, cm, opt_points):
+        dist_list = []
+        for i in range(opt_points.shape[0]):
+            dist = distance.euclidean(opt_points[i,:], cm)
+            dist_list.append(dist)
+        
+        near = min(dist_list)/2
+        far = max(dist_list) * 2
+        return (near, far)
         
 
     def add_tool_icons(self):
@@ -252,8 +286,6 @@ class Tools(QObject):
                 self.associated_videos[self.selected_feature_index].append(m_idx)
                 self.locs[self.selected_feature_index].append([fc.x_loc, fc.y_loc])
 
-            # self.ctrl_wdg.viewer._scene.addItem(fc)
-            # self.ctrl_wdg.viewer._scene.addItem(fc.label)
             
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t].append(fc)

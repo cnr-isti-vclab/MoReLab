@@ -60,7 +60,7 @@ def bundle_adjustment(xs, visible_labels, K):
     cam_indices = np.array([])
     point_indices = np.array([])
     for i,x in enumerate(visible_labels):
-        print("Number of features in image # "+str(i+1)+" : "+str(len(x)))
+        # print("Number of features in image # "+str(i+1)+" : "+str(len(x)))
         cam_indices = np.hstack((cam_indices, np.full_like(np.arange(len(x), dtype=int), i)))
         point_indices = np.hstack((point_indices, x))
         
@@ -76,7 +76,7 @@ def bundle_adjustment(xs, visible_labels, K):
     x0 = np.hstack((cameras.ravel(), Xs.ravel())) # camera pose and 3d points
 
     J = bundle_adjustment_sparsity(n_cameras=n_cameras, n_points=n_3d_points, camera_indices=cam_indices, point_indices=point_indices)
-    res = least_squares(func2, x0, verbose=2, ftol=1e-15, method='trf', jac_sparsity=J, args=(points_2d, n_cameras, n_3d_points, cam_indices, point_indices, K))
+    res = least_squares(func2, x0, verbose=0, ftol=1e-15, method='trf', jac_sparsity=J, args=(points_2d, n_cameras, n_3d_points, cam_indices, point_indices, K))
 
     opt_cameras = res.x[:n_cameras * 6].reshape((n_cameras, 6)) # rotation and translation
     opt_points = res.x[n_cameras * 6: ].reshape((n_3d_points, 3))  # 3d points

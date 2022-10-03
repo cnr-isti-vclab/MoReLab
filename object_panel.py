@@ -6,10 +6,13 @@ class ObjectPanel(QTreeWidget):
     def __init__(self, parent):
         super().__init__()
         self.setColumnCount(2)
+        # self.setFixedSize(500, 800)
         self.setHeaderLabels(["Features", "Info"])
         self.label_index = -1
         self.items = []
         self.tool_obj = parent
+        self.factor_x = 1
+        self.factor_y = 1
         
     
     def add_feature_data(self, data, feature_idx):
@@ -37,10 +40,10 @@ class ObjectPanel(QTreeWidget):
                     for j,ff in enumerate(f):
                         if j==0:
                             str_vf = str_vf + '('+str(videos[i][j]+1)+','+str(ff+1)+')'
-                            str_loc = str_loc + '('+str(locs[i][j][0])+ ',' + str(locs[i][j][1])+')'
+                            str_loc = str_loc + '('+str(self.transform_x(locs[i][j][0]))+ ',' + str(self.transform_y(locs[i][j][1]))+')'
                         else:
                             str_vf = str_vf + ', ('+str(videos[i][j]+1)+','+str(ff+1)+')'
-                            str_loc = str_loc + ', ('+str(locs[i][j][0])+ ',' + str(locs[i][j][1])+')'
+                            str_loc = str_loc + ', ('+str(self.transform_x(locs[i][j][0]))+ ',' + str(self.transform_y(locs[i][j][1]))+')'
                                                
                     child2 = QTreeWidgetItem(["Association", str_vf])
                     child3 = QTreeWidgetItem(["Locations", str_loc])
@@ -70,7 +73,6 @@ class ObjectPanel(QTreeWidget):
                 ch = selection.child(0)
                 label = ch.text(1)
                 self.tool_obj.selected_feature_index = int(label) - 1
-                
                 self.select_feature()
         else:
             selection.setSelected(False)
@@ -103,3 +105,25 @@ class ObjectPanel(QTreeWidget):
                     fc.setSelected(False)
                 if found:
                     v.features_network[t][f].setSelected(True)            
+
+                    
+                    
+    def wdg_to_img_space(self):
+        w1 = self.tool_obj.ctrl_wdg.gl_viewer.w1
+        w2 = self.tool_obj.ctrl_wdg.gl_viewer.w2
+        h1 = self.tool_obj.ctrl_wdg.gl_viewer.h1
+        h2 = self.tool_obj.ctrl_wdg.gl_viewer.h2
+        v = self.tool_obj.ctrl_wdg.mv_panel.movie_caps[self.tool_obj.ctrl_wdg.mv_panel.selected_movie_idx]
+        self.factor_x = v.width/(w2-w1)
+        self.factor_y = v.height/(h2-h1)
+
+    def transform_x(self, x):
+        x2 = (x - self.tool_obj.ctrl_wdg.gl_viewer.w1)*self.factor_x
+        # x2 = x
+        return int(x2)        
+
+    def transform_y(self, y):
+        y2 = (y - self.tool_obj.ctrl_wdg.gl_viewer.h1)*self.factor_y
+        # y2 = y
+        return int(y2)
+

@@ -35,8 +35,8 @@ class GL_Widget(QOpenGLWidget):
         self.setAutoFillBackground(False) 
         self.offset_x = 0
         self.offset_y = 0
-        self.near = -100
-        self.far = 100
+        self.near = -2
+        self.far = 2
         self.opengl_intrinsics = np.eye(4)
         self.opengl_extrinsics = np.eye(4)
         self.press_loc = (self.width()/2, self.height()/2)
@@ -87,9 +87,9 @@ class GL_Widget(QOpenGLWidget):
     #     v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
     #     glViewport(0, 0, width, height)
     #     glMatrixMode(GL_PROJECTION)
-    #     # glLoadIdentity()
+    #     glLoadIdentity()
     #     aspect = float(width) / float(height)
-    #     # gluPerspective(45.0, aspect, 0.1, 10000.0)
+    #     gluPerspective(45.0, aspect, -1, 1.0)
     #     # glOrtho(0, width, height, 0, self.near, self.far)
     #     glMatrixMode(GL_MODELVIEW)
 
@@ -142,16 +142,21 @@ class GL_Widget(QOpenGLWidget):
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:
+                    # self.near, self.far = self.obj.near_far[j][0], self.obj.near_far[j][1]
+                    # print(self.near, self.far)
                     self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1], self.w2-self.w1, self.h2-self.h1)
                     
                     load_mat = self.opengl_extrinsics
-                    print(load_mat)
+                    # print(load_mat)
                     glMatrixMode(GL_PROJECTION)
+                    # glLoadIdentity()
                     glLoadMatrixf(load_mat)
                     glMatrixMode(GL_MODELVIEW)
+                    glLoadIdentity()
                     
                     data = self.obj.ply_pts[0]
                     colors = np.zeros(shape=(data.shape[0], 3))
+                    colors[:,2] = 1
                     
                     glRotate(self.rotX, 1.0, 0.0, 0.0)
                     glRotate(self.rotY, 0.0, 1.0, 0.0)
@@ -162,7 +167,7 @@ class GL_Widget(QOpenGLWidget):
                     self.rotX, self.rotY, self.rotZ = 0, 0, 0
                     self.transX, self.transY, self.transZ = 0, 0, 0
         
-                    glPushMatrix()
+                    # glPushMatrix()
                     glPointSize(5)
                     glBegin(GL_POINTS)
                     
@@ -170,7 +175,7 @@ class GL_Widget(QOpenGLWidget):
                         glColor3f(colors[i,0], colors[i,1], colors[i,2])
                         glVertex3f(data[i,0], data[i,1], data[i,2])
                     glEnd()
-                    glPopMatrix()
+                    # glPopMatrix()
             
         
 
@@ -206,6 +211,8 @@ class GL_Widget(QOpenGLWidget):
             self.w2 = self.width() - self.w1
             self.h1 = 0
             self.h2 = self.height()
+            
+        self.obj.wdg_tree.wdg_to_img_space()
 
 
     def mouseDoubleClickEvent(self, event):
@@ -300,8 +307,8 @@ class GL_Widget(QOpenGLWidget):
         
     def computeOpenGL_fromCV(self, K, Rt, cols=960, rows=1280):
         
-        perspective = np.array([[-K[0,0],         0,            K[0,2]-cols,                    0],
-                                [       0,      -K[1,1],        K[1,2]-rows,                    0],
+        perspective = np.array([[-K[0,0],         0,            K[0,2],                    0],
+                                [       0,      -K[1,1],        K[1,2],                    0],
                                 [       0,          0,      -(self.near+self.far),      self.near*self.far],
                                 [       0,          0,                 1,                   0]])
         
@@ -313,11 +320,11 @@ class GL_Widget(QOpenGLWidget):
         
         
         
-        conversionT = np.array([[cols/2.0,      0,      0,      cols/2.0],
-                                [ 0,        rows/2.0,   0,      rows/2.0],
-                                [ 0,        0,         0,       1],
+        conversionT = np.array([[1.0,      0,      0,      1],
+                                [ 0,        1.0,   0,      1],
+                                [ 0,        0,         0,       2.0],
                                 [ 0,        0,          0,      1]])
 
         
-        self.opengl_intrinsics = np.dot(NDC, perspective)
-        self.opengl_extrinsics = np.dot(self.opengl_intrinsics, Rt)
+        self.opengl_intrinsics = np.matmul(NDC, perspective)
+        self.opengl_extrinsics = np.matmul(self.opengl_intrinsics, Rt)
