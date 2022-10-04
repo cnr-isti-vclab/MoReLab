@@ -7,7 +7,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.arrays import vbo
 from tools import Tools
-import open3d as o3d
+# import open3d as o3d
 import cv2
 import sys
 import numpy as np
