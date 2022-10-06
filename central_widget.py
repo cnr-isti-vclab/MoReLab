@@ -8,6 +8,7 @@ from util.util import show_dialogue
 from document import Document
 from movie_panel import MoviePanel
 from GL_widget_viewer import GL_Widget
+from obj_viewer import GT_Widget
 
 import json, os, glob
 import cv2
@@ -23,6 +24,7 @@ class Widget(QWidget):
         self.create_wdg1()
         self.create_scroll_area()
         self.gl_viewer = GL_Widget(self)
+        self.gt_viewer = GT_Widget(self)
         
         self.doc = Document(self)
         self.mv_panel = MoviePanel(self)
@@ -54,11 +56,6 @@ class Widget(QWidget):
         
         self.radiobutton = QCheckBox("Display image and features")
         self.radiobutton.setChecked(True)
-        # self.radiobutton.toggled.connect(self.onClicked)
-        
-        self.radiobutton2 = QCheckBox("Stop rotation")
-        self.radiobutton2.setChecked(False)
-        self.radiobutton2.stateChanged.connect(self.on_Clicked)
         
         self.sliderX = QSlider(Qt.Horizontal)
         self.sliderX.valueChanged.connect(lambda val: self.gl_viewer.setRotX(val))
@@ -79,27 +76,26 @@ class Widget(QWidget):
         self.slider_transZ.valueChanged.connect(lambda val: self.gl_viewer.setTransZ(val))
         
         
-    def on_Clicked(self):
-        if self.radiobutton2.isChecked():
-            self.last_x = self.gl_viewer.rotX
-            self.last_y = self.gl_viewer.rotY
-            self.last_z = self.gl_viewer.rotZ
-            self.last_transx = self.gl_viewer.transX
-            self.last_transy = self.gl_viewer.transY
-            self.last_transz = self.gl_viewer.transZ
-            self.gl_viewer.rotX = 0
-            self.gl_viewer.rotY = 0
-            self.gl_viewer.rotZ = 0
-            self.gl_viewer.transX = 0
-            self.gl_viewer.transY = 0
-            self.gl_viewer.transZ = 0
-        else:
-            self.gl_viewer.rotX = self.last_x
-            self.gl_viewer.rotY = self.last_y
-            self.gl_viewer.rotZ = self.last_z
-            self.gl_viewer.transX = self.last_transx
-            self.gl_viewer.transY = self.last_transy
-            self.gl_viewer.transZ = self.last_transz
+        self.sliderX2 = QSlider(Qt.Horizontal)
+        self.sliderX2.valueChanged.connect(lambda val: self.gt_viewer.setRotX(val))
+
+        self.sliderY2 = QSlider(Qt.Horizontal)
+        self.sliderY2.valueChanged.connect(lambda val: self.gt_viewer.setRotY(val))
+
+        self.sliderZ2 = QSlider(Qt.Horizontal)
+        self.sliderZ2.valueChanged.connect(lambda val: self.gt_viewer.setRotZ(val))
+        
+        self.slider_transX2 = QSlider(Qt.Horizontal)
+        self.slider_transX2.valueChanged.connect(lambda val: self.gt_viewer.setTransX(val))
+
+        self.slider_transY2 = QSlider(Qt.Horizontal)
+        self.slider_transY2.valueChanged.connect(lambda val: self.gt_viewer.setTransY(val))
+
+        self.slider_transZ2 = QSlider(Qt.Horizontal)
+        self.slider_transZ2.valueChanged.connect(lambda val: self.gt_viewer.setTransZ(val))
+
+
+
 
     
        
