@@ -29,7 +29,17 @@ class Window(QMainWindow):
 
     def create_layout(self):
         self.vboxLayout3 = QVBoxLayout()
-        self.vboxLayout3.addWidget(self.widget.mv_panel)
+        self.vboxLayout3.addWidget(self.widget.mv_panel, 3)
+        self.vboxLayout3.addWidget(self.widget.gt_viewer, 3)
+
+        self.vboxLayout3.addWidget(self.widget.slider_transX2)
+        self.vboxLayout3.addWidget(self.widget.slider_transY2)
+        self.vboxLayout3.addWidget(self.widget.slider_transZ2)
+
+        self.vboxLayout3.addWidget(self.widget.sliderX2)
+        self.vboxLayout3.addWidget(self.widget.sliderY2)
+        self.vboxLayout3.addWidget(self.widget.sliderZ2)
+
         self.vboxLayout3.addWidget(self.widget.btn_kf)
         
         self.vboxLayout2 = QVBoxLayout()
@@ -52,11 +62,12 @@ class Window(QMainWindow):
         self.hboxLayout = QHBoxLayout()
 
         self.hboxLayout.addLayout(self.vboxLayout3, 1 )
-        self.hboxLayout.addLayout(self.vboxLayout2, 4)
-        self.hboxLayout.addLayout(self.vert1, 2)
+        self.hboxLayout.addLayout(self.vboxLayout2, 3)
+        self.hboxLayout.addLayout(self.vert1, 1)
         
         self.widget.setLayout(self.hboxLayout)
         self.setCentralWidget(self.widget)
+        
 
 
         
@@ -185,6 +196,8 @@ class Window(QMainWindow):
             if self.widget.selected_thumbnail_index != -1:
                 self.widget.gl_viewer.setMinimumSize(1077, 804)
                 self.widget.displayThumbnail(self.widget.selected_thumbnail_index)
+
+            
 
             if self.widget.gl_viewer.obj.cross_hair:
                 self.widget.gl_viewer.obj.feature_tool()

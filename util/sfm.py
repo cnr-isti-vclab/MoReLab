@@ -76,9 +76,6 @@ def triangulate(P1, pts1, P2, pts2):
 
 
 def project_2d(Pw, P1, P2):
-    # print("Let's check")
-    # print(P1.shape)
-    # print(Pw.shape)
     pts1_out = np.matmul(P1, Pw.T)
     pts2_out = np.matmul(P2, Pw.T)
     pts1_out = pts1_out.T
@@ -138,11 +135,11 @@ def calc_camera_pos(rotation, translation):
     return camera_points.transpose()
 
 
-def scale_data(w1, w2, h1, h2, X):
+def scale_data(w1, w2, h1, h2, z1, z2, X):
     X_std = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0))
     scaled_x = X_std[:,0] * (w2 - w1) + w1
     scaled_y = X_std[:,1] * (h2 - h1) + h1
-    scaled_z = X_std[:,2] * (h2 - h1) + 0
+    scaled_z = X_std[:,2] * (z2 - z1) + 0
     
     scaled_data = np.vstack((scaled_x, scaled_y, scaled_z)).T
     return scaled_data
