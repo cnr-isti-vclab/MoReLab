@@ -142,17 +142,23 @@ class GL_Widget(QOpenGLWidget):
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:
-                    # self.near, self.far = self.obj.near_far[j][0], self.obj.near_far[j][1]
-                    # print(self.near, self.far)
+                    
+                    self.near, self.far = self.obj.near_far[j][0], self.obj.near_far[j][1]
+                    print([self.near, self.far])
+                    
                     self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1], self.w2-self.w1, self.h2-self.h1)
                     
-                    load_mat = self.opengl_extrinsics
                     # print(load_mat)
+
                     glMatrixMode(GL_PROJECTION)
-                    # glLoadIdentity()
+                    glLoadIdentity()
+                    load_mat = self.opengl_intrinsics
                     glLoadMatrixf(load_mat)
+                    
                     glMatrixMode(GL_MODELVIEW)
                     glLoadIdentity()
+                    load_mat = self.opengl_extrinsics
+                    glLoadMatrixf(load_mat)
                     
                     data = self.obj.ply_pts[0]
                     colors = np.zeros(shape=(data.shape[0], 3))
@@ -185,8 +191,8 @@ class GL_Widget(QOpenGLWidget):
         else:
             self.aspect_image = image.shape[1]/image.shape[0]
             self.aspect_widget = self.width()/self.height()
-            # print("Aspect ratio : "+str(self.aspect_image))
-            # print("Widget ratio : "+str(self.aspect_widget))
+            print("Aspect ratio : "+str(self.aspect_image))
+            print("Widget ratio : "+str(self.aspect_widget))
             self.set_default_view_param()
             w = int(self.w2-self.w1)
             h = int(self.h2-self.h1)
@@ -293,6 +299,7 @@ class GL_Widget(QOpenGLWidget):
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
         convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                
         p = convert_to_Qt_format.scaled(width, height, Qt.KeepAspectRatio)
         return QPixmap.fromImage(p)
     
@@ -306,7 +313,6 @@ class GL_Widget(QOpenGLWidget):
         
         
     def computeOpenGL_fromCV(self, K, Rt, cols=960, rows=1280):
-        
         perspective = np.array([[-K[0,0],         0,            K[0,2],                    0],
                                 [       0,      -K[1,1],        K[1,2],                    0],
                                 [       0,          0,      -(self.near+self.far),      self.near*self.far],
@@ -324,7 +330,29 @@ class GL_Widget(QOpenGLWidget):
                                 [ 0,        1.0,   0,      1],
                                 [ 0,        0,         0,       2.0],
                                 [ 0,        0,          0,      1]])
-
+                                
+        zn = -1 #self.near
+        zf = 1 #self.far
+        d = zn - zf
+        cx = K[0,2]
+        cy = K[1,2]
+        perspective = np.zeros((4,4))
         
-        self.opengl_intrinsics = np.matmul(NDC, perspective)
-        self.opengl_extrinsics = np.matmul(self.opengl_intrinsics, Rt)
+        width = 1920
+        height = 1080
+
+        perspective[0][0] =  2.0 * K[0,0] / width
+        perspective[1][1] = -2.0 * K[1,1] / height
+        perspective[2][0] =  1.0 - 2.0 * cx / width
+        perspective[2][1] =  2.0 * cy / height -1.0
+        perspective[2][2] =  (zf + zn) / d
+        perspective[2][3] =  -1.0
+        perspective[3][2] = 2.0 * zn * zf / d
+
+        perspective = perspective.transpose()
+
+        self.opengl_intrinsics = perspective
+        #self.opengl_intrinsics = np.matmul(NDC, perspective)
+        out = Rt.transpose()
+
+        self.opengl_extrinsics = out #np.matmul(self.opengl_intrinsics, Rt)

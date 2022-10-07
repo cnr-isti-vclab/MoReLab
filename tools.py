@@ -167,8 +167,8 @@ class Tools(QObject):
             dist = distance.euclidean(opt_points[i,:], cm)
             dist_list.append(dist)
         
-        near = min(dist_list)/2
-        far = max(dist_list) * 2
+        near = min(dist_list)
+        far = max(dist_list)
         return (near, far)
         
 

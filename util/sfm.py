@@ -134,7 +134,7 @@ def visualize2d(img1, img2, pts1, projected_pts1, pts2, projected_pts2, labels, 
         cv2.destroyAllWindows()
 
 def calc_camera_pos(rotation, translation):
-    camera_points = np.dot(-np.transpose(rotation),translation)
+    camera_points = np.dot(-np.transpose(rotation), translation)
     return camera_points.transpose()
 
 
