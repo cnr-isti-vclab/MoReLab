@@ -30,15 +30,15 @@ class Window(QMainWindow):
     def create_layout(self):
         self.vboxLayout3 = QVBoxLayout()
         self.vboxLayout3.addWidget(self.widget.mv_panel, 3)
-        self.vboxLayout3.addWidget(self.widget.gt_viewer, 3)
+        # self.vboxLayout3.addWidget(self.widget.gt_viewer, 3)
 
-        self.vboxLayout3.addWidget(self.widget.slider_transX2)
-        self.vboxLayout3.addWidget(self.widget.slider_transY2)
-        self.vboxLayout3.addWidget(self.widget.slider_transZ2)
+        # self.vboxLayout3.addWidget(self.widget.slider_transX2)
+        # self.vboxLayout3.addWidget(self.widget.slider_transY2)
+        # self.vboxLayout3.addWidget(self.widget.slider_transZ2)
 
-        self.vboxLayout3.addWidget(self.widget.sliderX2)
-        self.vboxLayout3.addWidget(self.widget.sliderY2)
-        self.vboxLayout3.addWidget(self.widget.sliderZ2)
+        # self.vboxLayout3.addWidget(self.widget.sliderX2)
+        # self.vboxLayout3.addWidget(self.widget.sliderY2)
+        # self.vboxLayout3.addWidget(self.widget.sliderZ2)
 
         self.vboxLayout3.addWidget(self.widget.btn_kf)
         

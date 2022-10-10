@@ -24,7 +24,7 @@ class Widget(QWidget):
         self.create_wdg1()
         self.create_scroll_area()
         self.gl_viewer = GL_Widget(self)
-        self.gt_viewer = GT_Widget(self)
+        # self.gt_viewer = GT_Widget(self)
         
         self.doc = Document(self)
         self.mv_panel = MoviePanel(self)

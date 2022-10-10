@@ -144,7 +144,7 @@ class GL_Widget(QOpenGLWidget):
                 if tup[0] == t:
                     
                     self.near, self.far = self.obj.near_far[j][0], self.obj.near_far[j][1]
-                    print([self.near, self.far])
+                    # print([self.near, self.far])
                     
                     self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1], self.w2-self.w1, self.h2-self.h1)
                     
@@ -209,7 +209,7 @@ class GL_Widget(QOpenGLWidget):
             self.w1 = 0
             self.w2 = self.width()
             diff = (self.aspect_image - self.aspect_widget)*self.height()
-            self.h1 = diff/2
+            self.h1 = 0
             self.h2 = self.height() - self.h1
         else:
             diff = (self.aspect_widget - self.aspect_image)*self.width()
