@@ -24,7 +24,7 @@ class GT_Widget(QOpenGLWidget):
         self.showMaximized()
         
         mesh = o3d.io.read_triangle_mesh('gl.obj')
-        X = np.array(mesh.vertices)
+        X = np.array(mesh.vertices)[0:1000]
         self.data = scale_data(50, 250, 50, 250, 0, 100, X)
         
         

@@ -35,8 +35,8 @@ class GL_Widget(QOpenGLWidget):
         self.setAutoFillBackground(False) 
         self.offset_x = 0
         self.offset_y = 0
-        self.near = -2
-        self.far = 2
+        self.near = -1
+        self.far = 1
         self.opengl_intrinsics = np.eye(4)
         self.opengl_extrinsics = np.eye(4)
         self.press_loc = (self.width()/2, self.height()/2)
@@ -53,9 +53,6 @@ class GL_Widget(QOpenGLWidget):
         self.transX = 0.0
         self.transY = 0.0
         self.transZ = 0.0
-        self.last_transX = 0.0
-        self.last_transY = 0.0
-        self.last_transZ = 0.0
         self.rotX = 0.0
         self.rotY = 0.0
         self.rotZ = 0.0
@@ -63,25 +60,22 @@ class GL_Widget(QOpenGLWidget):
 
     
     def setRotX(self, val):
-        self.rotX = val*(np.pi/16)
+        self.rotX = val*np.pi
     
     def setRotY(self, val):
-        self.rotY = val*(np.pi/16)
+        self.rotY = val*np.pi
     
     def setRotZ(self, val):
-        self.rotZ = val*(np.pi/16)
+        self.rotZ = val*np.pi
         
     def setTransX(self, val):
-        self.transX = val - self.last_transX
-        self.last_transX = val
+        self.transX = val
     
     def setTransY(self, val):
-        self.transY = val - self.last_transY
-        self.last_transY = val
+        self.transY = val
     
     def setTransZ(self, val):
-        self.transZ = val - self.last_transZ
-        self.last_transZ = val
+        self.transZ = val 
 
     # def resizeGL(self, width, height):
     #     v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
@@ -124,7 +118,7 @@ class GL_Widget(QOpenGLWidget):
                 if len(v.features_regular) > 0:
                     for i, fc in enumerate(v.features_regular[t]):
                         if not v.hide_regular[t][i]:
-                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
+                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                             self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
     
@@ -140,15 +134,11 @@ class GL_Widget(QOpenGLWidget):
         
         
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
+            
+            diff = (self.width()/v.width)*v.height
             for j, tup in enumerate(self.obj.camera_projection_mat):
-                if tup[0] == t:
-                    
-                    self.near, self.far = self.obj.near_far[j][0], self.obj.near_far[j][1]
-                    # print([self.near, self.far])
-                    
-                    self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1], self.w2-self.w1, self.h2-self.h1)
-                    
-                    # print(load_mat)
+                if tup[0] == t:                    
+                    self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
 
                     glMatrixMode(GL_PROJECTION)
                     glLoadIdentity()
@@ -170,8 +160,6 @@ class GL_Widget(QOpenGLWidget):
                     
                     glTranslate(self.transX, self.transY, self.transZ)
                     
-                    self.rotX, self.rotY, self.rotZ = 0, 0, 0
-                    self.transX, self.transY, self.transZ = 0, 0, 0
         
                     # glPushMatrix()
                     glPointSize(5)
@@ -191,11 +179,10 @@ class GL_Widget(QOpenGLWidget):
         else:
             self.aspect_image = image.shape[1]/image.shape[0]
             self.aspect_widget = self.width()/self.height()
-            print("Aspect ratio : "+str(self.aspect_image))
-            print("Widget ratio : "+str(self.aspect_widget))
             self.set_default_view_param()
             w = int(self.w2-self.w1)
             h = int(self.h2-self.h1)
+
             image = cv2.resize(image, (w, h), interpolation = cv2.INTER_AREA)
             # print("Image size after resizing: Width: "+str(image.shape[1])+ " , Height: "+str(image.shape[0]))
             PIL_image = self.toImgPIL(image).convert('RGB')
@@ -208,9 +195,11 @@ class GL_Widget(QOpenGLWidget):
         if self.aspect_image > self.aspect_widget:
             self.w1 = 0
             self.w2 = self.width()
-            diff = (self.aspect_image - self.aspect_widget)*self.height()
-            self.h1 = 0
+
+            diff = self.height() - (self.width()/v.width)*v.height
+            self.h1 = diff/2
             self.h2 = self.height() - self.h1
+            
         else:
             diff = (self.aspect_widget - self.aspect_image)*self.width()
             self.w1 = diff/2
@@ -312,25 +301,7 @@ class GL_Widget(QOpenGLWidget):
             return Image.fromarray(cv2.cvtColor(imgOpenCV, cv2.COLOR_BGR2RGB))
         
         
-    def computeOpenGL_fromCV(self, K, Rt, cols=960, rows=1280):
-        perspective = np.array([[-K[0,0],         0,            K[0,2],                    0],
-                                [       0,      -K[1,1],        K[1,2],                    0],
-                                [       0,          0,      -(self.near+self.far),      self.near*self.far],
-                                [       0,          0,                 1,                   0]])
-        
-        
-        NDC = np.array([[   -2.0/cols,      0,              0,                      1],
-                        [       0,       2.0/rows,          0,                      -1],
-                        [       0,          0,      -2.0/(self.far - self.near),    -(self.far+self.near)/(self.far-self.near)],
-                        [       0,          0,              0,                         1]])
-        
-        
-        
-        conversionT = np.array([[1.0,      0,      0,      1],
-                                [ 0,        1.0,   0,      1],
-                                [ 0,        0,         0,       2.0],
-                                [ 0,        0,          0,      1]])
-                                
+    def computeOpenGL_fromCV(self, K, Rt):
         zn = -1 #self.near
         zf = 1 #self.far
         d = zn - zf
@@ -338,8 +309,10 @@ class GL_Widget(QOpenGLWidget):
         cy = K[1,2]
         perspective = np.zeros((4,4))
         
-        width = 1920
-        height = 1080
+        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
+        width = v.width
+        # height = 1350
+        height = v.height*(self.width()/self.height())
 
         perspective[0][0] =  2.0 * K[0,0] / width
         perspective[1][1] = -2.0 * K[1,1] / height
@@ -356,3 +329,6 @@ class GL_Widget(QOpenGLWidget):
         out = Rt.transpose()
 
         self.opengl_extrinsics = out #np.matmul(self.opengl_intrinsics, Rt)
+        
+
+    

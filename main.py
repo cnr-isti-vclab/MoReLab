@@ -62,8 +62,8 @@ class Window(QMainWindow):
         self.hboxLayout = QHBoxLayout()
 
         self.hboxLayout.addLayout(self.vboxLayout3, 1 )
-        self.hboxLayout.addLayout(self.vboxLayout2, 3)
-        self.hboxLayout.addLayout(self.vert1, 1)
+        self.hboxLayout.addLayout(self.vboxLayout2, 4)
+        self.hboxLayout.addLayout(self.vert1, 2)
         
         self.widget.setLayout(self.hboxLayout)
         self.setCentralWidget(self.widget)
@@ -210,7 +210,6 @@ class Window(QMainWindow):
     
     def implement_save(self, p):
         name_project = os.path.relpath(p, os.getcwd())
-        print(name_project)
         
         disp_name_project = split_path(name_project)
         
@@ -221,7 +220,7 @@ class Window(QMainWindow):
         
         data = self.widget.doc.get_data()
         json_object = json.dumps(data, indent = 4)
-        with open(name_project+'.json', "w") as outfile:
+        with open(name_project, "w") as outfile:
             outfile.write(json_object)        
     
     

@@ -78,16 +78,11 @@ class Document():
             
             ab = []
             for k,e in enumerate(data["locations"][j]):
-                a = [int(x) for x in e]
+                a = (int(e[0]), int(e[1]))
                 ab.append(a)
             self.ctrl_wdg.gl_viewer.obj.locs.append(ab)
         
         feature_data_list = data["feature_dict"]
-
-        # print(self.ctrl_wdg.viewer.obj.labels)
-        # print(self.ctrl_wdg.viewer.obj.associated_frames)
-        # print(self.ctrl_wdg.viewer.obj.associated_videos)
-        # print(self.ctrl_wdg.viewer.obj.locs)
         
         a = os.path.join(project_path.split('.')[0], 'extracted_frames')
         movie_dirs = os.listdir(a)
@@ -183,4 +178,8 @@ class Document():
                     # img_path = os.path.join(path_network, self.ctrl_wdg.mv_panel.movie_caps[i].key_frame_indices_network[j] +'.png')
                     img_path = os.path.join(path_network, str(j).zfill(6)+'.jpeg')
                     cv2.imwrite(img_path, img)
-                    
+            
+            
+        
+    # def adjust_points(self, arr):
+        

@@ -60,7 +60,7 @@ def bundle_adjustment(xs, visible_labels, K):
     cam_indices = np.array([])
     point_indices = np.array([])
     for i,x in enumerate(visible_labels):
-        # print("Number of features in image # "+str(i+1)+" : "+str(len(x)))
+        print("Number of features in image # "+str(i+1)+" : "+str(len(x)))
         cam_indices = np.hstack((cam_indices, np.full_like(np.arange(len(x), dtype=int), i)))
         point_indices = np.hstack((point_indices, x))
         

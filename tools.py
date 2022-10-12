@@ -12,7 +12,8 @@ from object_panel import ObjectPanel
 import cv2, copy
 from scipy import optimize
 from scipy.spatial import distance
-# import matplotlib.pyplot as plt
+
+import matplotlib.pyplot as plt
 
 class Tools(QObject):
     def __init__(self, ctrl_wdg):
@@ -85,9 +86,9 @@ class Tools(QObject):
                 count = 0
                 for j,hide in enumerate(hr):
                     fc = v.features_regular[i][j]
-                    tmp1.append([self.wdg_tree.transform_x(fc.x_loc), self.wdg_tree.transform_y(fc.y_loc)])
+                    tmp1.append([fc.x_loc, fc.y_loc])
                     if not hide:
-                        tmp3.append([self.wdg_tree.transform_x(fc.x_loc), self.wdg_tree.transform_y(fc.y_loc)])
+                        tmp3.append([fc.x_loc, fc.y_loc])
                         tmp2.append(j)
                         count = count + 1
                 if count > 7:
@@ -115,8 +116,7 @@ class Tools(QObject):
         # print(all_pts)
 
         self.K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
-        # self.K[0,2] = self.K[0,2] + self.ctrl_wdg.mv_panel.width()
-        # self.K[1,2] = self.K[1,2] + self.ctrl_wdg.scroll_area.height()
+
     
         if len(img_indices) > 0:
             print("Performing Bundle adjustment")
@@ -138,26 +138,14 @@ class Tools(QObject):
                 cam_pos_list.append([cm[0,0], cm[0,1], cm[0,2]])
             
             # print(self.near_far)
-            print("K")
-            print(self.K)
+            print("Bundle adjustment has been computed.")
             array_camera_poses = np.asarray(cam_pos_list)
             ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
             write_pointcloud(self.output_name, ply_pts) 
             after_BA_dialogue(self.output_name)
-            
-            # opt_points = scale_data(-1 , 1, -1 , 1, opt_points)
+             
             self.ply_pts.append(opt_points)
-            
-
-            # print("Width of central widget: "+str(self.ctrl_wdg.width()))
-            # print("Width of movie panel: "+str(self.ctrl_wdg.mv_panel.width()))
-            # print("Width of GL Viewer: "+str(self.ctrl_wdg.gl_viewer.width()))
-            # print("Width of feature panel: "+str(self.wdg_tree.width()))
-
-            # print("Width of central widget: "+str(self.ctrl_wdg.height()))
-            # print("Width of movie panel: "+str(self.ctrl_wdg.mv_panel.height()))
-            # print("Width of GL Viewer: "+str(self.ctrl_wdg.gl_viewer.height()))
-            # print("Width of feature panel: "+str(self.wdg_tree.height()))
+    
 
             
             
@@ -229,24 +217,25 @@ class Tools(QObject):
 
         
     def move_tool(self):
-        self.ft_tool.setStyleSheet(self.tool_btn_style)
-        self.mv_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
-        self.cross_hair = False
-        self.hide_features(True)
-        # self.hide_features(False)
-        self.display_data()
-        # self.ctrl_wdg.viewer.setScrolDragMode()
-        self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:    
+            self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.mv_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
+            self.cross_hair = False
+            self.hide_features(True)
+            # self.hide_features(False)
+            self.display_data()
+            # self.ctrl_wdg.viewer.setScrolDragMode()
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
         
     def feature_tool(self):
-        # print('feature')
-        self.mv_tool.setStyleSheet(self.tool_btn_style)
-        self.ft_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
-        self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
-        # self.ctrl_wdg.gl_viewer.setNoDragMode()
-        self.cross_hair = True
-        self.hide_features(True)
-        self.display_data()
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
+            # self.ctrl_wdg.gl_viewer.setNoDragMode()
+            self.cross_hair = True
+            self.hide_features(True)
+            self.display_data()
 
     
     def add_feature(self, x, y):
