@@ -3,6 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import platform, struct
 import numpy as np
+from scipy.spatial import distance
 
 
 
@@ -78,6 +79,18 @@ def show_dialogue():
     return b
 
 
+def confirm_exit():
+    msgBox = QMessageBox()
+    msgBox.setText("Are you sure you want to exit ?")
+    msgBox.setWindowTitle("Exit Project")
+    msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    returnValue = msgBox.exec()
+    b = False
+    if returnValue == QMessageBox.Yes:
+       b = True
+    return b
+
+
 def movie_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("This movie has already been loaded.")
@@ -90,7 +103,8 @@ def after_BA_dialogue(filename):
     msgBox.setText("3D structure has been computed and saved as "+str(filename))
     msgBox.setWindowTitle("3D structure")
     msgBox.setStandardButtons(QMessageBox.Ok)
-    returnValue = msgBox.exec()
+    returnValue = msgBox.exec()    
+
     
 
 def numFeature_dialogue():
@@ -187,3 +201,12 @@ def empty_gui(layout):
     return layout
 
 
+def calc_near_far(cm, opt_points):
+    dist_list = []
+    for i in range(opt_points.shape[0]):
+        dist = distance.euclidean(opt_points[i,:], cm)
+        dist_list.append(dist)
+    
+    near = min(dist_list)
+    far = max(dist_list)
+    return (near, far)

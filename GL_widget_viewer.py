@@ -16,6 +16,7 @@ from PIL.ImageQt import ImageQt
 from util.sfm import scale_data
 
 
+
 class GL_Widget(QOpenGLWidget):
     def __init__(self, parent=None):
         QOpenGLWidget.__init__(self, parent)
@@ -44,6 +45,7 @@ class GL_Widget(QOpenGLWidget):
         self.mv_pix = 1
         self.aspect_image = 0
         self.aspect_widget = self.width()/self.height()
+        
 
     def initializeGL(self):
         glClearDepth(1.0)
@@ -77,15 +79,6 @@ class GL_Widget(QOpenGLWidget):
     def setTransZ(self, val):
         self.transZ = val 
 
-    # def resizeGL(self, width, height):
-    #     v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-    #     glViewport(0, 0, width, height)
-    #     glMatrixMode(GL_PROJECTION)
-    #     glLoadIdentity()
-    #     aspect = float(width) / float(height)
-    #     gluPerspective(45.0, aspect, -1, 1.0)
-    #     # glOrtho(0, width, height, 0, self.near, self.far)
-    #     glMatrixMode(GL_MODELVIEW)
 
     def paintGL(self):        
         glClearDepth(1.0)
@@ -129,12 +122,55 @@ class GL_Widget(QOpenGLWidget):
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                             self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
+    
+                
+            
+            # Painting for Quad Tool
+            
+            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and self.obj.up_pt_bool:
+                
+                pen = QPen(QColor(0, 0, 255))
+                pen.setWidth(2)
+                self.painter.setPen(pen)
+                
+                if self.obj.ctrl_wdg.kf_method == "Regular":
+                    for i, fc in enumerate(v.features_regular[t]):
+                        if v.quad_groups_regular[t][i] != -1:
+                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
 
+                    
+                elif self.obj.ctrl_wdg.kf_method == "Network":
+                    for i, fc in enumerate(v.features_network[t]):
+                        if v.quad_groups_network[t][i] != -1:
+                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
+                            
+                # self.painter.setBrush(QBrush(QColor(0, 0, 255)))
+                # for i, cx in enumerate(self.obj.ctrl_wdg.quad_obj.centers_x):
+                #     cy = self.obj.ctrl_wdg.quad_obj.centers_y[i]
+                #     self.painter.drawEllipse(cx, cy, 10, 10)    
+
+                self.painter.setBrush(QBrush(QColor(255, 255, 255)))
+                for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
+                    for j in range(4):
+                        P_j = pt_tup[j]
+                        # print(P_j)
+                        self.painter.drawEllipse(P_j[0], P_j[1], 10, 10)
+
+                # for i, x_arr in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
+                #     for j in range(x_arr.shape[0]):
+                #         self.painter.drawEllipse(x_arr[j,0], x_arr[j,1], 10, 10)                         
+                            
+                        
+            
+            
+            
             self.painter.end()
         
-        
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
-            
             diff = (self.width()/v.width)*v.height
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:                    
@@ -152,7 +188,7 @@ class GL_Widget(QOpenGLWidget):
                     
                     data = self.obj.ply_pts[0]
                     colors = np.zeros(shape=(data.shape[0], 3))
-                    colors[:,2] = 1
+                    colors[:,0] = 1
                     
                     glRotate(self.rotX, 1.0, 0.0, 0.0)
                     glRotate(self.rotY, 0.0, 1.0, 0.0)
@@ -213,7 +249,7 @@ class GL_Widget(QOpenGLWidget):
     def mouseDoubleClickEvent(self, event):
         a = event.pos()
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        if self.img_file is not None:
+        if self.img_file is not None and self.obj.cross_hair:
             # print(a.x(), a.y())
             if a.x() > 0 and a.y() > 0:
                 x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
@@ -228,27 +264,28 @@ class GL_Widget(QOpenGLWidget):
         f = self.obj.selected_feature_index
         t = self.obj.ctrl_wdg.selected_thumbnail_index
 
-        if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
-            self.obj.delete_feature()
-
-        elif event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
-            if event.key() == Qt.Key_Left:
-                x = v.features_regular[t][f].x_loc-self.mv_pix
-                y = v.features_regular[t][f].y_loc
-            elif event.key() == Qt.Key_Right:
-                x = v.features_regular[t][f].x_loc+self.mv_pix
-                y = v.features_regular[t][f].y_loc
-            elif event.key() == Qt.Key_Up:
-                x = v.features_regular[t][f].x_loc
-                y = v.features_regular[t][f].y_loc-self.mv_pix
-            elif event.key() == Qt.Key_Down:
-                x = v.features_regular[t][f].x_loc
-                y = v.features_regular[t][f].y_loc+self.mv_pix
-            else:
-                x = v.features_regular[t][f].x_loc
-                y = v.features_regular[t][f].y_loc
-
-            self.obj.move_feature(x, y, v.features_regular[t][f])
+        if self.obj.cross_hair:
+            if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+                self.obj.delete_feature()
+    
+            elif event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
+                if event.key() == Qt.Key_Left:
+                    x = v.features_regular[t][f].x_loc-self.mv_pix
+                    y = v.features_regular[t][f].y_loc
+                elif event.key() == Qt.Key_Right:
+                    x = v.features_regular[t][f].x_loc+self.mv_pix
+                    y = v.features_regular[t][f].y_loc
+                elif event.key() == Qt.Key_Up:
+                    x = v.features_regular[t][f].x_loc
+                    y = v.features_regular[t][f].y_loc-self.mv_pix
+                elif event.key() == Qt.Key_Down:
+                    x = v.features_regular[t][f].x_loc
+                    y = v.features_regular[t][f].y_loc+self.mv_pix
+                else:
+                    x = v.features_regular[t][f].x_loc
+                    y = v.features_regular[t][f].y_loc
+    
+                self.obj.move_feature(x, y, v.features_regular[t][f])
 
         super(GL_Widget, self).keyPressEvent(event)
 
@@ -271,15 +308,23 @@ class GL_Widget(QOpenGLWidget):
     def mousePressEvent(self, event):
         a = event.pos()
         self.press_loc = (a.x(), a.y())
+        if self.obj.up_pt_bool:
+            x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
+            y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
+            self.obj.ctrl_wdg.quad_obj.select_feature(x, y)
+            
+            
 
     # overriding the mousePressEvent method
     def mouseReleaseEvent(self, event):
         a = event.pos()
-        self.release_loc = (a.x(), a.y())
-        if self._zoom >= 1:
-            self.offset_x += (self.release_loc[0] - self.press_loc[0])
-            self.offset_y += (self.release_loc[1] - self.press_loc[1])
-                    
+        if not self.obj.up_pt_bool:
+            self.release_loc = (a.x(), a.y())
+            if self._zoom >= 1:
+                self.offset_x += (self.release_loc[0] - self.press_loc[0])
+                self.offset_y += (self.release_loc[1] - self.press_loc[1])
+        
+                        
                     
                     
     def convert_cv_qt(self, cv_img, width, height):

@@ -9,6 +9,7 @@ from document import Document
 from movie_panel import MoviePanel
 from GL_widget_viewer import GL_Widget
 from obj_viewer import GT_Widget
+from quad import Quad_Tool
 
 import json, os, glob
 import cv2
@@ -28,6 +29,7 @@ class Widget(QWidget):
         
         self.doc = Document(self)
         self.mv_panel = MoviePanel(self)
+        self.quad_obj = Quad_Tool(self)
         
         self.thumbnail_text_stylesheet = """color:black;
                                  font-weight:bold;
@@ -74,28 +76,6 @@ class Widget(QWidget):
 
         self.slider_transZ = QSlider(Qt.Horizontal)
         self.slider_transZ.valueChanged.connect(lambda val: self.gl_viewer.setTransZ(val))
-        
-        
-        self.sliderX2 = QSlider(Qt.Horizontal)
-        self.sliderX2.valueChanged.connect(lambda val: self.gt_viewer.setRotX(val))
-
-        self.sliderY2 = QSlider(Qt.Horizontal)
-        self.sliderY2.valueChanged.connect(lambda val: self.gt_viewer.setRotY(val))
-
-        self.sliderZ2 = QSlider(Qt.Horizontal)
-        self.sliderZ2.valueChanged.connect(lambda val: self.gt_viewer.setRotZ(val))
-        
-        self.slider_transX2 = QSlider(Qt.Horizontal)
-        self.slider_transX2.valueChanged.connect(lambda val: self.gt_viewer.setTransX(val))
-
-        self.slider_transY2 = QSlider(Qt.Horizontal)
-        self.slider_transY2.valueChanged.connect(lambda val: self.gt_viewer.setTransY(val))
-
-        self.slider_transZ2 = QSlider(Qt.Horizontal)
-        self.slider_transZ2.valueChanged.connect(lambda val: self.gt_viewer.setTransZ(val))
-
-
-
 
     
        

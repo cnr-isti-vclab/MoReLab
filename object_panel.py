@@ -124,4 +124,14 @@ class ObjectPanel(QTreeWidget):
         y2 = (y - self.tool_obj.ctrl_wdg.gl_viewer.h1)*self.factor_y
         # y2 = y
         return int(y2)
+    
+    def inv_trans_x(self, x):
+        x2 = self.tool_obj.ctrl_wdg.gl_viewer.w1 + (x/self.factor_x)
+        # x2 = x
+        return int(x2)        
+
+    def inv_trans_y(self, y):
+        y2 = self.tool_obj.ctrl_wdg.gl_viewer.h1 + (y/self.factor_y)
+        # y2 = y
+        return int(y2)
 

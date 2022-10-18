@@ -3,7 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import sys, os, sip, json, glob, cv2
 from central_widget import Widget
-from util.util import movie_dialogue, split_path, empty_gui, adjust_op
+from util.util import movie_dialogue, split_path, empty_gui, adjust_op, confirm_exit
 from GL_widget_viewer import GL_Widget
 
 from util.video import Video
@@ -30,15 +30,6 @@ class Window(QMainWindow):
     def create_layout(self):
         self.vboxLayout3 = QVBoxLayout()
         self.vboxLayout3.addWidget(self.widget.mv_panel, 3)
-        # self.vboxLayout3.addWidget(self.widget.gt_viewer, 3)
-
-        # self.vboxLayout3.addWidget(self.widget.slider_transX2)
-        # self.vboxLayout3.addWidget(self.widget.slider_transY2)
-        # self.vboxLayout3.addWidget(self.widget.slider_transZ2)
-
-        # self.vboxLayout3.addWidget(self.widget.sliderX2)
-        # self.vboxLayout3.addWidget(self.widget.sliderY2)
-        # self.vboxLayout3.addWidget(self.widget.sliderZ2)
 
         self.vboxLayout3.addWidget(self.widget.btn_kf)
         
@@ -83,18 +74,18 @@ class Window(QMainWindow):
         self.widget.gl_viewer.obj.om_tool.clicked.connect(self.open_movie)
         self.widget.gl_viewer.obj.sp_tool.clicked.connect(self.save_project)
         self.widget.gl_viewer.obj.sp_as_tool.clicked.connect(self.save_as_project)
-        # self.widget.gl_viewer.obj.ep_tool.clicked.connect(self.exit_project)
+        self.widget.gl_viewer.obj.ep_tool.clicked.connect(self.exit_project)
         
 
         toolbar.addWidget(self.widget.gl_viewer.obj.np_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.op_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.om_tool)
-        # toolbar.addWidget(self.widget.viewer.obj.om_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.sp_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.sp_as_tool)
-        # toolbar.addWidget(self.widget.viewer.obj.ep_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.ep_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.mv_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.ft_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.qd_tool)
         
         self.addToolBarBreak(Qt.TopToolBarArea) 
 
@@ -172,7 +163,8 @@ class Window(QMainWindow):
         self.project_name_label.setText("untitled.json")
         
     def exit_project(self):
-        self.close()
+        if confirm_exit():
+            self.close()
     
     def open_project(self):
         file_types = "json (*.json)"

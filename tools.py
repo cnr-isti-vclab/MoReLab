@@ -11,8 +11,7 @@ import numpy as np
 from object_panel import ObjectPanel
 import cv2, copy
 from scipy import optimize
-from scipy.spatial import distance
-
+from util.util import calc_near_far
 import matplotlib.pyplot as plt
 
 class Tools(QObject):
@@ -35,7 +34,7 @@ class Tools(QObject):
                                   """)
         self.cam_btn.clicked.connect(self.calibrate)
         self.cross_hair = False
-        
+        self.up_pt_bool = False
         self.labels = []
         self.locs = []
         self.associated_frames = []
@@ -123,41 +122,35 @@ class Tools(QObject):
             opt_cameras, opt_points = bundle_adjustment(all_pts, visible_labels, self.K)
             opt_points_ext = np.concatenate((opt_points, np.ones((opt_points.shape[0], 1))), axis=1)             
 
+            # print(self.near_far)
+            print("Bundle adjustment has been computed.")
+
             cam_pos_list = []
             for i in range(opt_cameras.shape[0]):
                 R = getRotation(opt_cameras[i,:3], 'e')
                 t = opt_cameras[i,3:].reshape((3,1))
+                Pr = np.matmul(self.K, (np.concatenate((R, t), axis=1)))
+                # print("P")
+                # print(Pr)
                 cam_ext = np.concatenate((np.concatenate((R, t), axis=1), np.array([0,0,0,1]).reshape((1,4))), axis=0)
                 # ppm =np.concatenate((np.matmul(self.K, (np.concatenate((R, t), axis=1))), np.array([0,0,0,1]).reshape((1,4))), axis=0)
                 
 
                 self.camera_projection_mat.append((img_indices[i], cam_ext))                
                 cm = calc_camera_pos(R, t)
-                self.near_far.append(self.calc_near_far(cm, opt_points))
+                self.near_far.append(calc_near_far(cm, opt_points))
                 self.camera_poses.append(cm)
                 cam_pos_list.append([cm[0,0], cm[0,1], cm[0,2]])
             
-            # print(self.near_far)
-            print("Bundle adjustment has been computed.")
+
             array_camera_poses = np.asarray(cam_pos_list)
             ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
             write_pointcloud(self.output_name, ply_pts) 
             after_BA_dialogue(self.output_name)
-             
+            # print(opt_points)
             self.ply_pts.append(opt_points)
-    
+     
 
-            
-            
-    def calc_near_far(self, cm, opt_points):
-        dist_list = []
-        for i in range(opt_points.shape[0]):
-            dist = distance.euclidean(opt_points[i,:], cm)
-            dist_list.append(dist)
-        
-        near = min(dist_list)
-        far = max(dist_list)
-        return (near, far)
         
 
     def add_tool_icons(self):
@@ -214,28 +207,46 @@ class Tools(QObject):
         self.ft_tool.clicked.connect(self.feature_tool)
         self.ft_tool.setStyleSheet(self.tool_btn_style)
         self.ft_tool.setToolTip("Feature Tool")
+        
+        self.qd_tool = QPushButton()
+        self.qd_tool.setIcon(QIcon("./icons/point_up.png"))
+        self.qd_tool.setIconSize(QSize(icon_size, icon_size))
+        self.qd_tool.clicked.connect(self.quad_tool)
+        self.qd_tool.setStyleSheet(self.tool_btn_style)
+        self.qd_tool.setToolTip("Quad Tool")
 
         
     def move_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:    
             self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.tool_btn_style)
             self.mv_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
             self.cross_hair = False
-            self.hide_features(True)
-            # self.hide_features(False)
+            self.up_pt_bool = False
             self.display_data()
-            # self.ctrl_wdg.viewer.setScrolDragMode()
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
         
     def feature_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
             self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.tool_btn_style)
             self.ft_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
-            # self.ctrl_wdg.gl_viewer.setNoDragMode()
             self.cross_hair = True
-            self.hide_features(True)
+            self.up_pt_bool = False
             self.display_data()
+            
+        
+    def quad_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
+            self.cross_hair = False
+            self.up_pt_bool = True
+            
+
 
     
     def add_feature(self, x, y):
@@ -279,11 +290,13 @@ class Tools(QObject):
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t].append(fc)
                 v.hide_regular[t].append(False)
+                v.quad_groups_regular[t].append(-1)
                 
                 
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(fc)
                 v.hide_network[t].append(False)
+                v.quad_groups_network[t].append(-1)
 
                 
             self.display_data()
@@ -304,39 +317,7 @@ class Tools(QObject):
             print(self.labels)
             print(self.associated_frames)
             print(self.locs)
-            
-            
-    def hide_features(self, current=True):
-        # print("Index : "+str(self.ctrl_wdg.mv_panel.selected_movie_idx))
-        t = self.ctrl_wdg.selected_thumbnail_index
-        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
-        
-        for v1 in self.ctrl_wdg.mv_panel.movie_caps:
-            for i in range(len(v1.n_objects_kf_regular)):
-                if v1.features_regular !=  []:
-                    for j,f in enumerate(v1.features_regular[i]):
-                        f.label.setVisible(False)
-                        f.setVisible(False)
-            for i in range(len(v1.n_objects_kf_network)):
-                if v1.features_network !=  []:
-                    for j,f in enumerate(v1.features_network[i]):
-                        f.label.setVisible(False)
-                        f.setVisible(False)
-        
-        if current:
-            if self.ctrl_wdg.kf_method == "Regular":
-                if v.features_regular != []:
-                    for j,f in enumerate(v.features_regular[t]):
-                        if not v.hide_regular[t][j]:
-                            f.label.setVisible(True)
-                            f.setVisible(True)
-                            
-            elif self.ctrl_wdg.kf_method == "Network":
-                if v.features_network != []:
-                    for j,f in enumerate(v.features_network[t]):
-                        if not v.hide_network[t][j]:
-                            f.label.setVisible(True)
-                            f.setVisible(True)
+     
 
 
     def find_idx(self, f, t):

@@ -112,24 +112,27 @@ class Document():
                     img_names_network = sorted(glob.glob(movie_dirr+'/Network/*'))
                     v.key_frames_network = [cv2.imread(x) for x in img_names_network]          
 
+            # print("Number : "+str(len(v.n_objects_kf_regular)))
             for j, val in enumerate(v.n_objects_kf_regular):
                 v.features_regular.append([])
+                v.quad_groups_regular.append([])
                 if val > 0:
                     bool_list = v.hide_regular[j]
                     for k in range(val):
                         if bool_list[k]:
                             fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, 0, 0, k+1, self.ctrl_wdg.gl_viewer.obj)
                             v.features_regular[j].append(fc)
-
+                            v.quad_groups_regular[j].append(-1)
                         else:
                             loccc = self.ctrl_wdg.gl_viewer.obj.locs[k][self.ctrl_wdg.gl_viewer.obj.find_idx(k, j)]
-                            
                             fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.gl_viewer.obj)
                             v.features_regular[j].append(fc)
+                            v.quad_groups_regular[j].append(-1)
 
 
             for j, val in enumerate(v.n_objects_kf_network):
                 v.features_network.append([])
+                v.quad_groups_network.append([])
                 if val > 0:
                     bool_list = v.hide_network[j]
                     for k in range(val):
@@ -140,6 +143,7 @@ class Document():
                             loccc = self.ctrl_wdg.gl_viewer.obj.locs[k][self.ctrl_wdg.gl_viewer.obj.find_idx(k, j)]
                             fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.gl_viewer.obj)
                             v.features_network[j].append(fc)
+                            v.quad_groups_network[j].append(-1)
                             
                             
         self.ctrl_wdg.mv_panel.selected_movie_path = adjust_op([data["selected_movie"]], op)[0]
