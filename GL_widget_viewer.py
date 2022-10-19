@@ -146,27 +146,7 @@ class GL_Widget(QOpenGLWidget):
                         if v.quad_groups_network[t][i] != -1:
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
-                            
-                # self.painter.setBrush(QBrush(QColor(0, 0, 255)))
-                # for i, cx in enumerate(self.obj.ctrl_wdg.quad_obj.centers_x):
-                #     cy = self.obj.ctrl_wdg.quad_obj.centers_y[i]
-                #     self.painter.drawEllipse(cx, cy, 10, 10)    
-
-                self.painter.setBrush(QBrush(QColor(255, 255, 255)))
-                for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
-                    for j in range(4):
-                        P_j = pt_tup[j]
-                        # print(P_j)
-                        self.painter.drawEllipse(P_j[0], P_j[1], 10, 10)
-
-                # for i, x_arr in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
-                #     for j in range(x_arr.shape[0]):
-                #         self.painter.drawEllipse(x_arr[j,0], x_arr[j,1], 10, 10)                         
-                            
-                        
-            
-            
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))                      
             
             self.painter.end()
         
@@ -197,7 +177,6 @@ class GL_Widget(QOpenGLWidget):
                     glTranslate(self.transX, self.transY, self.transZ)
                     
         
-                    # glPushMatrix()
                     glPointSize(5)
                     glBegin(GL_POINTS)
                     
@@ -205,9 +184,31 @@ class GL_Widget(QOpenGLWidget):
                         glColor3f(colors[i,0], colors[i,1], colors[i,2])
                         glVertex3f(data[i,0], data[i,1], data[i,2])
                     glEnd()
-                    # glPopMatrix()
-            
-        
+
+                      
+            for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
+                glColor3f(0.0, 0.0, 1.0)
+                glBegin(GL_TRIANGLES)      
+                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                glEnd()
+                
+                glBegin(GL_TRIANGLES)      
+                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                glEnd()
+                
+                glLineWidth(2.0)
+                glColor3f(0.0, 0.0, 0.0)
+                glBegin(GL_LINE_LOOP)
+                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+
+                glEnd()
 
     def setPhoto(self, image=None):
         if image is None:
