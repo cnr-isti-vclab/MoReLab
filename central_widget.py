@@ -37,12 +37,6 @@ class Widget(QWidget):
         self.thumbnail_height = 96
         self.thumbnail_width = 120
         self.kf_method = ""
-        self.last_x = 0
-        self.last_y = 0
-        self.last_z = 0
-        self.last_transx = 0
-        self.last_transy = 0
-        self.last_transz = 0
         
 
 
@@ -55,27 +49,6 @@ class Widget(QWidget):
                                   QPushButton {background-color: rgb(230,230,230); border-radius: 20px; padding: 15px; border: 1px solid black; color:black; font-size: 15px;}
                                   """)
         self.btn_kf.clicked.connect(self.extract)
-        
-        self.radiobutton = QCheckBox("Display image and features")
-        self.radiobutton.setChecked(True)
-        
-        self.sliderX = QSlider(Qt.Horizontal)
-        self.sliderX.valueChanged.connect(lambda val: self.gl_viewer.setRotX(val))
-
-        self.sliderY = QSlider(Qt.Horizontal)
-        self.sliderY.valueChanged.connect(lambda val: self.gl_viewer.setRotY(val))
-
-        self.sliderZ = QSlider(Qt.Horizontal)
-        self.sliderZ.valueChanged.connect(lambda val: self.gl_viewer.setRotZ(val))
-        
-        self.slider_transX = QSlider(Qt.Horizontal)
-        self.slider_transX.valueChanged.connect(lambda val: self.gl_viewer.setTransX(val))
-
-        self.slider_transY = QSlider(Qt.Horizontal)
-        self.slider_transY.valueChanged.connect(lambda val: self.gl_viewer.setTransY(val))
-
-        self.slider_transZ = QSlider(Qt.Horizontal)
-        self.slider_transZ.valueChanged.connect(lambda val: self.gl_viewer.setTransZ(val))
 
     
        

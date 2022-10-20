@@ -51,33 +51,6 @@ class GL_Widget(QOpenGLWidget):
         glClearDepth(1.0)
         glClearColor(0.8, 0.8, 0.8, 1)
         glEnable(GL_DEPTH_TEST)
-        
-        self.transX = 0.0
-        self.transY = 0.0
-        self.transZ = 0.0
-        self.rotX = 0.0
-        self.rotY = 0.0
-        self.rotZ = 0.0
-    
-
-    
-    def setRotX(self, val):
-        self.rotX = val*np.pi
-    
-    def setRotY(self, val):
-        self.rotY = val*np.pi
-    
-    def setRotZ(self, val):
-        self.rotZ = val*np.pi
-        
-    def setTransX(self, val):
-        self.transX = val
-    
-    def setTransY(self, val):
-        self.transY = val
-    
-    def setTransZ(self, val):
-        self.transZ = val 
 
 
     def paintGL(self):        
@@ -89,7 +62,7 @@ class GL_Widget(QOpenGLWidget):
         t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
         
-        if self.img_file is not None and self.obj.ctrl_wdg.radiobutton.isChecked():
+        if self.img_file is not None:
             self.painter.begin(self)
             pen = QPen(QColor(0, 0, 0))
             pen.setWidth(2)
@@ -170,12 +143,6 @@ class GL_Widget(QOpenGLWidget):
                     colors = np.zeros(shape=(data.shape[0], 3))
                     colors[:,0] = 1
                     
-                    glRotate(self.rotX, 1.0, 0.0, 0.0)
-                    glRotate(self.rotY, 0.0, 1.0, 0.0)
-                    glRotate(self.rotZ, 0.0, 0.0, 1.0)
-                    
-                    glTranslate(self.transX, self.transY, self.transZ)
-                    
         
                     glPointSize(5)
                     glBegin(GL_POINTS)
@@ -186,29 +153,33 @@ class GL_Widget(QOpenGLWidget):
                     glEnd()
 
                       
-            for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
-                glColor3f(0.0, 0.0, 1.0)
-                glBegin(GL_TRIANGLES)      
-                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                glEnd()
-                
-                glBegin(GL_TRIANGLES)      
-                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                glEnd()
-                
-                glLineWidth(2.0)
-                glColor3f(0.0, 0.0, 0.0)
-                glBegin(GL_LINE_LOOP)
-                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-
-                glEnd()
+                    for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
+                        if i==self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx:
+                            glColor3f(0.38, 0.85, 0.211)
+                        else:
+                            glColor3f(0.0, 0.635, 1.0)
+                        glBegin(GL_TRIANGLES)      
+                        glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                        glEnd()
+                        
+                        glBegin(GL_TRIANGLES)      
+                        glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                        glEnd()
+                        
+                        glLineWidth(2.0)
+                        glColor3f(0.0, 0.0, 0.0)
+                        glBegin(GL_LINE_LOOP)
+                        glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                        glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+        
+                        glEnd()
+                    # print("------------------------------")
 
     def setPhoto(self, image=None):
         if image is None:

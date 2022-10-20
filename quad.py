@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from scipy.spatial import distance
+from quad_panel import QuadPanel
 import numpy as np
 
 
@@ -9,47 +10,64 @@ class Quad_Tool(QObject):
     def __init__(self, ctrl_wdg):
         super().__init__(ctrl_wdg)
         self.ctrl_wdg = ctrl_wdg
+        self.quad_tree = QuadPanel(self)
         self.dist_thresh_select = 10.0
-        self.num_selected = 0
+        self.group_num = 0
         self.occurence_groups = []
         self.centers_x = []
         self.centers_y = []
         self.new_points = []
+        self.order = []
+        self.data_val = []
         
         
     def select_feature(self, x, y):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         t = self.ctrl_wdg.selected_thumbnail_index
+        
 
-        if len(v.features_regular) > 0 or len(v.features_network) > 0:
+        if (len(v.features_regular) > 0 or len(v.features_network) > 0) and len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0:
+            data = self.ctrl_wdg.gl_viewer.obj.ply_pts[-1]    # 3D data from bundle adjustment
             if self.ctrl_wdg.kf_method == "Regular":
                 for i, fc in enumerate(v.features_regular[t]):
                     if not v.hide_regular[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select and v.quad_groups_regular[t][i] == -1:
-                            v.quad_groups_regular[t][i] = 1 + int(self.num_selected/4)                            
-                            self.num_selected += 1
+                            self.order.append(i)
+                            self.data_val.append(data[i,:])
+                            v.quad_groups_regular[t][i] = self.group_num                          
 
-                if self.num_selected % 4 == 0 and self.num_selected > 0:
-                    data = self.ctrl_wdg.gl_viewer.obj.ply_pts[0]    # 3D data from bundle adjustment
-                    
-                    num_groups = int(self.num_selected/4)
-                    for j in range(num_groups):
-                        occ = []
-                        data_val = []
-                        # print(v.quad_groups_regular[t])
-                        for k,val in enumerate(v.quad_groups_regular[t]):
-                            if j+1 == val:
-                                occ.append(k)
-                                data_val.append(data[k,:])
-                        assert len(data_val) == 4
-                        self.occurence_groups.append(occ)
-                        
-                        self.compute_new_points(np.array([data_val[0][0], data_val[0][1], data_val[0][2]]),
-                                                np.array([data_val[2][0], data_val[2][1], data_val[2][2]]),
-                                                np.array([data_val[3][0], data_val[3][1], data_val[3][2]]),
-                                                np.array([data_val[1][0], data_val[1][1], data_val[1][2]]))
-                        
+                            if len(self.data_val) == 4:
+                                self.occurence_groups.append(self.order)                                
+                                xp = self.compute_new_points(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                self.new_points.append(xp)
+                                self.quad_tree.add_quad(self.order, self.group_num + 1)
+                                self.order = []
+                                self.data_val = []
+                                self.group_num += 1
+             
+            elif self.ctrl_wdg.kf_method == "Network":
+                for i, fc in enumerate(v.features_network[t]):
+                    if not v.hide_network[t][i]:
+                        d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
+                        if d < self.dist_thresh_select and v.quad_groups_network[t][i] == -1:
+                            self.order.append(i)
+                            self.data_val.append(data[i,:])
+                            v.quad_groups_network[t][i] = self.group_num                          
+
+                            if len(self.data_val) == 4:
+                                self.occurence_groups.append(self.order)                                
+                                xp = self.compute_new_points(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                self.new_points.append(xp)
+                                self.quad_tree.add_quad(self.order, self.group_num + 1)
+                                self.order = []
+                                self.data_val = []
+                                self.group_num += 1
+
+
+
+
+
                         
                         
     def compute_new_points(self, F1, F2, F3, F4): # F1, F2, F3, F4 are the input points in clockwise order as on doc file
@@ -96,8 +114,6 @@ class Quad_Tool(QObject):
         P3 = min_T*T + min_B*B + center
         P4 = max_T*T + min_B*B + center
         
-        x = [P1, P2, P3, P4]
-        # print(x)
-        
-        self.new_points.append(x)
+        x = (P1, P2, P3, P4)
+        return x
         

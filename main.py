@@ -30,7 +30,7 @@ class Window(QMainWindow):
     def create_layout(self):
         self.vboxLayout3 = QVBoxLayout()
         self.vboxLayout3.addWidget(self.widget.mv_panel, 3)
-
+        self.vboxLayout3.addWidget(self.widget.quad_obj.quad_tree, 3)
         self.vboxLayout3.addWidget(self.widget.btn_kf)
         
         self.vboxLayout2 = QVBoxLayout()
@@ -39,22 +39,13 @@ class Window(QMainWindow):
         
         self.vert1 = QVBoxLayout()
         self.vert1.addWidget(self.widget.gl_viewer.obj.wdg_tree)
-        self.vert1.addWidget(self.widget.slider_transX)
-        self.vert1.addWidget(self.widget.slider_transY)
-        self.vert1.addWidget(self.widget.slider_transZ)
-
-        # self.vert1.addWidget(self.widget.radiobutton2)
-        self.vert1.addWidget(self.widget.radiobutton)
-        self.vert1.addWidget(self.widget.sliderX)
-        self.vert1.addWidget(self.widget.sliderY)
-        self.vert1.addWidget(self.widget.sliderZ)
         self.vert1.addWidget(self.widget.gl_viewer.obj.cam_btn)
 
         self.hboxLayout = QHBoxLayout()
 
         self.hboxLayout.addLayout(self.vboxLayout3, 1 )
-        self.hboxLayout.addLayout(self.vboxLayout2, 4)
-        self.hboxLayout.addLayout(self.vert1, 2)
+        self.hboxLayout.addLayout(self.vboxLayout2, 2)
+        self.hboxLayout.addLayout(self.vert1, 1)
         
         self.widget.setLayout(self.hboxLayout)
         self.setCentralWidget(self.widget)
