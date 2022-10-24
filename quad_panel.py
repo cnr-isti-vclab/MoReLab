@@ -34,3 +34,4 @@ class QuadPanel(QTreeWidget):
             self.selected_quad_idx = self.items.index(selection)
             # print("selected Quad # "+str(self.selected_quad_idx))
             self.items[self.selected_quad_idx].setSelected(True)
+            

@@ -14,6 +14,7 @@ class Quad_Tool(QObject):
         self.dist_thresh_select = 10.0
         self.group_num = 0
         self.occurence_groups = []
+        self.colors = []
         self.centers_x = []
         self.centers_y = []
         self.new_points = []
@@ -38,7 +39,12 @@ class Quad_Tool(QObject):
                             v.quad_groups_regular[t][i] = self.group_num                          
 
                             if len(self.data_val) == 4:
-                                self.occurence_groups.append(self.order)                                
+                                self.occurence_groups.append(self.order)
+                                # print("Group number:")
+                                # print(self.group_num+1)
+                                r, g, b = self.getRGBfromI(self.group_num+1)
+                                # print(r, g, b)
+                                self.colors.append((r,g,b))
                                 xp = self.compute_new_points(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                 self.new_points.append(xp)
                                 self.quad_tree.add_quad(self.order, self.group_num + 1)
@@ -116,4 +122,17 @@ class Quad_Tool(QObject):
         
         x = (P1, P2, P3, P4)
         return x
+    
+    
+    def getRGBfromI(self, RGBint): # RGBint should be between 1 and 500
+        red = 1/RGBint
+        green = RGBint/500.0
+        blue = RGBint/500.0
+        # blue =  RGBint & 255
+        # green = (RGBint >> 8) & 255
+        # red =   (RGBint >> 16) & 255
+        return red, green, blue
         
+    def getIfromRGB(self, r, g, b):
+        RGBint = 1/r
+        return RGBint

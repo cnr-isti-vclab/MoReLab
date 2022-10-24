@@ -18,9 +18,7 @@ class Window(QMainWindow):
         self.setWindowTitle('MoReLab')
         self.showMaximized()
         self.widget = Widget()
-        
         self.save_response = ''
-        
         self.create_menu()
         self.create_statusbar()
         self.create_toolbar()

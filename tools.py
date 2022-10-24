@@ -407,8 +407,9 @@ class Tools(QObject):
                 fc.y_loc = int(updated_cursor_y)
                 
                 self.selected_feature_index = int(fc.label.label) - 1
-                
                 pic_idx = self.find_idx(f,t)
+                # print(f, pic_idx, fc.x_loc)
+                # print(self.locs[f][pic_idx][0])
                 self.locs[f][pic_idx][0] = fc.x_loc
                 self.locs[f][pic_idx][1] = fc.y_loc
                 
