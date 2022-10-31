@@ -18,7 +18,9 @@ class Window(QMainWindow):
         self.setWindowTitle('MoReLab')
         self.showMaximized()
         self.widget = Widget()
+        
         self.save_response = ''
+        
         self.create_menu()
         self.create_statusbar()
         self.create_toolbar()
@@ -34,6 +36,7 @@ class Window(QMainWindow):
         self.vboxLayout2 = QVBoxLayout()
         self.vboxLayout2.addWidget(self.widget.scroll_area, 1)
         self.vboxLayout2.addWidget(self.widget.gl_viewer, 5)
+        self.vboxLayout2.addWidget(self.widget.gl_viewer.color_label, 1)
         
         self.vert1 = QVBoxLayout()
         self.vert1.addWidget(self.widget.gl_viewer.obj.wdg_tree)
@@ -56,8 +59,6 @@ class Window(QMainWindow):
         toolbar = QToolBar("&ToolBar", self)
         self.addToolBar(Qt.TopToolBarArea , toolbar )
 
-        # self.om_tool = self.newButton("open_movie.png",     "Open Movie",  flatbuttonstyle1, self.open_movie)
-        
         self.widget.gl_viewer.obj.np_tool.clicked.connect(self.new_project)
         self.widget.gl_viewer.obj.op_tool.clicked.connect(self.open_project)
         self.widget.gl_viewer.obj.om_tool.clicked.connect(self.open_movie)
@@ -65,7 +66,6 @@ class Window(QMainWindow):
         self.widget.gl_viewer.obj.sp_as_tool.clicked.connect(self.save_as_project)
         self.widget.gl_viewer.obj.ep_tool.clicked.connect(self.exit_project)
         
-
         toolbar.addWidget(self.widget.gl_viewer.obj.np_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.op_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.om_tool)
@@ -178,7 +178,6 @@ class Window(QMainWindow):
                 self.widget.gl_viewer.setMinimumSize(1077, 804)
                 self.widget.displayThumbnail(self.widget.selected_thumbnail_index)
 
-            
 
             if self.widget.gl_viewer.obj.cross_hair:
                 self.widget.gl_viewer.obj.feature_tool()

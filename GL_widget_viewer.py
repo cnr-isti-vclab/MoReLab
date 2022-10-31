@@ -8,8 +8,6 @@ from OpenGL.GLU import *
 from OpenGL.arrays import vbo
 from OpenGL.GL.shaders import compileProgram, compileShader
 from tools import Tools
-import pyrr
-from TextureLoader import load_texture
 
 # import open3d as o3d
 import cv2
@@ -34,6 +32,11 @@ class GL_Widget(QOpenGLWidget):
         self.setFocusPolicy(Qt.StrongFocus)
         self.showMaximized()
         self.obj = Tools(parent)
+        self.color_label = QLabel("X :        Y :        Color:           Selected Quad ID : ")
+        self.color_label.setAlignment(Qt.AlignCenter)
+        self.pick = False
+        self.x = 1
+        self.y = 1
 
         self._zoom = 1
         self.painter = QPainter()
@@ -49,191 +52,83 @@ class GL_Widget(QOpenGLWidget):
         self.mv_pix = 1
         self.aspect_image = 0
         self.aspect_widget = self.width()/self.height()
+        self.flag_g = False
+
+
+
+    def paintGL(self):    
         
-
-       
-        
-
-    def initializeGL(self):
-        glClearDepth(1.0)
-        glClearColor(0.8, 0.8, 0.8, 1)
-        glEnable(GL_DEPTH_TEST)
-        
-     
-
-
-
-
-    def paintGL(self):        
-        glClearDepth(1.0)
-        glEnable(GL_DEPTH_TEST)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT)
-        
-
-        # print(glGetString(GL_VERSION))
-
 
         t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
+
+
+######################################################################################        
+
+        # picking texture and a frame buffer object
         
-
-        # cube_buffer = [-0.5, -0.5,  0.5, 0.0, 0.0,
-        #              0.5, -0.5,  0.5, 1.0, 0.0,
-        #              0.5,  0.5,  0.5, 1.0, 1.0,
-        #             -0.5,  0.5,  0.5, 0.0, 1.0,
-
-        #             -0.5, -0.5, -0.5, 0.0, 0.0,
-        #              0.5, -0.5, -0.5, 1.0, 0.0,
-        #              0.5,  0.5, -0.5, 1.0, 1.0,
-        #             -0.5,  0.5, -0.5, 0.0, 1.0,
-
-        #              0.5, -0.5, -0.5, 0.0, 0.0,
-        #              0.5,  0.5, -0.5, 1.0, 0.0,
-        #              0.5,  0.5,  0.5, 1.0, 1.0,
-        #              0.5, -0.5,  0.5, 0.0, 1.0,
-
-        #             -0.5,  0.5, -0.5, 0.0, 0.0,
-        #             -0.5, -0.5, -0.5, 1.0, 0.0,
-        #             -0.5, -0.5,  0.5, 1.0, 1.0,
-        #             -0.5,  0.5,  0.5, 0.0, 1.0,
-
-        #             -0.5, -0.5, -0.5, 0.0, 0.0,
-        #              0.5, -0.5, -0.5, 1.0, 0.0,
-        #              0.5, -0.5,  0.5, 1.0, 1.0,
-        #             -0.5, -0.5,  0.5, 0.0, 1.0,
-
-        #              0.5,  0.5, -0.5, 0.0, 0.0,
-        #             -0.5,  0.5, -0.5, 1.0, 0.0,
-        #             -0.5,  0.5,  0.5, 1.0, 1.0,
-        #              0.5,  0.5,  0.5, 0.0, 1.0]
-
-        # cube_buffer = np.array(cube_buffer, dtype=np.float32)
-
-        # cube_indices = [ 0,  1,  2,  2,  3,  0,
-        #                 4,  5,  6,  6,  7,  4,
-        #                 8,  9, 10, 10, 11,  8,
-        #                12, 13, 14, 14, 15, 12,
-        #                16, 17, 18, 18, 19, 16,
-        #                20, 21, 22, 22, 23, 20]
-
-        # cube_indices = np.array(cube_indices, dtype=np.uint32)
-
-
-
-        vertex_src = """
-        # version 330
-        layout(location = 0) in vec3 a_position;
-        layout(location = 1) in vec2 a_texture;
-        uniform mat4 model;
-        uniform mat4 projection;
-        uniform mat4 view;
-        out vec2 v_texture;
-        void main()
-        {
-            gl_Position = projection * view * model * vec4(a_position, 1.0);
-
-            v_texture = a_texture;
-        }
-        """
+        if not self.flag_g:
+            self.pick_texture = glGenTextures(1)
+            self.FBO = glGenFramebuffers(1)
+            self.flag_g = True
         
-        fragment_src = """
-        # version 330
-        in vec2 v_texture;
-        out vec4 out_color;
-        uniform sampler2D s_texture;
-        uniform ivec3 icolor;
-        uniform int switcher;
-        void main()
-        {
-            if(switcher == 0){
-                out_color = texture(s_texture, v_texture);
-            }else{
-                out_color = vec4(icolor.r/255.0, icolor.g/255.0, icolor.b/255.0, 1.0);
-            }
-        }
-        """
-        
-        self.shader = compileProgram(compileShader(vertex_src, GL_VERTEX_SHADER), compileShader(fragment_src, GL_FRAGMENT_SHADER))
+            glBindTexture(GL_TEXTURE_2D, self.pick_texture)
+            glBindFramebuffer(GL_FRAMEBUFFER, self.FBO)
     
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.width(), self.height(), 0, GL_RGB, GL_FLOAT, None)
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.pick_texture, 0)
 
-        # textures = glGenTextures(3)
-        # crate = load_texture("textures/crate.jpg", textures[0])
-        # metal = load_texture("textures/metal.jpg", textures[1])
-        # brick = load_texture("textures/brick.jpg", textures[2])
 
+        glBindTexture(GL_TEXTURE_2D, self.pick_texture)        
+        glBindFramebuffer(GL_FRAMEBUFFER, self.FBO)
 
         
-        pick_texture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, pick_texture)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.width(), self.height(), 0, GL_RGB, GL_FLOAT, None)
+   
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
-        FBO = glGenFramebuffers(1)
-        glBindFramebuffer(GL_FRAMEBUFFER, FBO)
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pick_texture, 0)
+        
+        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.obj.up_pt_bool:
+            for j, tup in enumerate(self.obj.camera_projection_mat):
+                if tup[0] == t:
+                    for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
+                        co = self.obj.ctrl_wdg.quad_obj.colors[i+1]
+                        glColor3f(co[0]/255, co[1]/255, co[2]/255)
+                        glBegin(GL_TRIANGLES)      
+                        glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+    
+                        glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                        glEnd()
+                        
+                        glLineWidth(2.0)
+                        glColor3f(0.0, 0.0, 0.0)
+                        glBegin(GL_LINE_LOOP)
+                        glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                        glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+        
+                        glEnd()
+
+        if self.pick:
+            ID = self.get_ID()
+            
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBindTexture(GL_TEXTURE_2D, 0)
-        
-        glUseProgram(self.shader)
-        
-        
-        # # projection = pyrr.matrix44.create_perspective_projection_matrix(45, 1280 / 720, 0.1, 100)
-        # # view = pyrr.matrix44.create_from_translation(pyrr.Vector3([0.0, 0.0, -4.0]))
-
-        # cube_positions = [(-2.0, 0.0, 0.0), (0.0, 0.0, 0.0), (2.0, 0.0, 0.0)]
-        # pick_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
-
-        # model_loc = glGetUniformLocation(self.shader, "model")
-        # # proj_loc = glGetUniformLocation(self.shader, "projection")
-        # # view_loc = glGetUniformLocation(self.shader, "view")
-        # icolor_loc = glGetUniformLocation(self.shader, "icolor")
-        # switcher_loc = glGetUniformLocation(self.shader, "switcher")
-
-        # # glUniformMatrix4fv(proj_loc, 1, GL_FALSE, projection)
-        # # glUniformMatrix4fv(view_loc, 1, GL_FALSE, view)
-        
-        
-        
-        
-        
-        
-        
-        
-        # glClearColor(0, 0.1, 0.1, 1)
-        # glEnable(GL_DEPTH_TEST)
-        # glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        
-        
 
         
-        # # draw to the default frame buffer
-        # glUniform1i(switcher_loc, 0)
-        # for i in range(len(cube_positions)):
-        #     model = pyrr.matrix44.create_from_translation(cube_positions[i])
-        #     if i == 0:
-        #         glBindTexture(GL_TEXTURE_2D, crate)
-        #         glUniformMatrix4fv(model_loc, 1, GL_FALSE, model)
-        #     elif i == 1:
-        #         glBindTexture(GL_TEXTURE_2D, metal)
-        #         glUniformMatrix4fv(model_loc, 1, GL_FALSE, model)
-        #     else:
-        #         glBindTexture(GL_TEXTURE_2D, brick)
-        #         glUniformMatrix4fv(model_loc, 1, GL_FALSE, model)
-
-        #     glDrawElements(GL_TRIANGLES, len(cube_indices), GL_UNSIGNED_INT, None)
-
-
-        # # draw to the custom frame buffer object - pick buffer
-        # glUniform1i(switcher_loc, 1)
+######################################################################################
         
         
-        
-        glBindFramebuffer(GL_FRAMEBUFFER, FBO)
-        # glClearColor(0.0, 0.0, 0.0, 1.0)
-        # glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-        # glBindFramebuffer(GL_FRAMEBUFFER, 0)
-
+        glClearDepth(1.0)
+        glClearColor(0.8, 0.8, 0.8, 1)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT| GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT )
+        glEnable(GL_DEPTH_TEST)  
 
         if self.img_file is not None:
             self.painter.begin(self)
@@ -268,13 +163,10 @@ class GL_Widget(QOpenGLWidget):
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                             self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
-    
-                
-            
+
             # Painting for Quad Tool
             
             if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and self.obj.up_pt_bool:
-                
                 pen = QPen(QColor(0, 0, 255))
                 pen.setWidth(2)
                 self.painter.setPen(pen)
@@ -295,13 +187,14 @@ class GL_Widget(QOpenGLWidget):
                             self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))                      
             
             self.painter.end()
-        
+            
+            
+            
+            
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
-            diff = (self.width()/v.width)*v.height
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:                    
                     self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
-
                     glMatrixMode(GL_PROJECTION)
                     glLoadIdentity()
                     load_mat = self.opengl_intrinsics
@@ -313,54 +206,43 @@ class GL_Widget(QOpenGLWidget):
                     glLoadMatrixf(load_mat)
                     
                     data = self.obj.ply_pts[0]
-                    colors = np.zeros(shape=(data.shape[0], 3))
-                    colors[:,0] = 1
                     
-        
+                    
+                    glColor3f(1.0, 0.0, 0.0)
                     glPointSize(5)
                     glBegin(GL_POINTS)
                     
                     for i in range(data.shape[0]):
-                        glColor3f(colors[i,0], colors[i,1], colors[i,2])
                         glVertex3f(data[i,0], data[i,1], data[i,2])
                     glEnd()
 
-                      
-                    for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
-                        if i==self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx:
-                            glColor3f(0.38, 0.85, 0.211)
-                        else:
-                            # c = self.obj.ctrl_wdg.quad_obj.colors[i]
-                            glColor3f(0, 0.6352, 1)
-                        glBegin(GL_TRIANGLES)      
-                        glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                        glEnd()
-                        
-                        glBegin(GL_TRIANGLES)      
-                        glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                        glEnd()
-                        
-                        glLineWidth(2.0)
-                        glColor3f(0.0, 0.0, 0.0)
-                        glBegin(GL_LINE_LOOP)
-                        glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                        glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                    if self.obj.up_pt_bool:
+                        for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
+                            if i==self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx:
+                                glColor3f(0.38, 0.85, 0.211)
+                            else:
+                                glColor3f(0, 0.6352, 1)
+                            glBegin(GL_TRIANGLES)      
+                            glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
         
-                        glEnd()
-                    # print("------------------------------")
+                            glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                            glEnd()
+                            
+                            glLineWidth(2.0)
+                            glColor3f(0.0, 0.0, 0.0)
+                            glBegin(GL_LINE_LOOP)
+                            glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                            glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                            glEnd()
 
-
-
-
-
-
-
+                
+                           
     def setPhoto(self, image=None):
         if image is None:
             self.img_file = None
@@ -370,7 +252,7 @@ class GL_Widget(QOpenGLWidget):
             self.set_default_view_param()
             w = int(self.w2-self.w1)
             h = int(self.h2-self.h1)
-
+    
             image = cv2.resize(image, (w, h), interpolation = cv2.INTER_AREA)
             # print("Image size after resizing: Width: "+str(image.shape[1])+ " , Height: "+str(image.shape[0]))
             PIL_image = self.toImgPIL(image).convert('RGB')
@@ -442,7 +324,7 @@ class GL_Widget(QOpenGLWidget):
         super(GL_Widget, self).keyPressEvent(event)
 
     def wheelEvent(self, event):
-        if self.img_file is not None:
+        if self.img_file is not None and not self.obj.up_pt_bool:
             if event.angleDelta().y() > 0:
                 self._zoom += 0.1
             else:
@@ -455,7 +337,6 @@ class GL_Widget(QOpenGLWidget):
                 self.set_default_view_param()
 
 
-
     # overriding the mousePressEvent method
     def mousePressEvent(self, event):
         a = event.pos()
@@ -463,12 +344,11 @@ class GL_Widget(QOpenGLWidget):
         if self.obj.up_pt_bool:
             x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
             y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
-            self.obj.ctrl_wdg.quad_obj.select_feature(x, y)
-            # x = self.obj.wdg_tree.transform_x(x)
-            # y = self.obj.wdg_tree.transform_y(y)
-            self.get_color(x, y)
-            
-            
+            selected_feature = self.obj.ctrl_wdg.quad_obj.select_feature(x, y)
+            if not selected_feature:
+                self.pick = True
+                self.x = a.x()
+                self.y = a.y()
 
     # overriding the mousePressEvent method
     def mouseReleaseEvent(self, event):
@@ -479,8 +359,7 @@ class GL_Widget(QOpenGLWidget):
                 self.offset_x += (self.release_loc[0] - self.press_loc[0])
                 self.offset_y += (self.release_loc[1] - self.press_loc[1])
         
-                        
-                    
+          
                     
     def convert_cv_qt(self, cv_img, width, height):
         """Convert from an opencv image to QPixmap"""
@@ -511,8 +390,11 @@ class GL_Widget(QOpenGLWidget):
         
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
         width = v.width
-        # height = 1350
+        # height = 1080
         height = v.height*(self.width()/self.height())
+        
+        # width = self.width()
+        # height = self.height()
 
         perspective[0][0] =  2.0 * K[0,0] / width
         perspective[1][1] = -2.0 * K[1,1] / height
@@ -532,17 +414,13 @@ class GL_Widget(QOpenGLWidget):
         
 
     
-    def get_color(self, x, y):
-        print(x,y)
-        print("Going to get color")
-        # glFlush()
-        # glFinish()
-        # glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        # glBindFramebuffer(GL_READ_FRAMEBUFFER, self.m_depthTexture);
-        # glReadBuffer(GL_COLOR_ATTACHMENT0);
-        
-        data = glReadPixels(x, y, 1, 1,GL_RGB, GL_FLOAT)
-        print(data)
-        
-        # glReadBuffer(GL_NONE);
-        # glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    def get_ID(self):
+        co = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_RGB, GL_UNSIGNED_BYTE)
+        ID = self.obj.ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
+        if ID > 0:
+            self.obj.ctrl_wdg.quad_obj.quad_tree.select_quad(self.obj.ctrl_wdg.quad_obj.quad_tree.items[ID-1])
+            self.color_label.setText("X : "+str(int(self.x))+"    Y : "+str(int(self.y))+"   Color : ("+str(co[0])+", "+str(co[1])+", "+str(co[2])+")      Selected Quad ID : "+str(ID))            
+        else:
+            self.color_label.setText("X : "+str(int(self.x))+"    Y : "+str(int(self.y))+"   Color : ("+str(co[0])+", "+str(co[1])+", "+str(co[2])+")      Background ")
+        self.pick = False
+        return ID

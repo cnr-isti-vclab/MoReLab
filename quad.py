@@ -14,7 +14,7 @@ class Quad_Tool(QObject):
         self.dist_thresh_select = 10.0
         self.group_num = 0
         self.occurence_groups = []
-        self.colors = []
+        self.colors = [(0,0,0)]
         self.centers_x = []
         self.centers_y = []
         self.new_points = []
@@ -26,6 +26,7 @@ class Quad_Tool(QObject):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         t = self.ctrl_wdg.selected_thumbnail_index
         
+        feature_selected = False
 
         if (len(v.features_regular) > 0 or len(v.features_network) > 0) and len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0:
             data = self.ctrl_wdg.gl_viewer.obj.ply_pts[-1]    # 3D data from bundle adjustment
@@ -36,15 +37,15 @@ class Quad_Tool(QObject):
                         if d < self.dist_thresh_select and v.quad_groups_regular[t][i] == -1:
                             self.order.append(i)
                             self.data_val.append(data[i,:])
-                            v.quad_groups_regular[t][i] = self.group_num                          
+                            v.quad_groups_regular[t][i] = self.group_num
+                            feature_selected = True
 
                             if len(self.data_val) == 4:
                                 self.occurence_groups.append(self.order)
                                 # print("Group number:")
                                 # print(self.group_num+1)
-                                r, g, b = self.getRGBfromI(self.group_num+1)
-                                # print(r, g, b)
-                                self.colors.append((r,g,b))
+                                c = self.getRGBfromI(self.group_num+1)
+                                self.colors.append(c)
                                 xp = self.compute_new_points(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                 self.new_points.append(xp)
                                 self.quad_tree.add_quad(self.order, self.group_num + 1)
@@ -59,21 +60,20 @@ class Quad_Tool(QObject):
                         if d < self.dist_thresh_select and v.quad_groups_network[t][i] == -1:
                             self.order.append(i)
                             self.data_val.append(data[i,:])
-                            v.quad_groups_network[t][i] = self.group_num                          
+                            v.quad_groups_network[t][i] = self.group_num
+                            feature_selected = True
 
                             if len(self.data_val) == 4:
-                                self.occurence_groups.append(self.order)                                
+                                self.occurence_groups.append(self.order)
+                                c = self.getRGBfromI(self.group_num+1)
+                                self.colors.append(c)
                                 xp = self.compute_new_points(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                 self.new_points.append(xp)
                                 self.quad_tree.add_quad(self.order, self.group_num + 1)
                                 self.order = []
                                 self.data_val = []
                                 self.group_num += 1
-
-
-
-
-
+        return feature_selected
                         
                         
     def compute_new_points(self, F1, F2, F3, F4): # F1, F2, F3, F4 are the input points in clockwise order as on doc file
@@ -124,15 +124,15 @@ class Quad_Tool(QObject):
         return x
     
     
-    def getRGBfromI(self, RGBint): # RGBint should be between 1 and 500
-        red = 1/RGBint
-        green = RGBint/500.0
-        blue = RGBint/500.0
-        # blue =  RGBint & 255
-        # green = (RGBint >> 8) & 255
-        # red =   (RGBint >> 16) & 255
-        return red, green, blue
+    def getRGBfromI(self, RGBint):
+        blue =  RGBint & 255
+        green = (RGBint >> 8) & 255
+        red =   (RGBint >> 16) & 255
+        c = (red, green, blue)
+        # print(c)
+        return c
         
     def getIfromRGB(self, r, g, b):
-        RGBint = 1/r
+        RGBint = int(r * 256*256 + g * 256 + b)
+        # print("ID : "+str(RGBint))
         return RGBint

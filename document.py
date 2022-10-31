@@ -78,7 +78,7 @@ class Document():
             
             ab = []
             for k,e in enumerate(data["locations"][j]):
-                a = (int(e[0]), int(e[1]))
+                a = [int(e[0]), int(e[1])]
                 ab.append(a)
             self.ctrl_wdg.gl_viewer.obj.locs.append(ab)
         
