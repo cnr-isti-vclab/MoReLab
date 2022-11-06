@@ -75,6 +75,7 @@ class Window(QMainWindow):
         toolbar.addWidget(self.widget.gl_viewer.obj.mv_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.ft_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.qd_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.meas_tool)
         
         self.addToolBarBreak(Qt.TopToolBarArea) 
 
@@ -175,7 +176,7 @@ class Window(QMainWindow):
             self.create_layout()
             v = self.widget.mv_panel.movie_caps[self.widget.mv_panel.selected_movie_idx]
             if self.widget.selected_thumbnail_index != -1:
-                self.widget.gl_viewer.setMinimumSize(1077, 804)
+                # self.widget.gl_viewer.setMinimumSize(1077, 750)
                 self.widget.displayThumbnail(self.widget.selected_thumbnail_index)
 
 
@@ -200,6 +201,8 @@ class Window(QMainWindow):
         
         data = self.widget.doc.get_data()
         json_object = json.dumps(data, indent = 4)
+        if name_project.split('.')[-1] != 'json':
+            name_project = name_project+'.json'
         with open(name_project, "w") as outfile:
             outfile.write(json_object)        
     

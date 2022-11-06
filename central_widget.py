@@ -8,7 +8,6 @@ from util.util import show_dialogue
 from document import Document
 from movie_panel import MoviePanel
 from GL_widget_viewer import GL_Widget
-from obj_viewer import GT_Widget
 from quad import Quad_Tool
 
 import json, os, glob

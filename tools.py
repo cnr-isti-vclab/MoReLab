@@ -214,37 +214,62 @@ class Tools(QObject):
         self.qd_tool.clicked.connect(self.quad_tool)
         self.qd_tool.setStyleSheet(self.tool_btn_style)
         self.qd_tool.setToolTip("Quad Tool")
+        
+        self.meas_tool = QPushButton()
+        self.meas_tool.setIcon(QIcon("./icons/tape_measure.png"))
+        self.meas_tool.setIconSize(QSize(icon_size, icon_size))
+        self.meas_tool.clicked.connect(self.measure_tool)
+        self.meas_tool.setStyleSheet(self.tool_btn_style)
+        self.meas_tool.setToolTip("Measure Tool")
 
         
     def move_tool(self):
-        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:    
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.meas_tool.setStyleSheet(self.tool_btn_style)
             self.ft_tool.setStyleSheet(self.tool_btn_style)
             self.qd_tool.setStyleSheet(self.tool_btn_style)
             self.mv_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
             self.cross_hair = False
             self.up_pt_bool = False
+            self.measure_bool = False
             self.display_data()
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
         
     def feature_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.meas_tool.setStyleSheet(self.tool_btn_style)
             self.mv_tool.setStyleSheet(self.tool_btn_style)
             self.qd_tool.setStyleSheet(self.tool_btn_style)
             self.ft_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
             self.cross_hair = True
             self.up_pt_bool = False
+            self.measure_bool = False
             self.display_data()
             
         
     def quad_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.meas_tool.setStyleSheet(self.tool_btn_style)
             self.mv_tool.setStyleSheet(self.tool_btn_style)
             self.ft_tool.setStyleSheet(self.tool_btn_style)
             self.qd_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             self.cross_hair = False
+            self.measure_bool = False
             self.up_pt_bool = True
+        
+    def measure_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.tool_btn_style)
+            self.meas_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
+            self.cross_hair = False
+            self.up_pt_bool = False
+            self.measure_bool = True
+            
             
 
 
@@ -262,7 +287,7 @@ class Tools(QObject):
                 label = v.n_objects_kf_network[t]
                 
             fc = FeatureCrosshair(self.feature_pixmap, x, y, label, self)
-                
+            
             if label not in self.labels:
                 if len(self.labels) > label:
                     self.selected_feature_index = label -1
@@ -297,7 +322,6 @@ class Tools(QObject):
                 v.features_network[t].append(fc)
                 v.hide_network[t].append(False)
                 v.quad_groups_network[t].append(-1)
-
                 
             self.display_data()
             

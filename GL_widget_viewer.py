@@ -28,15 +28,31 @@ class GL_Widget(QOpenGLWidget):
         timer.timeout.connect(self.update)
         timer.start()
 
+        
+
         self.setPhoto()
         self.setFocusPolicy(Qt.StrongFocus)
         self.showMaximized()
         self.obj = Tools(parent)
-        self.color_label = QLabel("X :        Y :        Color:           Selected Quad ID : ")
+        self.color_label = QLabel("X :        Y :        Position:           Selected Quad ID :             Distance : ")
         self.color_label.setAlignment(Qt.AlignCenter)
         self.pick = False
         self.x = 1
         self.y = 1
+        self.clicked_once = False
+        self.last_3d_pos = np.array([0.0,0.0, 0.0])
+        self.last_pos = np.array([0.0,0.0])
+        self.current_pos = np.array([0.0,0.0])
+        self.setMouseTracking(True)
+        
+        self.setMinimumSize(1077, 804)
+        # sizeObject = QDesktopWidget().screenGeometry(-1)
+        # print(" Screen size : "  + str(sizeObject.height()) + "x"  + str(sizeObject.width()))
+        # ws, hs = parent.scroll_area.width(), parent.scroll_area.height()
+        # ww = sizeObject.width() - ws
+        # hw = sizeObject.height() - hs
+        # print(ww, hw)
+        # self.setMinimumSize(ww, hw)
 
         self._zoom = 1
         self.painter = QPainter()
@@ -62,36 +78,48 @@ class GL_Widget(QOpenGLWidget):
         t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
 
-
 ######################################################################################        
 
         # picking texture and a frame buffer object
         
         if not self.flag_g:
-            self.pick_texture = glGenTextures(1)
-            self.FBO = glGenFramebuffers(1)
             self.flag_g = True
-        
-            glBindTexture(GL_TEXTURE_2D, self.pick_texture)
+            self.FBO = glGenFramebuffers(1)
             glBindFramebuffer(GL_FRAMEBUFFER, self.FBO)
-    
+
+            # Texture for Color Information
+            self.pick_texture = glGenTextures(1)        
+            glBindTexture(GL_TEXTURE_2D, self.pick_texture)
+
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.width(), self.height(), 0, GL_RGB, GL_FLOAT, None)
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.pick_texture, 0)
 
 
-        glBindTexture(GL_TEXTURE_2D, self.pick_texture)        
+            # Texture for Depth Information
+            self.depth_texture = glGenTextures(1)
+            glBindTexture(GL_TEXTURE_2D, self.depth_texture)
+            
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, self.width(), self.height(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, None)
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, self.depth_texture, 0)
+
+
+        glBindTexture(GL_TEXTURE_2D, self.pick_texture)
+        glBindTexture(GL_TEXTURE_2D, self.depth_texture)        
         glBindFramebuffer(GL_FRAMEBUFFER, self.FBO)
 
         
-   
         glClearColor(0.0, 0.0, 0.0, 1.0)
+        # glClearDepth(0.5)
+        glEnable(GL_DEPTH_TEST)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
         
-        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.obj.up_pt_bool:
+        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and (self.obj.up_pt_bool or self.obj.measure_bool):
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:
                     for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
+                        self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
+                        
                         co = self.obj.ctrl_wdg.quad_obj.colors[i+1]
                         glColor3f(co[0]/255, co[1]/255, co[2]/255)
                         glBegin(GL_TRIANGLES)      
@@ -115,7 +143,8 @@ class GL_Widget(QOpenGLWidget):
                         glEnd()
 
         if self.pick:
-            ID = self.get_ID()
+            ID, pos1 = self.get_ID()
+            
             
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
@@ -129,6 +158,8 @@ class GL_Widget(QOpenGLWidget):
         glClearColor(0.8, 0.8, 0.8, 1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT| GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT )
         glEnable(GL_DEPTH_TEST)  
+
+
 
         if self.img_file is not None:
             self.painter.begin(self)
@@ -166,7 +197,7 @@ class GL_Widget(QOpenGLWidget):
 
             # Painting for Quad Tool
             
-            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and self.obj.up_pt_bool:
+            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.up_pt_bool or self.obj.measure_bool) :
                 pen = QPen(QColor(0, 0, 255))
                 pen.setWidth(2)
                 self.painter.setPen(pen)
@@ -185,11 +216,10 @@ class GL_Widget(QOpenGLWidget):
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                             self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))                      
-            
+
             self.painter.end()
-            
-            
-            
+
+
             
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
             for j, tup in enumerate(self.obj.camera_projection_mat):
@@ -207,7 +237,6 @@ class GL_Widget(QOpenGLWidget):
                     
                     data = self.obj.ply_pts[0]
                     
-                    
                     glColor3f(1.0, 0.0, 0.0)
                     glPointSize(5)
                     glBegin(GL_POINTS)
@@ -215,8 +244,9 @@ class GL_Widget(QOpenGLWidget):
                     for i in range(data.shape[0]):
                         glVertex3f(data[i,0], data[i,1], data[i,2])
                     glEnd()
+                    
 
-                    if self.obj.up_pt_bool:
+                    if self.obj.up_pt_bool or self.obj.measure_bool:
                         for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
                             if i==self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx:
                                 glColor3f(0.38, 0.85, 0.211)
@@ -242,6 +272,21 @@ class GL_Widget(QOpenGLWidget):
                             glEnd()
 
                 
+
+        # Draw Measuring Line
+        if self.obj.measure_bool and self.clicked_once and len(self.obj.ply_pts) > 0:
+            self.painter.begin(self)
+            pen = QPen(QColor(0, 0, 255))
+            pen.setWidth(2)
+            self.painter.setPen(pen)
+            self.painter.drawLine(QLineF(self.last_pos[0], self.last_pos[1], self.current_pos[0], self.current_pos[1]))
+            self.painter.end()
+
+
+
+
+
+
                            
     def setPhoto(self, image=None):
         if image is None:
@@ -324,7 +369,7 @@ class GL_Widget(QOpenGLWidget):
         super(GL_Widget, self).keyPressEvent(event)
 
     def wheelEvent(self, event):
-        if self.img_file is not None and not self.obj.up_pt_bool:
+        if self.img_file is not None and not self.obj.up_pt_bool and not self.obj.measure_bool:
             if event.angleDelta().y() > 0:
                 self._zoom += 0.1
             else:
@@ -349,11 +394,24 @@ class GL_Widget(QOpenGLWidget):
                 self.pick = True
                 self.x = a.x()
                 self.y = a.y()
+            
+        if self.obj.measure_bool:
+            self.pick = True
+            self.x = a.x()
+            self.y = a.y()
+            
+            
+    def mouseMoveEvent(self, event):
+        if self.obj.measure_bool:
+            a = event.pos()
+            self.current_pos = np.array([a.x(), a.y()])
+
+            
 
     # overriding the mousePressEvent method
     def mouseReleaseEvent(self, event):
         a = event.pos()
-        if not self.obj.up_pt_bool:
+        if (not self.obj.up_pt_bool) and (not self.obj.measure_bool):
             self.release_loc = (a.x(), a.y())
             if self._zoom >= 1:
                 self.offset_x += (self.release_loc[0] - self.press_loc[0])
@@ -389,12 +447,9 @@ class GL_Widget(QOpenGLWidget):
         perspective = np.zeros((4,4))
         
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        width = v.width
-        # height = 1080
+        width = v.width        
         height = v.height*(self.width()/self.height())
-        
-        # width = self.width()
-        # height = self.height()
+
 
         perspective[0][0] =  2.0 * K[0,0] / width
         perspective[1][1] = -2.0 * K[1,1] / height
@@ -416,11 +471,34 @@ class GL_Widget(QOpenGLWidget):
     
     def get_ID(self):
         co = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_RGB, GL_UNSIGNED_BYTE)
+        dd = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_DEPTH_COMPONENT, GL_FLOAT)[0][0]
+        # print("Depth : "+str(dd))
+        
+        px = gluUnProject(self.x, self.height()-self.y, dd)
         ID = self.obj.ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
-        if ID > 0:
+        dist = 0.0
+        
+        if self.obj.measure_bool and len(self.obj.ply_pts) > 0:
+            if self.clicked_once:
+                dist = np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
+                self.last_pos = np.array([0.0,0.0])
+                self.last_3d_pos = np.array([0.0,0.0,0.0])
+            else:
+                self.last_pos = np.array([self.x, self.y])
+                self.last_3d_pos = np.array(px)
+                
+            self.clicked_once = not self.clicked_once
+
+        
+       
+        px = (round(px[0], 2), round(px[1], 2), round(px[2], 2))
+        if self.obj.up_pt_bool and ID > 0:
             self.obj.ctrl_wdg.quad_obj.quad_tree.select_quad(self.obj.ctrl_wdg.quad_obj.quad_tree.items[ID-1])
-            self.color_label.setText("X : "+str(int(self.x))+"    Y : "+str(int(self.y))+"   Color : ("+str(co[0])+", "+str(co[1])+", "+str(co[2])+")      Selected Quad ID : "+str(ID))            
+
+        if ID > 0:
+            self.color_label.setText("X : "+str(int(self.x))+"    Y : "+str(int(self.y))+"   Position : "+str(px)+"      Selected Quad ID : "+str(ID)+"     Distance : "+str(round(dist,4)))            
         else:
-            self.color_label.setText("X : "+str(int(self.x))+"    Y : "+str(int(self.y))+"   Color : ("+str(co[0])+", "+str(co[1])+", "+str(co[2])+")      Background ")
+            self.color_label.setText("X : "+str(int(self.x))+"    Y : "+str(int(self.y))+"   Position : "+str(px)+"      Background            Distance : "+str(round(dist,4)))
         self.pick = False
-        return ID
+        
+        return ID, px
