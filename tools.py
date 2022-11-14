@@ -6,12 +6,13 @@ from util.util import feature_absent_dialogue, numFeature_dialogue, write_pointc
 from util.sfm import *
 from util.optimize_K import find_optimized_K
 from util.bundle_adjustment import bundle_adjustment
-# from GL_widget_viewer import display_3d
 import numpy as np
 from object_panel import ObjectPanel
 import cv2, copy
 from scipy import optimize
 from util.util import calc_near_far
+from cylinder import Cylinder_Tool
+
 import matplotlib.pyplot as plt
 
 class Tools(QObject):
@@ -23,6 +24,10 @@ class Tools(QObject):
                 QPushButton {border:none; padding: 10px;}
                 QToolTip { background-color: white; color: black); }
                 """
+        self.selected_btn_style = """
+                QPushButton {background-color: rgb(180,180,180); border: 1px solid darkgray; }
+                QToolTip { background-color: white; color: black); }
+        """
         self.wdg_tree = ObjectPanel(self)
         self.feature_pixmap = QPixmap("icons/small_crosshair.png")
         self.output_name = '3d_output.ply'
@@ -35,6 +40,8 @@ class Tools(QObject):
         self.cam_btn.clicked.connect(self.calibrate)
         self.cross_hair = False
         self.up_pt_bool = False
+        self.cylinder_bool = False
+        self.measure_bool = False
         self.labels = []
         self.locs = []
         self.associated_frames = []
@@ -44,6 +51,7 @@ class Tools(QObject):
         self.near_far = []
         self.camera_poses = []
         self.K = np.eye(3)
+        self.cylinder_obj = Cylinder_Tool(self.ctrl_wdg)
         
         # self.associated_frames2 = [[]]
         self.selected_feature_index =-1
@@ -145,7 +153,7 @@ class Tools(QObject):
 
             array_camera_poses = np.asarray(cam_pos_list)
             ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
-            write_pointcloud(self.output_name, ply_pts) 
+            # write_pointcloud(self.output_name, ply_pts) 
             after_BA_dialogue(self.output_name)
             # print(opt_points)
             self.ply_pts.append(opt_points)
@@ -221,56 +229,82 @@ class Tools(QObject):
         self.meas_tool.clicked.connect(self.measure_tool)
         self.meas_tool.setStyleSheet(self.tool_btn_style)
         self.meas_tool.setToolTip("Measure Tool")
+        
+        self.cylinder_tool = QPushButton()
+        self.cylinder_tool.setIcon(QIcon("./icons/cylinder.png"))
+        self.cylinder_tool.setIconSize(QSize(icon_size, icon_size))
+        self.cylinder_tool.clicked.connect(self.draw_cylinder_tool)
+        self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+        self.cylinder_tool.setToolTip("Cylinder Tool")
 
         
     def move_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.meas_tool.setStyleSheet(self.tool_btn_style)
             self.ft_tool.setStyleSheet(self.tool_btn_style)
             self.qd_tool.setStyleSheet(self.tool_btn_style)
-            self.mv_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
+            self.meas_tool.setStyleSheet(self.tool_btn_style)
+            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+            self.mv_tool.setStyleSheet(self.selected_btn_style)
             self.cross_hair = False
             self.up_pt_bool = False
             self.measure_bool = False
+            self.cylinder_bool = False
             self.display_data()
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
         
     def feature_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.meas_tool.setStyleSheet(self.tool_btn_style)
             self.mv_tool.setStyleSheet(self.tool_btn_style)
             self.qd_tool.setStyleSheet(self.tool_btn_style)
-            self.ft_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
+            self.meas_tool.setStyleSheet(self.tool_btn_style)
+            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet(self.selected_btn_style)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
             self.cross_hair = True
             self.up_pt_bool = False
             self.measure_bool = False
+            self.cylinder_bool = False
             self.display_data()
             
         
     def quad_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.meas_tool.setStyleSheet(self.tool_btn_style)
             self.mv_tool.setStyleSheet(self.tool_btn_style)
             self.ft_tool.setStyleSheet(self.tool_btn_style)
-            self.qd_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
+            self.qd_tool.setStyleSheet(self.selected_btn_style)
+            self.meas_tool.setStyleSheet(self.tool_btn_style)
+            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             self.cross_hair = False
             self.measure_bool = False
             self.up_pt_bool = True
+            self.cylinder_bool = False
         
     def measure_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
             self.mv_tool.setStyleSheet(self.tool_btn_style)
             self.ft_tool.setStyleSheet(self.tool_btn_style)
             self.qd_tool.setStyleSheet(self.tool_btn_style)
-            self.meas_tool.setStyleSheet('background-color: rgb(180,180,180); border: 1px solid darkgray; ')
+            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+            self.meas_tool.setStyleSheet(self.selected_btn_style)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
             self.cross_hair = False
             self.up_pt_bool = False
             self.measure_bool = True
+            self.cylinder_bool = False
             
-            
+    def draw_cylinder_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.tool_btn_style)
+            self.meas_tool.setStyleSheet(self.tool_btn_style)            
+            self.cylinder_tool.setStyleSheet(self.selected_btn_style)
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
+            self.cross_hair = False
+            self.up_pt_bool = False
+            self.measure_bool = False
+            self.cylinder_bool = True
 
 
     
@@ -316,12 +350,14 @@ class Tools(QObject):
                 v.features_regular[t].append(fc)
                 v.hide_regular[t].append(False)
                 v.quad_groups_regular[t].append(-1)
+                v.cylinder_groups_regular[t].append(-1)
                 
                 
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(fc)
                 v.hide_network[t].append(False)
                 v.quad_groups_network[t].append(-1)
+                v.cylinder_groups_network[t].append(-1)
                 
             self.display_data()
             

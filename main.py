@@ -3,11 +3,12 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import sys, os, sip, json, glob, cv2
 from central_widget import Widget
-from util.util import movie_dialogue, split_path, empty_gui, adjust_op, confirm_exit
+from util.util import movie_dialogue, split_path, empty_gui, adjust_op, confirm_exit, write_pointcloud
 from GL_widget_viewer import GL_Widget
 
 from util.video import Video
 from tools import Tools
+import numpy as np
 
 
 
@@ -76,6 +77,7 @@ class Window(QMainWindow):
         toolbar.addWidget(self.widget.gl_viewer.obj.ft_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.qd_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.meas_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.cylinder_tool)
         
         self.addToolBarBreak(Qt.TopToolBarArea) 
 
@@ -96,9 +98,9 @@ class Window(QMainWindow):
                
         
     def create_menu(self):
-        menuBar = self.menuBar()
+        self.menu_bar = self.menuBar()
         fileMenu = QMenu("&File", self)
-        menuBar.addMenu(fileMenu)
+        self.menu_bar.addMenu(fileMenu)
         
         self.new_pr = QAction(QIcon("./icons/new_project.png"),"&New",self)
         fileMenu.addAction(self.new_pr)
@@ -126,13 +128,47 @@ class Window(QMainWindow):
         self.open_mov.triggered.connect(self.open_movie)
         self.open_mov.setShortcut("ctrl+shift+o")
         
+        self.exp_ply = QAction(QIcon("./icons/3d_printer.png"),"&Export PLY",self)
+        fileMenu.addAction(self.exp_ply)
+        self.exp_ply.triggered.connect(self.export_ply_data)
+        self.exp_ply.setShortcut("ctrl+e")
+        
         self.exit_pr = QAction(QIcon("./icons/exit_project.png"),"&Exit",self)
         fileMenu.addAction(self.exit_pr)
         self.exit_pr.triggered.connect(self.exit_project)
         self.exit_pr.setShortcut("Esc")
-        
+
 
         
+    def export_ply_data(self):
+        bundle_adjustment_ply_data = self.widget.gl_viewer.obj.ply_pts[-1]
+        rgb_ba = np.ones(bundle_adjustment_ply_data.shape).astype(np.uint8)*255 
+
+        quad_data_list = self.widget.quad_obj.new_points
+        quad_data = np.vstack(quad_data_list)
+        rgb_quad = np.zeros(quad_data.shape).astype(np.uint8)*255 
+        
+        base_cylinder_data_list = self.widget.gl_viewer.obj.cylinder_obj.vertices_cylinder
+        base_cylinder_data = np.vstack(base_cylinder_data_list)
+        top_cylinder_data_list = self.widget.gl_viewer.obj.cylinder_obj.top_vertices
+        top_cylinder_data = np.vstack(top_cylinder_data_list)
+        cylinder_data = np.concatenate((base_cylinder_data, top_cylinder_data))
+        rgb_cylinder = np.zeros(cylinder_data.shape).astype(np.uint8)*255
+        rgb_cylinder[:,0] = 255
+
+        # White color for bundle adjustment 3d data
+        # Black color for Quad data
+        # Red color for Cylinder data
+        ply_data_all = np.concatenate((bundle_adjustment_ply_data, quad_data, cylinder_data))
+        ply_rgb_all = np.concatenate((rgb_ba, rgb_quad, rgb_cylinder))
+        
+        write_pointcloud('3d_data.ply', ply_data_all, ply_rgb_all)
+        
+            
+        
+
+
+
     
     def ask_save_dialogue(self):
         msgBox = QMessageBox()
@@ -150,7 +186,10 @@ class Window(QMainWindow):
         self.ask_save_dialogue()
         self.widget = Widget()
         self.setCentralWidget(QWidget())
+
         self.project_name_label.setText("untitled.json")
+        
+        
         
     def exit_project(self):
         if confirm_exit():
@@ -180,10 +219,6 @@ class Window(QMainWindow):
                 self.widget.displayThumbnail(self.widget.selected_thumbnail_index)
 
 
-            if self.widget.gl_viewer.obj.cross_hair:
-                self.widget.gl_viewer.obj.feature_tool()
-            else:
-                self.widget.gl_viewer.obj.move_tool()
             
             display_msg = "Opened "+split_path(project_path)
             self.statusBar.showMessage(display_msg, 2000)

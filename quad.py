@@ -65,6 +65,7 @@ class Quad_Tool(QObject):
 
                             if len(self.data_val) == 4:
                                 self.occurence_groups.append(self.order)
+                                self.all_data_val.append(self.data_val)
                                 c = self.getRGBfromI(self.group_num+1)
                                 self.colors.append(c)
                                 xp = self.compute_new_points(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])

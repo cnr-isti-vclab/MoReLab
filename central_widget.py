@@ -29,6 +29,7 @@ class Widget(QWidget):
         self.doc = Document(self)
         self.mv_panel = MoviePanel(self)
         self.quad_obj = Quad_Tool(self)
+
         
         self.thumbnail_text_stylesheet = """color:black;
                                  font-weight:bold;
@@ -97,6 +98,7 @@ class Widget(QWidget):
         
     def displayThumbnail(self, index):
         self.selected_thumbnail_index = index
+        self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].selected_thumbnail_index = index
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)

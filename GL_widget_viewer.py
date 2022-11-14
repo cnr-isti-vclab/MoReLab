@@ -9,7 +9,6 @@ from OpenGL.arrays import vbo
 from OpenGL.GL.shaders import compileProgram, compileShader
 from tools import Tools
 
-# import open3d as o3d
 import cv2
 import sys
 import numpy as np
@@ -27,13 +26,13 @@ class GL_Widget(QOpenGLWidget):
         timer.setInterval(10)   # period, in milliseconds
         timer.timeout.connect(self.update)
         timer.start()
-
         
-
         self.setPhoto()
         self.setFocusPolicy(Qt.StrongFocus)
         self.showMaximized()
+        
         self.obj = Tools(parent)
+
         self.color_label = QLabel("X :        Y :        Position:           Selected Quad ID :             Distance : ")
         self.color_label.setAlignment(Qt.AlignCenter)
         self.pick = False
@@ -73,10 +72,8 @@ class GL_Widget(QOpenGLWidget):
 
 
     def paintGL(self):    
-        
-
-        t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
+        t = v.selected_thumbnail_index
 
 ######################################################################################        
 
@@ -150,15 +147,12 @@ class GL_Widget(QOpenGLWidget):
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBindTexture(GL_TEXTURE_2D, 0)
 
-        
 ######################################################################################
-        
-        
+
         glClearDepth(1.0)
         glClearColor(0.8, 0.8, 0.8, 1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT| GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT )
         glEnable(GL_DEPTH_TEST)  
-
 
 
         if self.img_file is not None:
@@ -217,10 +211,32 @@ class GL_Widget(QOpenGLWidget):
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                             self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))                      
 
+            # self.painter.end()
+            
+            # Painting for Sphere Tool
+            
+            if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) and self.obj.cylinder_bool:
+                pen = QPen(QColor(0, 0, 255))
+                pen.setWidth(2)
+                self.painter.setPen(pen)
+                if self.obj.ctrl_wdg.kf_method == "Regular":
+                    for i, fc in enumerate(v.features_regular[t]):
+                        if i in self.obj.cylinder_obj.order:
+                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
+
+                    
+                elif self.obj.ctrl_wdg.kf_method == "Network":
+                    for i, fc in enumerate(v.features_network[t]):
+                        if v.cylinder_groups_network[t][i] != -1:
+                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))                      
+
             self.painter.end()
 
-
-            
+           
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:                    
@@ -270,6 +286,46 @@ class GL_Widget(QOpenGLWidget):
                             glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
                             glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
                             glEnd()
+                            
+                            
+                    if self.obj.cylinder_bool:
+                        for i, vertices in enumerate(self.obj.cylinder_obj.vertices_cylinder):
+                            base_center = self.obj.cylinder_obj.centers[i]
+                            glColor3f(0, 0.6352, 1)
+                            glBegin(GL_TRIANGLES)
+                            for k in range(1,len(vertices)):                                
+                                glVertex3f(base_center[0], base_center[1], base_center[2])
+                                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+                                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+                            glEnd()
+                            glColor3f(0.0, 0.0, 0.0)
+                            glBegin(GL_LINE_STRIP)
+                            for k, v in enumerate(vertices):
+                                glVertex3f(v[0], v[1], v[2])
+                            glEnd()
+                        
+                        for i, vertices in enumerate(self.obj.cylinder_obj.top_vertices):
+                            top_center = self.obj.cylinder_obj.top_centers[i]
+                            glColor3f(0, 0.6352, 1)
+                            glBegin(GL_TRIANGLES)
+                            for k in range(1,len(vertices)):                                
+                                glVertex3f(top_center[0], top_center[1], top_center[2])
+                                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+                                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+                            glEnd()
+                            glColor3f(0.0, 0.0, 0.0)
+                            glBegin(GL_LINE_STRIP)
+                            for k, v in enumerate(vertices):
+                                glVertex3f(v[0], v[1], v[2])
+                            glEnd()
+                            
+                        glPointSize(5)
+                        glBegin(GL_POINTS)
+                        for i, base_center in enumerate(self.obj.cylinder_obj.centers):
+                            glVertex3f(base_center[0], base_center[1], base_center[2])
+                            glVertex3f(self.obj.cylinder_obj.top_centers[i][0], self.obj.cylinder_obj.top_centers[i][1], self.obj.cylinder_obj.top_centers[i][2])
+                        glEnd()
+                        
 
                 
 
@@ -291,6 +347,7 @@ class GL_Widget(QOpenGLWidget):
     def setPhoto(self, image=None):
         if image is None:
             self.img_file = None
+
         else:
             self.aspect_image = image.shape[1]/image.shape[0]
             self.aspect_widget = self.width()/self.height()
@@ -302,6 +359,7 @@ class GL_Widget(QOpenGLWidget):
             # print("Image size after resizing: Width: "+str(image.shape[1])+ " , Height: "+str(image.shape[0]))
             PIL_image = self.toImgPIL(image).convert('RGB')
             self.img_file = ImageQt(PIL_image)
+            
             
 
     def set_default_view_param(self):
@@ -341,7 +399,7 @@ class GL_Widget(QOpenGLWidget):
     def keyPressEvent(self, event):
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
         f = self.obj.selected_feature_index
-        t = self.obj.ctrl_wdg.selected_thumbnail_index
+        t = v.selected_thumbnail_index
 
         if self.obj.cross_hair:
             if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
@@ -394,6 +452,12 @@ class GL_Widget(QOpenGLWidget):
                 self.pick = True
                 self.x = a.x()
                 self.y = a.y()
+                
+        if self.obj.cylinder_bool:
+            x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
+            y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
+            selected_feature = self.obj.cylinder_obj.select_feature(x, y)
+
             
         if self.obj.measure_bool:
             self.pick = True

@@ -10,6 +10,7 @@ class Video:
         
         self.height = 0
         self.width = 0
+        self.selected_thumbnail_index = -1
         
         self.key_frames_regular = []
         self.key_frame_indices_regular = []
@@ -20,11 +21,13 @@ class Video:
         self.features_regular = []
         self.hide_regular = []
         self.quad_groups_regular = []
+        self.cylinder_groups_regular = []
         
         self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
         self.quad_groups_network = []
+        self.cylinder_groups_network = []
         
         self.summary = ""
 
@@ -45,6 +48,7 @@ class Video:
         self.features_regular = []
         self.hide_regular = []
         self.quad_groups_regular = []
+        self.cylinder_groups_regular = []
         
         self.cap = cv2.VideoCapture(self.video_path)
         count = 0
@@ -67,6 +71,7 @@ class Video:
             self.features_regular.append([])
             self.hide_regular.append([])
             self.quad_groups_regular.append([])
+            self.cylinder_groups_regular.append([])
     
             
     def fromVideoFrameToNP(self, frame):
@@ -127,6 +132,7 @@ class Video:
         self.features_network = []
         self.hide_network = []
         self.quad_groups_network = []
+        self.cylinder_groups_network = []
 
         bLoad = True
         j = 0
@@ -199,5 +205,6 @@ class Video:
             self.features_network.append([])
             self.hide_network.append([])
             self.quad_groups_network.append([])
+            self.cylinder_groups_network.append([])
 
 

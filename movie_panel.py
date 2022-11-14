@@ -25,6 +25,7 @@ class MoviePanel(QTreeWidget):
         v = Video(movie_path)
         self.movie_caps.append(v)
         v.video_summary()
+        # print(len(v.features_regular))
         movie_name = split_path(movie_path)
         
         item = QTreeWidgetItem([str(movie_name)])
@@ -34,7 +35,6 @@ class MoviePanel(QTreeWidget):
         item.addChild(QTreeWidgetItem(["Resolution", str(v.width) + ' X ' +str(v.height)]))
 
         self.items.append(item)
-        
         self.insertTopLevelItems(len(self.movie_paths) - 1, [item])
         self.select_movie(item)
         
@@ -61,19 +61,21 @@ class MoviePanel(QTreeWidget):
     
                 
     def select_movie(self, selection):
-        self.deselect_movies()
-        # self.ctrl_wdg.viewer.obj.hide_features(False)
-        
-        self.selected_movie_idx = self.items.index(selection)
-        self.selected_movie_path = self.movie_paths[self.selected_movie_idx]
-        
-        # print("selected : "+str(self.selected_movie_idx))
+        if selection in self.items:
+            self.deselect_movies()
+            
+            self.selected_movie_idx = self.items.index(selection)
+            self.selected_movie_path = self.movie_paths[self.selected_movie_idx]
+            
+            # print("selected : "+str(self.selected_movie_idx))
+                    
+            self.switch_kf_method()        
+            self.items[self.selected_movie_idx].setSelected(True)
+            self.ctrl_wdg.populate_scrollbar()
+            
+            t = self.movie_caps[self.selected_movie_idx].selected_thumbnail_index
+            if t == -1:
+                self.ctrl_wdg.gl_viewer.setPhoto()
+            else:
+                self.ctrl_wdg.displayThumbnail(t)
                 
-        self.switch_kf_method()        
-        self.items[self.selected_movie_idx].setSelected(True)
-        self.ctrl_wdg.populate_scrollbar()
-        
-        self.ctrl_wdg.gl_viewer.setPhoto()
-        self.ctrl_wdg.gl_viewer.obj.display_data()
-        
-    
