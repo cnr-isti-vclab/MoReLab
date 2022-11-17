@@ -10,7 +10,6 @@ class Video:
         
         self.height = 0
         self.width = 0
-        self.selected_thumbnail_index = -1
         
         self.key_frames_regular = []
         self.key_frame_indices_regular = []

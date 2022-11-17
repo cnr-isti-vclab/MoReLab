@@ -18,6 +18,7 @@ class Cylinder_Tool(QObject):
         self.top_vertices = []
         self.centers = []
         self.top_centers = []
+        self.base_circles = []
 
         
         
@@ -41,17 +42,14 @@ class Cylinder_Tool(QObject):
                             
                             if len(self.data_val) == 4:
                                 self.centers.append(self.data_val[0])
-                                bases, tops = self.make_circle(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                bases, tops, _, top_c = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                self.top_centers.append(top_c)
                                 self.vertices_cylinder.append(bases)
                                 self.top_vertices.append(tops)
-                                
-  
-                                # self.occurence_groups.append(self.order)
-                                # print("Group number:")
-                                # print(self.group_num+1)
-                                # self.order = []
                                 self.data_val = []
                                 self.group_num += 1
+                                # print(self.centers)
+                                # print(self.top_centers)
              
             elif self.ctrl_wdg.kf_method == "Network":
                 for i, fc in enumerate(v.features_network[t]):
@@ -61,7 +59,33 @@ class Cylinder_Tool(QObject):
         return feature_selected
     
     
-    def make_circle(self, center, p1, p2, p3, sectorCount = 16): # p1 is anchor and p2 is used for radius
+    def make_circle(self, center, p1, p2, sectorCount = 16):
+        t_vec = p1 - center
+        b_vec_temp = p2 - center
+        
+        radius = np.linalg.norm(b_vec_temp)
+        
+        t_vec = t_vec/np.linalg.norm(t_vec)
+        b_vec_temp = b_vec_temp/radius
+
+        N = np.cross(b_vec_temp, t_vec)
+        N = N/np.linalg.norm(N)
+        
+        b_vec = np.cross(t_vec, N)          # t_vec, b_vec and N form our x,y,z coordinate system
+        sectorStep = 2*np.pi/sectorCount
+        
+        base_points = []
+        
+        for i in range(sectorCount+1):
+            sectorAngle = i * sectorStep           # theta
+            base_points.append(center + radius*np.cos(sectorAngle)*t_vec + radius*np.sin(sectorAngle)*b_vec)
+            
+        return base_points, center
+        
+        
+    
+    def make_cylinder(self, center, p1, p2, p3, sectorCount = 16): # p1 is anchor and p2 is used for radius
+        # print("Center : "+str(center))
         t_vec = p1 - center
         b_vec_temp = p2 - center
         H_vec = p3 - center
@@ -69,12 +93,12 @@ class Cylinder_Tool(QObject):
         radius = np.linalg.norm(b_vec_temp)
         
         t_vec = t_vec/np.linalg.norm(t_vec)
-        b_vec_temp = b_vec_temp/np.linalg.norm(b_vec_temp)
+        b_vec_temp = b_vec_temp/radius
 
         N = np.cross(b_vec_temp, t_vec)
         N = N/np.linalg.norm(N)
         
-        height = np.dot(H_vec, N)/np.linalg.norm(N)
+        height = np.dot(H_vec, N)
         
         b_vec = np.cross(t_vec, N)          # t_vec, b_vec and N form our x,y,z coordinate system
         
@@ -88,22 +112,7 @@ class Cylinder_Tool(QObject):
             base_points.append(center + radius*np.cos(sectorAngle)*t_vec + radius*np.sin(sectorAngle)*b_vec)
             top_points.append(center + radius*np.cos(sectorAngle)*t_vec + radius*np.sin(sectorAngle)*b_vec + height*N)
         
-        self.top_centers.append(center + height*N)
         
-        return base_points, top_points
+        return base_points, top_points, center, center + height*N
+    
         
-        
-    
-    
-    
-    def getUnitCircleVertices(self, radius, sectorCount = 8):
-        sectorStep = 2*np.pi/sectorCount
-        cos_values = []
-        sin_values = []
-        for i in range(sectorCount+1):
-            sectorAngle = i * sectorStep           # theta
-            cos_values.append(np.cos(sectorAngle))
-            sin_values.append(np.sin(sectorAngle))
-
-        return cos_values, sin_values
-                

@@ -152,7 +152,6 @@ class Document():
                             
         self.ctrl_wdg.mv_panel.selected_movie_path = adjust_op([data["selected_movie"]], op)[0]
         self.ctrl_wdg.mv_panel.selected_movie_idx = self.ctrl_wdg.mv_panel.movie_paths.index(self.ctrl_wdg.mv_panel.selected_movie_path)
-        self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx].selected_thumbnail_index = data["displayIndex"]
         self.ctrl_wdg.mv_panel.select_movie(self.ctrl_wdg.mv_panel.items[self.ctrl_wdg.mv_panel.selected_movie_idx])                                
         self.ctrl_wdg.gl_viewer.obj.selected_feature_index = data["selected_feature"]  
 

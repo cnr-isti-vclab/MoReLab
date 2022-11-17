@@ -1,7 +1,12 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-import sys, os, sip, json, glob, cv2
+import sys
+import os
+import sip
+import json
+import glob
+import cv2
 from central_widget import Widget
 from util.util import movie_dialogue, split_path, empty_gui, adjust_op, confirm_exit, write_pointcloud
 from GL_widget_viewer import GL_Widget
@@ -11,7 +16,6 @@ from tools import Tools
 import numpy as np
 
 
-
 class Window(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)    # call the init for the parent class
@@ -19,54 +23,49 @@ class Window(QMainWindow):
         self.setWindowTitle('MoReLab')
         self.showMaximized()
         self.widget = Widget()
-        
+
         self.save_response = ''
-        
+
         self.create_menu()
         self.create_statusbar()
         self.create_toolbar()
-        
-
 
     def create_layout(self):
         self.vboxLayout3 = QVBoxLayout()
         self.vboxLayout3.addWidget(self.widget.mv_panel, 3)
         self.vboxLayout3.addWidget(self.widget.quad_obj.quad_tree, 3)
         self.vboxLayout3.addWidget(self.widget.btn_kf)
-        
+
         self.vboxLayout2 = QVBoxLayout()
         self.vboxLayout2.addWidget(self.widget.scroll_area, 1)
         self.vboxLayout2.addWidget(self.widget.gl_viewer, 5)
-        self.vboxLayout2.addWidget(self.widget.gl_viewer.color_label, 1)
-        
+        # self.vboxLayout2.addWidget(self.widget.gl_viewer.color_label, 1)
+
         self.vert1 = QVBoxLayout()
         self.vert1.addWidget(self.widget.gl_viewer.obj.wdg_tree)
         self.vert1.addWidget(self.widget.gl_viewer.obj.cam_btn)
 
         self.hboxLayout = QHBoxLayout()
 
-        self.hboxLayout.addLayout(self.vboxLayout3, 1 )
+        self.hboxLayout.addLayout(self.vboxLayout3, 1)
         self.hboxLayout.addLayout(self.vboxLayout2, 2)
         self.hboxLayout.addLayout(self.vert1, 1)
-        
+
         self.widget.setLayout(self.hboxLayout)
         self.setCentralWidget(self.widget)
-        
 
-
-        
-        
     def create_toolbar(self):
         toolbar = QToolBar("&ToolBar", self)
-        self.addToolBar(Qt.TopToolBarArea , toolbar )
+        self.addToolBar(Qt.TopToolBarArea, toolbar)
 
         self.widget.gl_viewer.obj.np_tool.clicked.connect(self.new_project)
         self.widget.gl_viewer.obj.op_tool.clicked.connect(self.open_project)
         self.widget.gl_viewer.obj.om_tool.clicked.connect(self.open_movie)
         self.widget.gl_viewer.obj.sp_tool.clicked.connect(self.save_project)
-        self.widget.gl_viewer.obj.sp_as_tool.clicked.connect(self.save_as_project)
+        self.widget.gl_viewer.obj.sp_as_tool.clicked.connect(
+            self.save_as_project)
         self.widget.gl_viewer.obj.ep_tool.clicked.connect(self.exit_project)
-        
+
         toolbar.addWidget(self.widget.gl_viewer.obj.np_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.op_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.om_tool)
@@ -78,179 +77,172 @@ class Window(QMainWindow):
         toolbar.addWidget(self.widget.gl_viewer.obj.qd_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.meas_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.cylinder_tool)
-        
-        self.addToolBarBreak(Qt.TopToolBarArea) 
+
+        self.addToolBarBreak(Qt.TopToolBarArea)
 
         left_spacer = QWidget()
         left_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         right_spacer = QWidget()
-        right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        
+        right_spacer.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         # self.project_name_label = QLabel(os.path.join(os.getcwd(), "Untitled.json"))
         self.project_name_label = QLabel("untitled.json")
-        
+
         toolbar2 = QToolBar()
-        self.addToolBar( Qt.TopToolBarArea , toolbar2)
+        self.addToolBar(Qt.TopToolBarArea, toolbar2)
         toolbar2.addWidget(left_spacer)
         toolbar2.addWidget(self.project_name_label)
-        toolbar2.addWidget(right_spacer)  
-               
-        
+        toolbar2.addWidget(right_spacer)
+
     def create_menu(self):
-        self.menu_bar = self.menuBar()
+        menuBar = self.menuBar()
         fileMenu = QMenu("&File", self)
-        self.menu_bar.addMenu(fileMenu)
-        
-        self.new_pr = QAction(QIcon("./icons/new_project.png"),"&New",self)
+        menuBar.addMenu(fileMenu)
+
+        self.new_pr = QAction(QIcon("./icons/new_project.png"), "&New", self)
         fileMenu.addAction(self.new_pr)
         self.new_pr.triggered.connect(self.new_project)
         self.new_pr.setShortcut("ctrl+n")
-        
 
-        self.open_pr = QAction(QIcon("./icons/open_project.png"),"&Open",self)
+        self.open_pr = QAction(
+            QIcon("./icons/open_project.png"), "&Open", self)
         fileMenu.addAction(self.open_pr)
         self.open_pr.triggered.connect(self.open_project)
         self.open_pr.setShortcut("ctrl+o")
-        
-        self.save_pr = QAction(QIcon("./icons/save_project.png"),"&Save",self)
+
+        self.save_pr = QAction(
+            QIcon("./icons/save_project.png"), "&Save", self)
         fileMenu.addAction(self.save_pr)
         self.save_pr.triggered.connect(self.save_project)
         self.save_pr.setShortcut("ctrl+s")
-        
-        self.save_as = QAction(QIcon("./icons/save_as.png"),"&Save as",self)
+
+        self.save_as = QAction(QIcon("./icons/save_as.png"), "&Save as", self)
         fileMenu.addAction(self.save_as)
         self.save_as.triggered.connect(self.save_as_project)
         self.save_as.setShortcut("ctrl+shift+s")
-        
-        self.open_mov = QAction(QIcon("./icons/open_movie.png"),"&Import Movie",self)
+
+        self.open_mov = QAction(
+            QIcon("./icons/open_movie.png"), "&Import Movie", self)
         fileMenu.addAction(self.open_mov)
         self.open_mov.triggered.connect(self.open_movie)
         self.open_mov.setShortcut("ctrl+shift+o")
-        
-        self.exp_ply = QAction(QIcon("./icons/3d_printer.png"),"&Export PLY",self)
+
+        self.exp_ply = QAction(
+            QIcon("./icons/3d_printer.png"), "&Export PLY", self)
         fileMenu.addAction(self.exp_ply)
         self.exp_ply.triggered.connect(self.export_ply_data)
         self.exp_ply.setShortcut("ctrl+e")
-        
-        self.exit_pr = QAction(QIcon("./icons/exit_project.png"),"&Exit",self)
+
+        self.exit_pr = QAction(
+            QIcon("./icons/exit_project.png"), "&Exit", self)
         fileMenu.addAction(self.exit_pr)
         self.exit_pr.triggered.connect(self.exit_project)
         self.exit_pr.setShortcut("Esc")
 
-
-        
     def export_ply_data(self):
         bundle_adjustment_ply_data = self.widget.gl_viewer.obj.ply_pts[-1]
-        rgb_ba = np.ones(bundle_adjustment_ply_data.shape).astype(np.uint8)*255 
+        rgb_ba = np.ones(bundle_adjustment_ply_data.shape).astype(np.uint8)*255
 
         quad_data_list = self.widget.quad_obj.new_points
         quad_data = np.vstack(quad_data_list)
-        rgb_quad = np.zeros(quad_data.shape).astype(np.uint8)*255 
-        
+        rgb_quad = np.zeros(quad_data.shape).astype(np.uint8)*255
+
         base_cylinder_data_list = self.widget.gl_viewer.obj.cylinder_obj.vertices_cylinder
         base_cylinder_data = np.vstack(base_cylinder_data_list)
         top_cylinder_data_list = self.widget.gl_viewer.obj.cylinder_obj.top_vertices
         top_cylinder_data = np.vstack(top_cylinder_data_list)
         cylinder_data = np.concatenate((base_cylinder_data, top_cylinder_data))
         rgb_cylinder = np.zeros(cylinder_data.shape).astype(np.uint8)*255
-        rgb_cylinder[:,0] = 255
+        rgb_cylinder[:, 0] = 255
 
         # White color for bundle adjustment 3d data
         # Black color for Quad data
         # Red color for Cylinder data
-        ply_data_all = np.concatenate((bundle_adjustment_ply_data, quad_data, cylinder_data))
+        ply_data_all = np.concatenate(
+            (bundle_adjustment_ply_data, quad_data, cylinder_data))
         ply_rgb_all = np.concatenate((rgb_ba, rgb_quad, rgb_cylinder))
-        
+
         write_pointcloud('3d_data.ply', ply_data_all, ply_rgb_all)
-        
-            
-        
 
-
-
-    
     def ask_save_dialogue(self):
         msgBox = QMessageBox()
         msgBox.setText("Do you want to save your current project ?")
         msgBox.setWindowTitle("Save project")
         msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-         
+
         returnValue = msgBox.exec()
         if returnValue == QMessageBox.Yes:
-           self.save_project()
-          
+            self.save_project()
 
-        
     def new_project(self):
         self.ask_save_dialogue()
         self.widget = Widget()
         self.setCentralWidget(QWidget())
-
         self.project_name_label.setText("untitled.json")
-        
-        
-        
+
     def exit_project(self):
         if confirm_exit():
             self.close()
-    
+
     def open_project(self):
         file_types = "json (*.json)"
         response = QFileDialog.getOpenFileName(
-            parent = self,
-            caption = 'Select project.',
-            directory = os.getcwd(),
-            filter = file_types
+            parent=self,
+            caption='Select project.',
+            directory=os.getcwd(),
+            filter=file_types
         )
         if response[0] != '':
             self.save_response = response
             project_path = response[0]
-            
+
             name_project = os.path.relpath(project_path, os.getcwd())
             disp_name_project = split_path(name_project)
             self.project_name_label.setText(disp_name_project)
-            
+
             self.widget.doc.load_data(project_path)
             self.create_layout()
             v = self.widget.mv_panel.movie_caps[self.widget.mv_panel.selected_movie_idx]
             if self.widget.selected_thumbnail_index != -1:
                 # self.widget.gl_viewer.setMinimumSize(1077, 750)
-                self.widget.displayThumbnail(self.widget.selected_thumbnail_index)
+                self.widget.displayThumbnail(
+                    self.widget.selected_thumbnail_index)
 
+            if self.widget.gl_viewer.obj.cross_hair:
+                self.widget.gl_viewer.obj.feature_tool()
+            else:
+                self.widget.gl_viewer.obj.move_tool()
 
-            
             display_msg = "Opened "+split_path(project_path)
             self.statusBar.showMessage(display_msg, 2000)
-            
-    
+
     def implement_save(self, p):
         name_project = os.path.relpath(p, os.getcwd())
-        
+
         disp_name_project = split_path(name_project)
-        
+
         display_msg = "Saving "+disp_name_project
         self.statusBar.showMessage(display_msg, 2000)
-        
+
         self.widget.doc.save_directory(name_project)
-        
+
         data = self.widget.doc.get_data()
-        json_object = json.dumps(data, indent = 4)
+        json_object = json.dumps(data, indent=4)
         if name_project.split('.')[-1] != 'json':
             name_project = name_project+'.json'
         with open(name_project, "w") as outfile:
-            outfile.write(json_object)        
-    
-    
-        
+            outfile.write(json_object)
+
     def save_project(self):
         if self.project_name_label.text() == 'untitled.json':
             file_types = "json (*.json)"
             self.save_response = QFileDialog.getSaveFileName(
-                parent = self,
-                caption = 'Save project.',
-                directory = os.getcwd(),
-                filter = file_types
+                parent=self,
+                caption='Save project.',
+                directory=os.getcwd(),
+                filter=file_types
             )
         if self.save_response[0] != '':
             name_project = os.path.relpath(self.save_response[0], os.getcwd())
@@ -259,31 +251,28 @@ class Window(QMainWindow):
 
             self.implement_save(self.save_response[0])
 
-                
-                
     def save_as_project(self):
         if self.project_name_label.text() == 'untitled.json':
             self.save_project()
         else:
             file_types = "json (*.json)"
             save_as_response = QFileDialog.getSaveFileName(
-                parent = self,
-                caption = 'Save as.',
-                directory = os.getcwd(),
-                filter = file_types
+                parent=self,
+                caption='Save as.',
+                directory=os.getcwd(),
+                filter=file_types
             )
             if save_as_response[0] != '':
-                self.implement_save(save_as_response[0])        
+                self.implement_save(save_as_response[0])
 
-        
     def open_movie(self):
         # file_types = "Video files (*.asf *.mp4 *.mov)"
         file_types = "Supported Video files (*.asf *.mp4 *.mov *.MP4 *.MOV *.ASF);; MP4 (*.mp4);; ASF (*.asf);; MOV(*.mov)"
         response = QFileDialog.getOpenFileName(
-           parent = self,
-           caption = 'Select movie file.',
-           directory = os.getcwd(),
-           filter = file_types
+            parent=self,
+            caption='Select movie file.',
+            directory=os.getcwd(),
+            filter=file_types
         )
         if response[0] != '':
             movie_path = os.path.relpath(response[0], os.getcwd())
@@ -291,21 +280,19 @@ class Window(QMainWindow):
                 movie_dialogue()
             else:
                 movie_name = split_path(movie_path)
-                display_msg = "Opened "+movie_name      
+                display_msg = "Opened "+movie_name
                 self.statusBar.showMessage(display_msg, 2000)
                 self.widget.mv_panel.add_movie(movie_path)
-                
+
                 if len(self.widget.mv_panel.movie_paths) == 1:
                     self.create_layout()
 
-        
     def create_statusbar(self):
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
-    
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = Window()
     window.show()

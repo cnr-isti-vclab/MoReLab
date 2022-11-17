@@ -98,7 +98,6 @@ class Widget(QWidget):
         
     def displayThumbnail(self, index):
         self.selected_thumbnail_index = index
-        self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].selected_thumbnail_index = index
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)

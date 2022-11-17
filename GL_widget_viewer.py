@@ -26,18 +26,20 @@ class GL_Widget(QOpenGLWidget):
         timer.setInterval(10)   # period, in milliseconds
         timer.timeout.connect(self.update)
         timer.start()
-        
+
         self.setPhoto()
         self.setFocusPolicy(Qt.StrongFocus)
         self.showMaximized()
-        
         self.obj = Tools(parent)
-
-        self.color_label = QLabel("X :        Y :        Position:           Selected Quad ID :             Distance : ")
+        self.color_label = QLabel("X :        Y :        Depth :            Position:          ")
         self.color_label.setAlignment(Qt.AlignCenter)
         self.pick = False
+        self.move_pick = False
         self.x = 1
         self.y = 1
+        self.move_x = 1
+        self.move_y = 1
+        self.cylinder_point = []
         self.clicked_once = False
         self.last_3d_pos = np.array([0.0,0.0, 0.0])
         self.last_pos = np.array([0.0,0.0])
@@ -72,8 +74,8 @@ class GL_Widget(QOpenGLWidget):
 
 
     def paintGL(self):    
+        t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        t = v.selected_thumbnail_index
 
 ######################################################################################        
 
@@ -106,58 +108,339 @@ class GL_Widget(QOpenGLWidget):
 
         
         glClearColor(0.0, 0.0, 0.0, 1.0)
-        # glClearDepth(0.5)
         glEnable(GL_DEPTH_TEST)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
-        
-        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and (self.obj.up_pt_bool or self.obj.measure_bool):
+        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:
-                    for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
-                        self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
+                    # self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
+                    self.render_points()
+                    
+                    if self.obj.up_pt_bool or self.obj.measure_bool or self.obj.cylinder_bool:
+                        self.render_quads(True)
                         
-                        co = self.obj.ctrl_wdg.quad_obj.colors[i+1]
-                        glColor3f(co[0]/255, co[1]/255, co[2]/255)
-                        glBegin(GL_TRIANGLES)      
-                        glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-    
-                        glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                        glEnd()
-                        
-                        glLineWidth(2.0)
-                        glColor3f(0.0, 0.0, 0.0)
-                        glBegin(GL_LINE_LOOP)
-                        glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-                        glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                        glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-                        glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-        
-                        glEnd()
+                    if self.obj.cylinder_bool:
+                        self.render_cylinders()
 
         if self.pick:
             ID, pos1 = self.get_ID()
-            
-            
+        
+        bases = []
+        center = [0,0,0]
+        center_base = center
+        center_top = center
+        cyl_bases = []
+        cyl_tops = []
+        if self.move_pick:
+            # glEnable
+            dd = glReadPixels(self.move_x, self.height()-self.move_y, 1, 1,GL_DEPTH_COMPONENT, GL_FLOAT)[0][0]
+            px = (0, 0, 0)
+            if dd < 1.0:
+                px = gluUnProject(self.move_x, self.height()-self.move_y, dd)
+                if len(self.obj.cylinder_obj.data_val) == 2:
+                    bases, center = self.obj.cylinder_obj.make_circle(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], np.array(px))
+                elif len(self.obj.cylinder_obj.data_val) == 3:
+                    cyl_bases, cyl_tops, center_base, center_top = self.obj.cylinder_obj.make_cylinder(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], self.obj.cylinder_obj.data_val[2], np.array(px))
+
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBindTexture(GL_TEXTURE_2D, 0)
 
 ######################################################################################
 
+# ------------------------------------------------------------------------------------------------------------------------
+
         glClearDepth(1.0)
         glClearColor(0.8, 0.8, 0.8, 1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT| GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT )
-        glEnable(GL_DEPTH_TEST)  
+        glEnable(GL_DEPTH_TEST)
+        # glEnable (GL_BLEND)
+        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
+
+        # glEnable(GL_CULL_FACE)
+        # glCullFace(GL_FRONT)
+        # glFrontFace(GL_CW)
+
+        self.paint_image(v, t)
 
 
+        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
+            for j, tup in enumerate(self.obj.camera_projection_mat):
+                if tup[0] == t:                    
+                    self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
+                    glMatrixMode(GL_PROJECTION)
+                    glLoadIdentity()
+                    load_mat = self.opengl_intrinsics
+                    glLoadMatrixf(load_mat)
+                    
+                    glMatrixMode(GL_MODELVIEW)
+                    glLoadIdentity()
+                    load_mat = self.opengl_extrinsics
+                    glLoadMatrixf(load_mat)
+                    
+                    self.render_points()
+                    
+
+                    if self.obj.up_pt_bool or self.obj.measure_bool:
+                        self.render_quads(False)
+                            
+                            
+                    if self.obj.cylinder_bool or self.obj.measure_bool:
+                        self.render_transient_cylinders(bases, center, cyl_bases, cyl_tops, center_base, center_top)
+                        
+                        self.render_cylinders()
+
+        # Draw Measuring Line
+        if self.obj.measure_bool and self.clicked_once and len(self.obj.ply_pts) > 0:
+            self.painter.begin(self)
+            pen = QPen(QColor(0, 0, 255))
+            pen.setWidth(2)
+            self.painter.setPen(pen)
+            self.painter.drawLine(QLineF(self.last_pos[0], self.last_pos[1], self.current_pos[0], self.current_pos[1]))
+            self.painter.end()
+            
+
+# ----------------------------------------------------------------------------------------------------------------------------
+                           
+    def setPhoto(self, image=None):
+        if image is None:
+            self.img_file = None
+        else:
+            self.aspect_image = image.shape[1]/image.shape[0]
+            self.aspect_widget = self.width()/self.height()
+            self.set_default_view_param()
+            w = int(self.w2-self.w1)
+            h = int(self.h2-self.h1)
+    
+            image = cv2.resize(image, (w, h), interpolation = cv2.INTER_AREA)
+            # print("Image size after resizing: Width: "+str(image.shape[1])+ " , Height: "+str(image.shape[0]))
+            PIL_image = self.toImgPIL(image).convert('RGB')
+            self.img_file = ImageQt(PIL_image)
+            
+
+    def set_default_view_param(self):
+        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
+        self.aspect_widget = self.width()/self.height()
+        if self.aspect_image > self.aspect_widget:
+            self.w1 = 0
+            self.w2 = self.width()
+
+            diff = self.height() - (self.width()/v.width)*v.height
+            self.h1 = diff/2
+            self.h2 = self.height() - self.h1
+            
+        else:
+            diff = (self.aspect_widget - self.aspect_image)*self.width()
+            self.w1 = diff/2
+            self.w2 = self.width() - self.w1
+            self.h1 = 0
+            self.h2 = self.height()
+            
+        self.obj.wdg_tree.wdg_to_img_space()
+
+
+    def mouseDoubleClickEvent(self, event):
+        a = event.pos()
+        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
+        if self.img_file is not None and self.obj.cross_hair:
+            # print(a.x(), a.y())
+            if a.x() > 0 and a.y() > 0:
+                x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
+                y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
+                if x > self.w1 and y > self.h1 and x < self.w2 and y < self.h2:
+                    self.obj.add_feature(x, y)
+
+        super(GL_Widget, self).mouseDoubleClickEvent(event)
+
+    def keyPressEvent(self, event):
+        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
+        f = self.obj.selected_feature_index
+        t = self.obj.ctrl_wdg.selected_thumbnail_index
+
+        if self.obj.cross_hair:
+            if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+                self.obj.delete_feature()
+    
+            elif event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
+                if event.key() == Qt.Key_Left:
+                    x = v.features_regular[t][f].x_loc-self.mv_pix
+                    y = v.features_regular[t][f].y_loc
+                elif event.key() == Qt.Key_Right:
+                    x = v.features_regular[t][f].x_loc+self.mv_pix
+                    y = v.features_regular[t][f].y_loc
+                elif event.key() == Qt.Key_Up:
+                    x = v.features_regular[t][f].x_loc
+                    y = v.features_regular[t][f].y_loc-self.mv_pix
+                elif event.key() == Qt.Key_Down:
+                    x = v.features_regular[t][f].x_loc
+                    y = v.features_regular[t][f].y_loc+self.mv_pix
+                else:
+                    x = v.features_regular[t][f].x_loc
+                    y = v.features_regular[t][f].y_loc
+    
+                self.obj.move_feature(x, y, v.features_regular[t][f])
+
+        super(GL_Widget, self).keyPressEvent(event)
+
+    def wheelEvent(self, event):
+        if self.img_file is not None and not self.obj.up_pt_bool and not self.obj.measure_bool:
+            if event.angleDelta().y() > 0:
+                self._zoom += 0.1
+            else:
+                self._zoom -= 0.1
+            # print(self.width()/2)
+            if self._zoom < 1:
+                self._zoom = 1
+                self.offset_x = 0
+                self.offset_y = 0
+                self.set_default_view_param()
+
+
+    # overriding the mousePressEvent method
+    def mousePressEvent(self, event):
+        a = event.pos()
+        self.press_loc = (a.x(), a.y())
+        if self.obj.up_pt_bool:
+            x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
+            y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
+            selected_feature = self.obj.ctrl_wdg.quad_obj.select_feature(x, y)
+            if not selected_feature:
+                self.x = a.x()
+                self.y = a.y()
+                self.pick = True
+
+                
+        if self.obj.cylinder_bool:
+            x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
+            y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
+            selected_feature = self.obj.cylinder_obj.select_feature(x, y)
+
+            
+        if self.obj.measure_bool:
+            self.x = a.x()
+            self.y = a.y()
+            self.pick = True
+            
+            
+    def mouseMoveEvent(self, event):
+        a = event.pos()
+        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
+        if self.obj.measure_bool and len(self.obj.ply_pts) > 0:    
+            self.current_pos = np.array([a.x(), a.y()])
+            
+        if len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0:
+            self.move_x = a.x()
+            self.move_y = a.y()
+            self.move_pick = True
+
+                
+
+            
+
+    # overriding the mousePressEvent method
+    def mouseReleaseEvent(self, event):
+        a = event.pos()
+        if (not self.obj.up_pt_bool) and (not self.obj.measure_bool):
+            self.release_loc = (a.x(), a.y())
+            if self._zoom >= 1:
+                self.offset_x += (self.release_loc[0] - self.press_loc[0])
+                self.offset_y += (self.release_loc[1] - self.press_loc[1])
+        
+          
+                    
+    def convert_cv_qt(self, cv_img, width, height):
+        """Convert from an opencv image to QPixmap"""
+        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgb_image.shape
+        bytes_per_line = ch * w
+        convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                
+        p = convert_to_Qt_format.scaled(width, height, Qt.KeepAspectRatio)
+        return QPixmap.fromImage(p)
+    
+
+
+    def toImgPIL(self, imgOpenCV=None):
+        if imgOpenCV is None:
+            return imgOpenCV
+        else:
+            return Image.fromarray(cv2.cvtColor(imgOpenCV, cv2.COLOR_BGR2RGB))
+        
+        
+    def computeOpenGL_fromCV(self, K, Rt):
+        zn = -1 #self.near
+        zf = 1 #self.far
+        d = zn - zf
+        cx = K[0,2]
+        cy = K[1,2]
+        perspective = np.zeros((4,4))
+        
+        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
+        width = v.width        
+        height = v.height*(self.width()/self.height())
+
+
+        perspective[0][0] =  2.0 * K[0,0] / width
+        perspective[1][1] = -2.0 * K[1,1] / height
+        perspective[2][0] =  1.0 - 2.0 * cx / width
+        perspective[2][1] =  2.0 * cy / height -1.0
+        perspective[2][2] =  (zf + zn) / d
+        perspective[2][3] =  -1.0
+        perspective[3][2] = 2.0 * zn * zf / d
+
+        perspective = perspective.transpose()
+
+        self.opengl_intrinsics = perspective
+        #self.opengl_intrinsics = np.matmul(NDC, perspective)
+        out = Rt.transpose()
+
+        self.opengl_extrinsics = out #np.matmul(self.opengl_intrinsics, Rt)
+        
+
+    
+    def get_ID(self):
+        co = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_RGB, GL_UNSIGNED_BYTE)
+        # print(co)
+        dd = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_DEPTH_COMPONENT, GL_FLOAT)[0][0]
+        # print("Depth : "+str(dd))
+        
+        px = gluUnProject(self.x, self.height()-self.y, dd)
+        ID = self.obj.ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
+        dist = 0.0
+        
+        if self.obj.measure_bool and len(self.obj.ply_pts) > 0:
+            if self.clicked_once:
+                dist = np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
+                self.last_pos = np.array([0.0,0.0])
+                self.last_3d_pos = np.array([0.0,0.0,0.0])
+            else:
+                self.last_pos = np.array([self.x, self.y])
+                self.last_3d_pos = np.array(px)
+                
+            self.clicked_once = not self.clicked_once
+
+        
+       
+        px = (round(px[0], 2), round(px[1], 2), round(px[2], 2))
+        # print(ID)
+        if self.obj.up_pt_bool and ID > 0:
+            self.obj.ctrl_wdg.quad_obj.quad_tree.select_quad(self.obj.ctrl_wdg.quad_obj.quad_tree.items[ID-1])
+
+        self.pick = False
+        
+        return ID, px
+    
+    
+    
+    
+    
+    
+    def paint_image(self, v, t):
         if self.img_file is not None:
             self.painter.begin(self)
-            pen = QPen(QColor(0, 0, 0))
+            pen = QPen(QColor(255, 0, 0))
             pen.setWidth(2)
             self.painter.setPen(pen)
             self.painter.setFont(self.painter.font())
@@ -234,335 +517,186 @@ class GL_Widget(QOpenGLWidget):
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                             self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))                      
 
-            self.painter.end()
-
-           
-        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
-            for j, tup in enumerate(self.obj.camera_projection_mat):
-                if tup[0] == t:                    
-                    self.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
-                    glMatrixMode(GL_PROJECTION)
-                    glLoadIdentity()
-                    load_mat = self.opengl_intrinsics
-                    glLoadMatrixf(load_mat)
-                    
-                    glMatrixMode(GL_MODELVIEW)
-                    glLoadIdentity()
-                    load_mat = self.opengl_extrinsics
-                    glLoadMatrixf(load_mat)
-                    
-                    data = self.obj.ply_pts[0]
-                    
-                    glColor3f(1.0, 0.0, 0.0)
-                    glPointSize(5)
-                    glBegin(GL_POINTS)
-                    
-                    for i in range(data.shape[0]):
-                        glVertex3f(data[i,0], data[i,1], data[i,2])
-                    glEnd()
-                    
-
-                    if self.obj.up_pt_bool or self.obj.measure_bool:
-                        for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
-                            if i==self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx:
-                                glColor3f(0.38, 0.85, 0.211)
-                            else:
-                                glColor3f(0, 0.6352, 1)
-                            glBegin(GL_TRIANGLES)      
-                            glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-                            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+            self.painter.end()  
+    
+    
+    def render_cylinders(self):
+        # Draw cylinder strips 
+        for i, vertices in enumerate(self.obj.cylinder_obj.vertices_cylinder):
+            top_vertices = self.obj.cylinder_obj.top_vertices[i]
+            glColor4f(0, 0.6352, 1, 0.1)
+            glBegin(GL_TRIANGLE_STRIP)
+            for k in range(1,len(vertices), 2):
+                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+                glVertex3f(top_vertices[k-1][0], top_vertices[k-1][1], top_vertices[k-1][2])
+                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+                glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
+            glEnd()
+            
+            glColor3f(0.0, 0.0, 0.0)
+            glBegin(GL_LINES)
+            for k,vert in enumerate(vertices):
+                glVertex3f(vert[0], vert[1], vert[2])
+                glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
+            glEnd()
         
-                            glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-                            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                            glEnd()
-                            
-                            glLineWidth(2.0)
-                            glColor3f(0.0, 0.0, 0.0)
-                            glBegin(GL_LINE_LOOP)
-                            glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-                            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                            glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-                            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                            glEnd()
-                            
-                            
-                    if self.obj.cylinder_bool:
-                        for i, vertices in enumerate(self.obj.cylinder_obj.vertices_cylinder):
-                            base_center = self.obj.cylinder_obj.centers[i]
-                            glColor3f(0, 0.6352, 1)
-                            glBegin(GL_TRIANGLES)
-                            for k in range(1,len(vertices)):                                
-                                glVertex3f(base_center[0], base_center[1], base_center[2])
-                                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-                                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
-                            glEnd()
-                            glColor3f(0.0, 0.0, 0.0)
-                            glBegin(GL_LINE_STRIP)
-                            for k, v in enumerate(vertices):
-                                glVertex3f(v[0], v[1], v[2])
-                            glEnd()
-                        
-                        for i, vertices in enumerate(self.obj.cylinder_obj.top_vertices):
-                            top_center = self.obj.cylinder_obj.top_centers[i]
-                            glColor3f(0, 0.6352, 1)
-                            glBegin(GL_TRIANGLES)
-                            for k in range(1,len(vertices)):                                
-                                glVertex3f(top_center[0], top_center[1], top_center[2])
-                                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-                                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
-                            glEnd()
-                            glColor3f(0.0, 0.0, 0.0)
-                            glBegin(GL_LINE_STRIP)
-                            for k, v in enumerate(vertices):
-                                glVertex3f(v[0], v[1], v[2])
-                            glEnd()
-                            
-                        glPointSize(5)
-                        glBegin(GL_POINTS)
-                        for i, base_center in enumerate(self.obj.cylinder_obj.centers):
-                            glVertex3f(base_center[0], base_center[1], base_center[2])
-                            glVertex3f(self.obj.cylinder_obj.top_centers[i][0], self.obj.cylinder_obj.top_centers[i][1], self.obj.cylinder_obj.top_centers[i][2])
-                        glEnd()
-                        
+        # Draw cylinder bases
+        for i, vertices in enumerate(self.obj.cylinder_obj.vertices_cylinder):
+            base_center = self.obj.cylinder_obj.centers[i]
+            glColor4f(0, 0.6352, 1, 0.1)
+            glBegin(GL_TRIANGLES)
+            for k in range(1,len(vertices)):                                
+                glVertex3f(base_center[0], base_center[1], base_center[2])
+                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+            glEnd()
+            glColor3f(0.0, 0.0, 0.0)
+            glBegin(GL_LINE_STRIP)
+            for k, v in enumerate(vertices):
+                glVertex3f(v[0], v[1], v[2])
+            glEnd()
+        
+        # Draw cylinder tops
+        for i, vertices in enumerate(self.obj.cylinder_obj.top_vertices):
+            top_center = self.obj.cylinder_obj.top_centers[i]
+            # print(top_center)
+            glColor4f(0, 0.6352, 1, 0.1)
+            glBegin(GL_TRIANGLES)
+            for k in range(1,len(vertices)):                                
+                glVertex3f(top_center[0], top_center[1], top_center[2])
+                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+            glEnd()
+            glColor3f(0.0, 0.0, 0.0)
+            glBegin(GL_LINE_STRIP)
+            for k, v in enumerate(vertices):
+                glVertex3f(v[0], v[1], v[2])
+            glEnd()
+        
 
-                
+        # Draw cylinder centers
+        glPointSize(3)
+        glBegin(GL_POINTS)
+        for i, base_center in enumerate(self.obj.cylinder_obj.centers):
+            glVertex3f(base_center[0], base_center[1], base_center[2])
+            glVertex3f(self.obj.cylinder_obj.top_centers[i][0], self.obj.cylinder_obj.top_centers[i][1], self.obj.cylinder_obj.top_centers[i][2])
+        glEnd()
+            
+            
+            
+            
+            
+    def render_transient_cylinders(self, bases, center, cyl_bases, cyl_tops, center_base, center_top):
+        # Draw transient cylinder bases
+        if len(bases) > 0:
+            glColor4f(0, 0.6352, 1, 0.1)
+            glBegin(GL_TRIANGLES)
 
-        # Draw Measuring Line
-        if self.obj.measure_bool and self.clicked_once and len(self.obj.ply_pts) > 0:
-            self.painter.begin(self)
-            pen = QPen(QColor(0, 0, 255))
-            pen.setWidth(2)
-            self.painter.setPen(pen)
-            self.painter.drawLine(QLineF(self.last_pos[0], self.last_pos[1], self.current_pos[0], self.current_pos[1]))
-            self.painter.end()
-
-
-
-
-
-
-                           
-    def setPhoto(self, image=None):
-        if image is None:
-            self.img_file = None
-
-        else:
-            self.aspect_image = image.shape[1]/image.shape[0]
-            self.aspect_widget = self.width()/self.height()
-            self.set_default_view_param()
-            w = int(self.w2-self.w1)
-            h = int(self.h2-self.h1)
-    
-            image = cv2.resize(image, (w, h), interpolation = cv2.INTER_AREA)
-            # print("Image size after resizing: Width: "+str(image.shape[1])+ " , Height: "+str(image.shape[0]))
-            PIL_image = self.toImgPIL(image).convert('RGB')
-            self.img_file = ImageQt(PIL_image)
+            for i in range(1,len(bases)):                           
+                glVertex3f(center[0], center[1], center[2])
+                glVertex3f(bases[i-1][0], bases[i-1][1], bases[i-1][2])
+                glVertex3f(bases[i][0], bases[i][1], bases[i][2])
+            glEnd()
+            glColor3f(0.0, 0.0, 0.0)
+            glBegin(GL_LINE_STRIP)
+            for k, v in enumerate(bases):
+                glVertex3f(v[0], v[1], v[2])
+            glEnd()
+        
+        if len(cyl_bases) > 0:
+            # Draw cylinder strips
+            vertices = cyl_bases
+            top_vertices = cyl_tops
+            glColor4f(0, 0.6352, 1, 0.1)
+            glBegin(GL_TRIANGLE_STRIP)
+            for k in range(1,len(vertices), 2):
+                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+                glVertex3f(top_vertices[k-1][0], top_vertices[k-1][1], top_vertices[k-1][2])
+                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+                glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
+            glEnd()
+            
+            glColor3f(0.0, 0.0, 0.0)
+            glBegin(GL_LINES)
+            for k,vert in enumerate(vertices):
+                glVertex3f(vert[0], vert[1], vert[2])
+                glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
+            glEnd()
+        
+        
+            # Draw cylinder bases
+            base_center = center_base
+            top_center = center_top
+            glColor4f(0, 0.6352, 1, 0.1)
+            glBegin(GL_TRIANGLES)
+            for k in range(1,len(vertices)):                                
+                glVertex3f(base_center[0], base_center[1], base_center[2])
+                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+            glEnd()
+            glColor3f(0.0, 0.0, 0.0)
+            glBegin(GL_LINE_STRIP)
+            for k, v in enumerate(vertices):
+                glVertex3f(v[0], v[1], v[2])
+            glEnd()
+            
+            # Draw cylinder tops
+            vertices = top_vertices
+            glColor4f(0, 0.6352, 1, 0.1)
+            glBegin(GL_TRIANGLES)
+            for k in range(1,len(vertices)):                                
+                glVertex3f(top_center[0], top_center[1], top_center[2])
+                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+            glEnd()
+            glColor3f(0.0, 0.0, 0.0)
+            glBegin(GL_LINE_STRIP)
+            for k, v in enumerate(vertices):
+                glVertex3f(v[0], v[1], v[2])
+            glEnd()    
             
             
 
-    def set_default_view_param(self):
-        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        self.aspect_widget = self.width()/self.height()
-        if self.aspect_image > self.aspect_widget:
-            self.w1 = 0
-            self.w2 = self.width()
 
-            diff = self.height() - (self.width()/v.width)*v.height
-            self.h1 = diff/2
-            self.h2 = self.height() - self.h1
-            
-        else:
-            diff = (self.aspect_widget - self.aspect_image)*self.width()
-            self.w1 = diff/2
-            self.w2 = self.width() - self.w1
-            self.h1 = 0
-            self.h2 = self.height()
-            
-        self.obj.wdg_tree.wdg_to_img_space()
+    def render_points(self):
+        data = self.obj.ply_pts[-1]
+        
+        glColor3f(0.0, 1.0, 0.0)
+        glPointSize(5)
+        glBegin(GL_POINTS)
+        
+        for i in range(data.shape[0]):
+            glVertex3f(data[i,0], data[i,1], data[i,2])
+        glEnd()
 
 
-    def mouseDoubleClickEvent(self, event):
-        a = event.pos()
-        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        if self.img_file is not None and self.obj.cross_hair:
-            # print(a.x(), a.y())
-            if a.x() > 0 and a.y() > 0:
-                x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
-                y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
-                if x > self.w1 and y > self.h1 and x < self.w2 and y < self.h2:
-                    self.obj.add_feature(x, y)
-
-        super(GL_Widget, self).mouseDoubleClickEvent(event)
-
-    def keyPressEvent(self, event):
-        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        f = self.obj.selected_feature_index
-        t = v.selected_thumbnail_index
-
-        if self.obj.cross_hair:
-            if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
-                self.obj.delete_feature()
-    
-            elif event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
-                if event.key() == Qt.Key_Left:
-                    x = v.features_regular[t][f].x_loc-self.mv_pix
-                    y = v.features_regular[t][f].y_loc
-                elif event.key() == Qt.Key_Right:
-                    x = v.features_regular[t][f].x_loc+self.mv_pix
-                    y = v.features_regular[t][f].y_loc
-                elif event.key() == Qt.Key_Up:
-                    x = v.features_regular[t][f].x_loc
-                    y = v.features_regular[t][f].y_loc-self.mv_pix
-                elif event.key() == Qt.Key_Down:
-                    x = v.features_regular[t][f].x_loc
-                    y = v.features_regular[t][f].y_loc+self.mv_pix
+    def render_quads(self, offscreen_bool = False):
+        for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
+            if offscreen_bool:
+                co = self.obj.ctrl_wdg.quad_obj.colors[i+1]
+                glColor3f(co[0]/255, co[1]/255, co[2]/255)
+            else:
+                if i==self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx:
+                    glColor3sf(0.38, 0.85, 0.211)
                 else:
-                    x = v.features_regular[t][f].x_loc
-                    y = v.features_regular[t][f].y_loc
+                    glColor3f(0, 0.6352, 1)                
+            glBegin(GL_TRIANGLES)      
+            glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
     
-                self.obj.move_feature(x, y, v.features_regular[t][f])
-
-        super(GL_Widget, self).keyPressEvent(event)
-
-    def wheelEvent(self, event):
-        if self.img_file is not None and not self.obj.up_pt_bool and not self.obj.measure_bool:
-            if event.angleDelta().y() > 0:
-                self._zoom += 0.1
-            else:
-                self._zoom -= 0.1
-            # print(self.width()/2)
-            if self._zoom < 1:
-                self._zoom = 1
-                self.offset_x = 0
-                self.offset_y = 0
-                self.set_default_view_param()
-
-
-    # overriding the mousePressEvent method
-    def mousePressEvent(self, event):
-        a = event.pos()
-        self.press_loc = (a.x(), a.y())
-        if self.obj.up_pt_bool:
-            x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
-            y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
-            selected_feature = self.obj.ctrl_wdg.quad_obj.select_feature(x, y)
-            if not selected_feature:
-                self.pick = True
-                self.x = a.x()
-                self.y = a.y()
-                
-        if self.obj.cylinder_bool:
-            x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
-            y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
-            selected_feature = self.obj.cylinder_obj.select_feature(x, y)
-
+            glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+            glEnd()
             
-        if self.obj.measure_bool:
-            self.pick = True
-            self.x = a.x()
-            self.y = a.y()
-            
-            
-    def mouseMoveEvent(self, event):
-        if self.obj.measure_bool:
-            a = event.pos()
-            self.current_pos = np.array([a.x(), a.y()])
-
-            
-
-    # overriding the mousePressEvent method
-    def mouseReleaseEvent(self, event):
-        a = event.pos()
-        if (not self.obj.up_pt_bool) and (not self.obj.measure_bool):
-            self.release_loc = (a.x(), a.y())
-            if self._zoom >= 1:
-                self.offset_x += (self.release_loc[0] - self.press_loc[0])
-                self.offset_y += (self.release_loc[1] - self.press_loc[1])
-        
-          
-                    
-    def convert_cv_qt(self, cv_img, width, height):
-        """Convert from an opencv image to QPixmap"""
-        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
-        h, w, ch = rgb_image.shape
-        bytes_per_line = ch * w
-        convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-                
-        p = convert_to_Qt_format.scaled(width, height, Qt.KeepAspectRatio)
-        return QPixmap.fromImage(p)
+            glLineWidth(2.0)
+            glColor3f(0.0, 0.0, 0.0)
+            glBegin(GL_LINE_LOOP)
+            glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+            glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
     
-
-
-    def toImgPIL(self, imgOpenCV=None):
-        if imgOpenCV is None:
-            return imgOpenCV
-        else:
-            return Image.fromarray(cv2.cvtColor(imgOpenCV, cv2.COLOR_BGR2RGB))
-        
-        
-    def computeOpenGL_fromCV(self, K, Rt):
-        zn = -1 #self.near
-        zf = 1 #self.far
-        d = zn - zf
-        cx = K[0,2]
-        cy = K[1,2]
-        perspective = np.zeros((4,4))
-        
-        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        width = v.width        
-        height = v.height*(self.width()/self.height())
-
-
-        perspective[0][0] =  2.0 * K[0,0] / width
-        perspective[1][1] = -2.0 * K[1,1] / height
-        perspective[2][0] =  1.0 - 2.0 * cx / width
-        perspective[2][1] =  2.0 * cy / height -1.0
-        perspective[2][2] =  (zf + zn) / d
-        perspective[2][3] =  -1.0
-        perspective[3][2] = 2.0 * zn * zf / d
-
-        perspective = perspective.transpose()
-
-        self.opengl_intrinsics = perspective
-        #self.opengl_intrinsics = np.matmul(NDC, perspective)
-        out = Rt.transpose()
-
-        self.opengl_extrinsics = out #np.matmul(self.opengl_intrinsics, Rt)
-        
-
+            glEnd()    
     
-    def get_ID(self):
-        co = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_RGB, GL_UNSIGNED_BYTE)
-        dd = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_DEPTH_COMPONENT, GL_FLOAT)[0][0]
-        # print("Depth : "+str(dd))
-        
-        px = gluUnProject(self.x, self.height()-self.y, dd)
-        ID = self.obj.ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
-        dist = 0.0
-        
-        if self.obj.measure_bool and len(self.obj.ply_pts) > 0:
-            if self.clicked_once:
-                dist = np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
-                self.last_pos = np.array([0.0,0.0])
-                self.last_3d_pos = np.array([0.0,0.0,0.0])
-            else:
-                self.last_pos = np.array([self.x, self.y])
-                self.last_3d_pos = np.array(px)
-                
-            self.clicked_once = not self.clicked_once
-
-        
-       
-        px = (round(px[0], 2), round(px[1], 2), round(px[2], 2))
-        if self.obj.up_pt_bool and ID > 0:
-            self.obj.ctrl_wdg.quad_obj.quad_tree.select_quad(self.obj.ctrl_wdg.quad_obj.quad_tree.items[ID-1])
-
-        if ID > 0:
-            self.color_label.setText("X : "+str(int(self.x))+"    Y : "+str(int(self.y))+"   Position : "+str(px)+"      Selected Quad ID : "+str(ID)+"     Distance : "+str(round(dist,4)))            
-        else:
-            self.color_label.setText("X : "+str(int(self.x))+"    Y : "+str(int(self.y))+"   Position : "+str(px)+"      Background            Distance : "+str(round(dist,4)))
-        self.pick = False
-        
-        return ID, px
