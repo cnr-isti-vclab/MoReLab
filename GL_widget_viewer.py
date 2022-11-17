@@ -70,6 +70,8 @@ class GL_Widget(QOpenGLWidget):
         self.aspect_image = 0
         self.aspect_widget = self.width()/self.height()
         self.flag_g = False
+        self.fill_color = (0.0, 0.6252, 1.0)
+        self.boundary_color = (0.0, 0.0, 0.0)
 
 
 
@@ -109,8 +111,9 @@ class GL_Widget(QOpenGLWidget):
         
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LESS)
+        glDepthFunc(GL_LEQUAL)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+ 
         
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
             for j, tup in enumerate(self.obj.camera_projection_mat):
@@ -121,11 +124,18 @@ class GL_Widget(QOpenGLWidget):
                     if self.obj.up_pt_bool or self.obj.measure_bool or self.obj.cylinder_bool:
                         self.render_quads(True)
                         
-                    if self.obj.cylinder_bool:
-                        self.render_cylinders()
+                    if self.obj.cylinder_bool or self.obj.measure_bool:
+                        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
+                        self.render_cylinders(self.fill_color)
+                        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
+                        self.render_cylinders(self.boundary_color)
+                        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
 
         if self.pick:
             ID, pos1 = self.get_ID()
+        
+
+       
         
         bases = []
         center = [0,0,0]
@@ -144,6 +154,9 @@ class GL_Widget(QOpenGLWidget):
                 elif len(self.obj.cylinder_obj.data_val) == 3:
                     cyl_bases, cyl_tops, center_base, center_top = self.obj.cylinder_obj.make_cylinder(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], self.obj.cylinder_obj.data_val[2], np.array(px))
 
+        
+        
+
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBindTexture(GL_TEXTURE_2D, 0)
@@ -156,17 +169,12 @@ class GL_Widget(QOpenGLWidget):
         glClearColor(0.8, 0.8, 0.8, 1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT| GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT )
         glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LESS)
-        # glEnable (GL_BLEND)
-        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        # glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
-
-  
+        glDepthFunc(GL_LEQUAL)
 
         self.paint_image(v, t)
 
         glEnable(GL_CULL_FACE)
-        glCullFace(GL_FRONT)
+        glCullFace(GL_BACK) 
         glFrontFace(GL_CCW)
         
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
@@ -191,9 +199,15 @@ class GL_Widget(QOpenGLWidget):
                             
                             
                     if self.obj.cylinder_bool or self.obj.measure_bool:
-                        self.render_transient_cylinders(bases, center, cyl_bases, cyl_tops, center_base, center_top)
-                        
-                        self.render_cylinders()
+                        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
+                        self.render_transient_circle(bases, center, self.fill_color)
+                        self.render_transient_cylinders(cyl_bases, cyl_tops, center_base, center_top, self.fill_color)
+                        self.render_cylinders(self.fill_color)
+                        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
+                        self.render_transient_circle(bases, center, self.boundary_color)
+                        self.render_transient_cylinders(cyl_bases, cyl_tops, center_base, center_top, self.boundary_color)
+                        self.render_cylinders(self.boundary_color)
+                        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
 
         # Draw Measuring Line
         if self.obj.measure_bool and self.clicked_once and len(self.obj.ply_pts) > 0:
@@ -525,34 +539,24 @@ class GL_Widget(QOpenGLWidget):
             self.painter.end()  
     
     
-    def render_cylinders(self):
+    def render_cylinders(self, color):
         # Draw cylinder strips 
         for i, vertices in enumerate(self.obj.cylinder_obj.vertices_cylinder):
             top_vertices = self.obj.cylinder_obj.top_vertices[i]
 
-
-            glColor4f(0.0, 0.6352, 1, 0.1)
+            
+            glColor4f(color[0], color[1], color[2], 0.1)
             glBegin(GL_TRIANGLE_STRIP)
             for k in range(0,len(vertices), 1):
                 glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
                 glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
-
-                # glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
-                # glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
             glEnd()
             
-
-            glColor3f(0.0, 0.0, 0.0)
-            glBegin(GL_LINES)
-            for k,vert in enumerate(vertices):
-                glVertex3f(vert[0], vert[1], vert[2])
-                glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
-            glEnd()
         
         # Draw cylinder bases
         for i, vertices in enumerate(self.obj.cylinder_obj.vertices_cylinder):
             base_center = self.obj.cylinder_obj.centers[i]
-            glColor4f(0, 0.6352, 1, 0.1)
+            glColor4f(color[0], color[1], color[2], 0.1)
             glBegin(GL_TRIANGLES)
             for k in range(1,len(vertices)):                                
                 glVertex3f(base_center[0], base_center[1], base_center[2])
@@ -560,46 +564,24 @@ class GL_Widget(QOpenGLWidget):
                 glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
 
             glEnd()
-            glColor3f(0.0, 0.0, 0.0)
-            glBegin(GL_LINE_STRIP)
-            for k, v in enumerate(vertices):
-                glVertex3f(v[0], v[1], v[2])
-            glEnd()
-        
-        # Draw cylinder tops
+
         for i, vertices in enumerate(self.obj.cylinder_obj.top_vertices):
             top_center = self.obj.cylinder_obj.top_centers[i]
             # print(top_center)
-            glColor4f(0, 0.6352, 1, 0.1)
+            glColor4f(color[0], color[1], color[2], 0.1)
             glBegin(GL_TRIANGLES)
             for k in range(1,len(vertices)):                                
                 glVertex3f(top_center[0], top_center[1], top_center[2])
                 glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
                 glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-            glEnd()
-            glColor3f(0.0, 0.0, 0.0)
-            glBegin(GL_LINE_STRIP)
-            for k, v in enumerate(vertices):
-                glVertex3f(v[0], v[1], v[2])
-            glEnd()
-        
 
-        # Draw cylinder centers
-        glPointSize(3)
-        glBegin(GL_POINTS)
-        for i, base_center in enumerate(self.obj.cylinder_obj.centers):
-            glVertex3f(base_center[0], base_center[1], base_center[2])
-            glVertex3f(self.obj.cylinder_obj.top_centers[i][0], self.obj.cylinder_obj.top_centers[i][1], self.obj.cylinder_obj.top_centers[i][2])
-        glEnd()
-            
-            
-            
-            
-            
-    def render_transient_cylinders(self, bases, center, cyl_bases, cyl_tops, center_base, center_top):
-        # Draw transient cylinder bases
+            glEnd()
+
+    
+    # Draw transient circle    
+    def render_transient_circle(self, bases, center, color):
         if len(bases) > 0:
-            glColor4f(0, 0.6352, 1, 0.1)
+            glColor4f(color[0], color[1], color[2], 0.1)
             glBegin(GL_TRIANGLES)
 
             for i in range(1,len(bases)):                           
@@ -607,63 +589,47 @@ class GL_Widget(QOpenGLWidget):
                 glVertex3f(bases[i-1][0], bases[i-1][1], bases[i-1][2])
                 glVertex3f(bases[i][0], bases[i][1], bases[i][2])
             glEnd()
-            glColor3f(0.0, 0.0, 0.0)
-            glBegin(GL_LINE_STRIP)
-            for k, v in enumerate(bases):
-                glVertex3f(v[0], v[1], v[2])
-            glEnd()
-        
+            
+    
+    # Draw transient cylinder
+    def render_transient_cylinders(self, cyl_bases, cyl_tops, center_base, center_top, color):        
         if len(cyl_bases) > 0:
             # Draw cylinder strips
             vertices = cyl_bases
             top_vertices = cyl_tops
-            glColor4f(0, 0.6352, 1, 0.1)
+            glColor4f(color[0], color[1], color[2], 0.1)
             glBegin(GL_TRIANGLE_STRIP)
             for k in range(0,len(vertices), 1):
                 glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
                 glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
             glEnd()
             
-            glColor3f(0.0, 0.0, 0.0)
-            glBegin(GL_LINES)
-            for k,vert in enumerate(vertices):
-                glVertex3f(vert[0], vert[1], vert[2])
-                glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
-            glEnd()
+
         
         
             # Draw cylinder bases
             base_center = center_base
             top_center = center_top
-            glColor4f(0, 0.6352, 1, 0.1)
+            glColor4f(color[0], color[1], color[2], 0.1)
             glBegin(GL_TRIANGLES)
             for k in range(1,len(vertices)):                                
                 glVertex3f(base_center[0], base_center[1], base_center[2])
                 glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
                 glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+
             glEnd()
-            glColor3f(0.0, 0.0, 0.0)
-            glBegin(GL_LINE_STRIP)
-            for k, v in enumerate(vertices):
-                glVertex3f(v[0], v[1], v[2])
-            glEnd()
+
             
             # Draw cylinder tops
             vertices = top_vertices
-            glColor4f(0, 0.6352, 1, 0.1)
+            glColor4f(color[0], color[1], color[2], 0.1)
             glBegin(GL_TRIANGLES)
             for k in range(1,len(vertices)):                                
                 glVertex3f(top_center[0], top_center[1], top_center[2])
                 glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
                 glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-            glEnd()
-            glColor3f(0.0, 0.0, 0.0)
-            glBegin(GL_LINE_STRIP)
-            for k, v in enumerate(vertices):
-                glVertex3f(v[0], v[1], v[2])
-            glEnd()    
-            
-            
+            glEnd()   
+         
 
 
     def render_points(self):
