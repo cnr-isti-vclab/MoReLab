@@ -109,6 +109,7 @@ class GL_Widget(QOpenGLWidget):
         
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LESS)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
@@ -151,21 +152,23 @@ class GL_Widget(QOpenGLWidget):
 
 # ------------------------------------------------------------------------------------------------------------------------
 
-        glClearDepth(1.0)
+        # glClearDepth(1.0)
         glClearColor(0.8, 0.8, 0.8, 1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT| GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT )
         glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LESS)
         # glEnable (GL_BLEND)
         # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         # glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
 
-        # glEnable(GL_CULL_FACE)
-        # glCullFace(GL_FRONT)
-        # glFrontFace(GL_CW)
+  
 
         self.paint_image(v, t)
 
-
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_FRONT)
+        glFrontFace(GL_CCW)
+        
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:                    
@@ -200,6 +203,8 @@ class GL_Widget(QOpenGLWidget):
             self.painter.setPen(pen)
             self.painter.drawLine(QLineF(self.last_pos[0], self.last_pos[1], self.current_pos[0], self.current_pos[1]))
             self.painter.end()
+            
+        glDisable(GL_CULL_FACE)
             
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -453,7 +458,7 @@ class GL_Widget(QOpenGLWidget):
                 self.painter.scale(self._zoom, self._zoom)
                 self.painter.translate(-self.width()/2, -self.height()/2)
                 
-    
+            
             self.painter.drawImage(self.w1, self.h1, self.img_file)
 
             if self.obj.ctrl_wdg.kf_method == "Regular":
@@ -524,15 +529,19 @@ class GL_Widget(QOpenGLWidget):
         # Draw cylinder strips 
         for i, vertices in enumerate(self.obj.cylinder_obj.vertices_cylinder):
             top_vertices = self.obj.cylinder_obj.top_vertices[i]
-            glColor4f(0, 0.6352, 1, 0.1)
+
+
+            glColor4f(0.0, 0.6352, 1, 0.1)
             glBegin(GL_TRIANGLE_STRIP)
-            for k in range(1,len(vertices), 2):
-                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-                glVertex3f(top_vertices[k-1][0], top_vertices[k-1][1], top_vertices[k-1][2])
+            for k in range(0,len(vertices), 1):
                 glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
                 glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
+
+                # glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
+                # glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
             glEnd()
             
+
             glColor3f(0.0, 0.0, 0.0)
             glBegin(GL_LINES)
             for k,vert in enumerate(vertices):
@@ -549,6 +558,7 @@ class GL_Widget(QOpenGLWidget):
                 glVertex3f(base_center[0], base_center[1], base_center[2])
                 glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
                 glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+
             glEnd()
             glColor3f(0.0, 0.0, 0.0)
             glBegin(GL_LINE_STRIP)
@@ -564,8 +574,8 @@ class GL_Widget(QOpenGLWidget):
             glBegin(GL_TRIANGLES)
             for k in range(1,len(vertices)):                                
                 glVertex3f(top_center[0], top_center[1], top_center[2])
-                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
                 glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
             glEnd()
             glColor3f(0.0, 0.0, 0.0)
             glBegin(GL_LINE_STRIP)
@@ -609,9 +619,7 @@ class GL_Widget(QOpenGLWidget):
             top_vertices = cyl_tops
             glColor4f(0, 0.6352, 1, 0.1)
             glBegin(GL_TRIANGLE_STRIP)
-            for k in range(1,len(vertices), 2):
-                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-                glVertex3f(top_vertices[k-1][0], top_vertices[k-1][1], top_vertices[k-1][2])
+            for k in range(0,len(vertices), 1):
                 glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
                 glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
             glEnd()
@@ -646,8 +654,8 @@ class GL_Widget(QOpenGLWidget):
             glBegin(GL_TRIANGLES)
             for k in range(1,len(vertices)):                                
                 glVertex3f(top_center[0], top_center[1], top_center[2])
-                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
                 glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
             glEnd()
             glColor3f(0.0, 0.0, 0.0)
             glBegin(GL_LINE_STRIP)
