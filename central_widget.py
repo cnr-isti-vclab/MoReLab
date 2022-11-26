@@ -39,8 +39,6 @@ class Widget(QWidget):
         self.kf_method = ""
         
 
-
-        
         
     def create_wdg1(self):
         self.btn_kf = QPushButton("Extract Key-frames")

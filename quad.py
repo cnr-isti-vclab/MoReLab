@@ -42,8 +42,6 @@ class Quad_Tool(QObject):
 
                             if len(self.data_val) == 4:
                                 self.occurence_groups.append(self.order)
-                                # print("Group number:")
-                                # print(self.group_num+1)
                                 c = self.getRGBfromI(self.group_num+1)
                                 self.colors.append(c)
                                 xp = self.compute_new_points(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
@@ -52,6 +50,7 @@ class Quad_Tool(QObject):
                                 self.order = []
                                 self.data_val = []
                                 self.group_num += 1
+
              
             elif self.ctrl_wdg.kf_method == "Network":
                 for i, fc in enumerate(v.features_network[t]):
@@ -75,6 +74,8 @@ class Quad_Tool(QObject):
                                 self.data_val = []
                                 self.group_num += 1
         return feature_selected
+
+
                         
                         
     def compute_new_points(self, F1, F2, F3, F4): # F1, F2, F3, F4 are the input points in clockwise order as on doc file

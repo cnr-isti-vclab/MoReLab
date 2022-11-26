@@ -4,6 +4,7 @@ from PyQt5.QtGui import *
 import platform, struct
 import numpy as np
 from scipy.spatial import distance
+from plyfile import PlyData, PlyElement
 
 
 
@@ -140,35 +141,44 @@ def adjust_op(mv_paths, op):
     return new_paths    
 
 
-def write_pointcloud(filename,xyz_points,rgb_points=None):
+def write_pointcloud(filename,vert_arr, face_arr, rgb_points=None):
 
     """ creates a .pkl file of the point clouds generated
     """
 
-    assert xyz_points.shape[1] == 3,'Input XYZ points should be Nx3 float array'
+    assert vert_arr.shape[1] == 3,'Input XYZ points should be Nx3 float array'
     if rgb_points is None:
-        rgb_points = np.ones(xyz_points.shape).astype(np.uint8)*255
-    assert xyz_points.shape == rgb_points.shape,'Input RGB colors should be Nx3 float array and have same size as input XYZ points'
-
-    # Write header of .ply file
-    fid = open(filename,'wb')
-    fid.write(bytes('ply\n', 'utf-8'))
-    fid.write(bytes('format binary_little_endian 1.0\n', 'utf-8'))
-    fid.write(bytes('element vertex %d\n'%xyz_points.shape[0], 'utf-8'))
-    fid.write(bytes('property float x\n', 'utf-8'))
-    fid.write(bytes('property float y\n', 'utf-8'))
-    fid.write(bytes('property float z\n', 'utf-8'))
-    fid.write(bytes('property uchar red\n', 'utf-8'))
-    fid.write(bytes('property uchar green\n', 'utf-8'))
-    fid.write(bytes('property uchar blue\n', 'utf-8'))
-    fid.write(bytes('end_header\n', 'utf-8'))
-
-    # Write 3D points to .ply file
-    for i in range(xyz_points.shape[0]):
-        fid.write(bytearray(struct.pack("fffccc",xyz_points[i,0],xyz_points[i,1],xyz_points[i,2],
-                                        rgb_points[i,0].tostring(),rgb_points[i,1].tostring(),
-                                        rgb_points[i,2].tostring())))
-    fid.close()
+        rgb_points = np.ones(face_arr.shape).astype(np.uint8)*255
+        
+    assert face_arr.shape == rgb_points.shape,'Color is for faces and hence should have same shape as faces'
+    
+    vert_arr = vert_arr.astype('f4')
+    face_arr = face_arr.astype('i4')
+    
+    vertex = np.empty(vert_arr.shape[0], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
+    vertex['x'] = vert_arr[:,0]
+    vertex['y'] = vert_arr[:,1]
+    vertex['z'] = vert_arr[:,2]
+    
+    
+    
+    ply_faces = np.empty(face_arr.shape[0], dtype=[('vertex_indices', 'i4', (3,)), ('red', 'u1'), ('green', 'u1'), ('blue', 'u1')])
+    ply_faces['vertex_indices'] = face_arr
+    ply_faces['red'] = rgb_points[:,0]
+    ply_faces['green'] = rgb_points[:,1]
+    ply_faces['blue'] = rgb_points[:,2]
+    
+    
+    data = PlyData(
+        [
+            PlyElement.describe(vertex, 'vertex'),
+            PlyElement.describe(ply_faces, 'face')
+        ]
+    )
+    data.write(filename)
+    
+    
+    
     
 def point_line_distance(line, point):
     numer = abs(np.sum(np.multiply(line, point)))

@@ -33,7 +33,7 @@ class Window(QMainWindow):
     def create_layout(self):
         self.vboxLayout3 = QVBoxLayout()
         self.vboxLayout3.addWidget(self.widget.mv_panel, 3)
-        self.vboxLayout3.addWidget(self.widget.quad_obj.quad_tree, 3)
+        self.vboxLayout3.addWidget(self.widget.quad_obj.quad_tree, 2)
         self.vboxLayout3.addWidget(self.widget.btn_kf)
 
         self.vboxLayout2 = QVBoxLayout()
@@ -62,8 +62,7 @@ class Window(QMainWindow):
         self.widget.gl_viewer.obj.op_tool.clicked.connect(self.open_project)
         self.widget.gl_viewer.obj.om_tool.clicked.connect(self.open_movie)
         self.widget.gl_viewer.obj.sp_tool.clicked.connect(self.save_project)
-        self.widget.gl_viewer.obj.sp_as_tool.clicked.connect(
-            self.save_as_project)
+        self.widget.gl_viewer.obj.sp_as_tool.clicked.connect(self.save_as_project)
         self.widget.gl_viewer.obj.ep_tool.clicked.connect(self.exit_project)
 
         toolbar.addWidget(self.widget.gl_viewer.obj.np_tool)
@@ -77,6 +76,7 @@ class Window(QMainWindow):
         toolbar.addWidget(self.widget.gl_viewer.obj.qd_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.meas_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.cylinder_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.picking_tool)
 
         self.addToolBarBreak(Qt.TopToolBarArea)
 
@@ -142,29 +142,96 @@ class Window(QMainWindow):
         self.exit_pr.setShortcut("Esc")
 
     def export_ply_data(self):
-        bundle_adjustment_ply_data = self.widget.gl_viewer.obj.ply_pts[-1]
-        rgb_ba = np.ones(bundle_adjustment_ply_data.shape).astype(np.uint8)*255
+        if len(self.widget.gl_viewer.obj.ply_pts) > 0:
+            bundle_adjustment_ply_data = self.widget.gl_viewer.obj.ply_pts[-1]
+    
+            quad_data_list = self.widget.quad_obj.new_points
+            if len(quad_data_list) > 0:
+                quad_data = np.vstack(quad_data_list)
 
-        quad_data_list = self.widget.quad_obj.new_points
-        quad_data = np.vstack(quad_data_list)
-        rgb_quad = np.zeros(quad_data.shape).astype(np.uint8)*255
+            num_cyl = 0
+            face_verts = []
+            new_base_centers = []
+            new_base_vertices = []
+            new_top_centers = []
+            new_top_vertices = []
+            for i, center in enumerate(self.widget.gl_viewer.obj.cylinder_obj.centers):
+                if -1 not in center:
+                    num_cyl += 1
+                    new_base_centers.append(center)
+                    new_base_vertices.append(self.widget.gl_viewer.obj.cylinder_obj.vertices_cylinder[i])
+                    new_top_centers.append(self.widget.gl_viewer.obj.cylinder_obj.top_centers[i])
+                    new_top_vertices.append(self.widget.gl_viewer.obj.cylinder_obj.top_vertices[i])
 
-        base_cylinder_data_list = self.widget.gl_viewer.obj.cylinder_obj.vertices_cylinder
-        base_cylinder_data = np.vstack(base_cylinder_data_list)
-        top_cylinder_data_list = self.widget.gl_viewer.obj.cylinder_obj.top_vertices
-        top_cylinder_data = np.vstack(top_cylinder_data_list)
-        cylinder_data = np.concatenate((base_cylinder_data, top_cylinder_data))
-        rgb_cylinder = np.zeros(cylinder_data.shape).astype(np.uint8)*255
-        rgb_cylinder[:, 0] = 255
+            
+            if len(new_base_centers) > 0:
+                center_cylinder_data = np.vstack(new_base_centers)
+                base_cylinder_data = np.vstack(new_base_vertices)
+                top_center_data = np.vstack(new_top_centers)
+                top_cylinder_data = np.vstack(new_top_vertices)
 
-        # White color for bundle adjustment 3d data
-        # Black color for Quad data
-        # Red color for Cylinder data
-        ply_data_all = np.concatenate(
-            (bundle_adjustment_ply_data, quad_data, cylinder_data))
-        ply_rgb_all = np.concatenate((rgb_ba, rgb_quad, rgb_cylinder))
-
-        write_pointcloud('3d_data.ply', ply_data_all, ply_rgb_all)
+                cylinder_data = np.concatenate((center_cylinder_data, base_cylinder_data, top_center_data, top_cylinder_data))
+                print(cylinder_data.shape)
+            if len(quad_data_list) > 0 and len(new_base_centers) > 0:
+                ply_data_all = np.concatenate((bundle_adjustment_ply_data, quad_data, cylinder_data))
+            elif len(quad_data_list) == 0 and len(new_base_centers) > 0:
+                ply_data_all = np.concatenate((bundle_adjustment_ply_data, cylinder_data))
+            elif len(quad_data_list) > 0 and len(new_base_centers) == 0:
+                ply_data_all = np.concatenate((bundle_adjustment_ply_data, quad_data))
+            else:
+                ply_data_all = bundle_adjustment_ply_data
+            
+            
+            # Face data for quads
+            face_data = np.zeros(shape=(2*len(quad_data_list), 3), dtype=int)
+            for i in range(0,face_data.shape[0], 2):
+                face_data[i,0] = bundle_adjustment_ply_data.shape[0] + 2*i
+                # print(face_data[i,0])
+                face_data[i,1] = face_data[i,0] + 3
+                face_data[i,2] = face_data[i,0] + 1
+                
+                face_data[i+1,0] = face_data[i,0] + 2
+                face_data[i+1,1] = face_data[i,0] + 1
+                face_data[i+1,2] = face_data[i,0] + 3
+            
+            # print(face_data)
+            
+            # Face data for cylinders
+            start = bundle_adjustment_ply_data.shape[0] + 4*len(quad_data_list)
+            # print("Start : "+str(start))
+            sectorCount = self.widget.gl_viewer.obj.cylinder_obj.sectorCount
+            face_data_cyl = np.zeros(shape=(4*sectorCount*num_cyl, 3), dtype=int)
+            for i in range(num_cyl): # Loop through cylinders
+                # Base
+                for j in range(sectorCount):
+                    face_data_cyl[sectorCount*4*i+j, 0] = start + i
+                    face_data_cyl[sectorCount*4*i+j, 1] = start + i + num_cyl + j + sectorCount*i
+                    face_data_cyl[sectorCount*4*i+j, 2] = start + i + num_cyl + j + sectorCount*i + 1
+                    
+                # Top    
+                for j in range(sectorCount):
+                    face_data_cyl[sectorCount*4*i+sectorCount+j, 0] = start + i + num_cyl + (sectorCount + 1)*num_cyl
+                    face_data_cyl[sectorCount*4*i+sectorCount+j, 1] = start + i + num_cyl + (sectorCount + 1)*num_cyl + num_cyl + j + sectorCount*i + 1 
+                    face_data_cyl[sectorCount*4*i+sectorCount+j, 2] = start + i + num_cyl + (sectorCount + 1)*num_cyl + num_cyl + j + sectorCount*i 
+                
+                # Strips
+                for j in range(sectorCount):
+                    face_data_cyl[sectorCount*4*i+2*sectorCount+j, 0] = start + num_cyl + (sectorCount + 1)*i + j
+                    face_data_cyl[sectorCount*4*i+2*sectorCount+j, 1] = start + num_cyl + (sectorCount + 1)*i + j + 1
+                    face_data_cyl[sectorCount*4*i+2*sectorCount+j, 2] = start + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount+1)*i + j 
+                    
+                for j in range(sectorCount):
+                    face_data_cyl[sectorCount*4*i+3*sectorCount+j, 0] = start + (sectorCount+1)*i + num_cyl + j + 1
+                    face_data_cyl[sectorCount*4*i+3*sectorCount+j, 1] = start + i + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount)*i + j + 1
+                    face_data_cyl[sectorCount*4*i+3*sectorCount+j, 2] = start + i + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount)*i + j
+                    
+                
+                # print(face_data_cyl)
+     
+            all_faces = np.concatenate((face_data, face_data_cyl))
+            write_pointcloud('3d_data.ply', ply_data_all, all_faces )
+        else:
+            print("Please compute 3D data points")
 
     def ask_save_dialogue(self):
         msgBox = QMessageBox()
