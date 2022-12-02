@@ -21,7 +21,7 @@ class Widget(QWidget):
         super().__init__()
             
         self.selected_thumbnail_index = -1
-        self.create_wdg1()
+
         self.create_scroll_area()
         self.gl_viewer = GL_Widget(self)
         # self.gt_viewer = GT_Widget(self)
@@ -29,7 +29,7 @@ class Widget(QWidget):
         self.doc = Document(self)
         self.mv_panel = MoviePanel(self)
         self.quad_obj = Quad_Tool(self)
-
+        self.create_wdg1()
         
         self.thumbnail_text_stylesheet = """color:black;
                                  font-weight:bold;
@@ -48,7 +48,18 @@ class Widget(QWidget):
                                   """)
         self.btn_kf.clicked.connect(self.extract)
 
-    
+
+        # self.scale_up_btn = QPushButton("Scale up along tangent")
+        # self.scale_up_btn.clicked.connect(self.quad_obj.scale_up_tangent)
+
+        # self.scale_down_btn = QPushButton("Scale down along tangent")
+        # self.scale_down_btn.clicked.connect(self.quad_obj.scale_down_tangent)
+        
+        # self.scale_up_binormal_btn = QPushButton("Scale up along binormal")
+        # self.scale_up_binormal_btn.clicked.connect(self.quad_obj.scale_up_binormal)
+
+        # self.scale_down_binormal_btn = QPushButton("Scale down along binormal")
+        # self.scale_down_binormal_btn.clicked.connect(self.quad_obj.scale_down_binormal)  
        
     def find_kfs(self):
         if self.kf_method == "Regular":

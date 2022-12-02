@@ -24,15 +24,15 @@ class ObjectPanel(QTreeWidget):
             locs = data["Locations"]
             self.items = []
             
-            selected_label = labels[feature_idx]
+            # selected_label = labels[feature_idx]
             count = 0
             for i,f in enumerate(frames):
                 if labels[i] != -1:
                     item = QTreeWidgetItem(["Feature "+str(labels[i])])
                     child1 = QTreeWidgetItem(["Label", str(labels[i])])
                     
-                    if selected_label == labels[i]:
-                        self.label_index = count
+                    # if selected_label == labels[i]:
+                    #     self.label_index = count
                     
                     str_vf = ""
                     str_loc = ""
@@ -71,38 +71,10 @@ class ObjectPanel(QTreeWidget):
                 ch = selection.child(0)
                 label = ch.text(1)
                 self.tool_obj.selected_feature_index = int(label) - 1
-                self.select_feature()
         else:
             selection.setSelected(False)
         
-        
     
-    def select_feature(self):
-        t = self.tool_obj.ctrl_wdg.selected_thumbnail_index            
-        v = self.tool_obj.ctrl_wdg.mv_panel.movie_caps[self.tool_obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        f = self.tool_obj.selected_feature_index
-        
-        if t!=-1 and f!=-1:
-            found = False
-            if self.tool_obj.ctrl_wdg.kf_method == "Regular" and len(v.hide_regular[t]) > f:
-                if not v.hide_regular[t][f] and f == (int(v.features_regular[t][f].label.label) - 1):
-                    found = True
-                
-            elif self.tool_obj.ctrl_wdg.kf_method == "Network" and len(v.hide_network[t]) > f:
-                if not v.hide_network[t][f] and f == (int(v.features_network[t][f].label.label) - 1):
-                    found = True
-            
-            if self.tool_obj.ctrl_wdg.kf_method == "Regular":
-                for i,fc in enumerate(v.features_regular[t]):
-                    fc.setSelected(False)
-                if found:
-                    v.features_regular[t][f].setSelected(True)
-                    
-            elif self.tool_obj.ctrl_wdg.kf_method == "Network":
-                for i,fc in enumerate(v.features_network[t]):
-                    fc.setSelected(False)
-                if found:
-                    v.features_network[t][f].setSelected(True)            
 
                     
                     

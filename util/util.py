@@ -99,9 +99,9 @@ def movie_dialogue():
     msgBox.setStandardButtons(QMessageBox.Ok)                 
     returnValue = msgBox.exec()
     
-def after_BA_dialogue(filename):
+def after_BA_dialogue():
     msgBox = QMessageBox()
-    msgBox.setText("3D structure has been computed and saved as "+str(filename))
+    msgBox.setText("3D structure has been computed.")
     msgBox.setWindowTitle("3D structure")
     msgBox.setStandardButtons(QMessageBox.Ok)
     returnValue = msgBox.exec()    
@@ -112,6 +112,13 @@ def numFeature_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("Atleast two frames must have atleast 8 features.")
     msgBox.setWindowTitle("Number of Features")
+    msgBox.setStandardButtons(QMessageBox.Ok)                 
+    returnValue = msgBox.exec()
+    
+def straight_line_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("The selected features are in a straight line and cannot form circle. Please select another feature.")
+    msgBox.setWindowTitle("Features on a straight line")
     msgBox.setStandardButtons(QMessageBox.Ok)                 
     returnValue = msgBox.exec()
     
@@ -141,7 +148,7 @@ def adjust_op(mv_paths, op):
     return new_paths    
 
 
-def write_pointcloud(filename,vert_arr, face_arr, rgb_points=None):
+def write_faces_ply(filename,vert_arr, face_arr, rgb_points=None):
 
     """ creates a .pkl file of the point clouds generated
     """
@@ -176,6 +183,39 @@ def write_pointcloud(filename,vert_arr, face_arr, rgb_points=None):
         ]
     )
     data.write(filename)
+    
+    
+    
+def write_vertices_ply(filename,xyz_points,rgb_points=None):
+
+    """ creates a .pkl file of the point clouds generated
+    """
+
+    assert xyz_points.shape[1] == 3,'Input XYZ points should be Nx3 float array'
+    if rgb_points is None:
+        rgb_points = np.ones(xyz_points.shape).astype(np.uint8)*255
+    assert xyz_points.shape == rgb_points.shape,'Input RGB colors should be Nx3 float array and have same size as input XYZ points'
+
+    # Write header of .ply file
+    fid = open(filename,'wb')
+    fid.write(bytes('ply\n', 'utf-8'))
+    fid.write(bytes('format binary_little_endian 1.0\n', 'utf-8'))
+    fid.write(bytes('element vertex %d\n'%xyz_points.shape[0], 'utf-8'))
+    fid.write(bytes('property float x\n', 'utf-8'))
+    fid.write(bytes('property float y\n', 'utf-8'))
+    fid.write(bytes('property float z\n', 'utf-8'))
+    fid.write(bytes('property uchar red\n', 'utf-8'))
+    fid.write(bytes('property uchar green\n', 'utf-8'))
+    fid.write(bytes('property uchar blue\n', 'utf-8'))
+    fid.write(bytes('end_header\n', 'utf-8'))
+
+    # Write 3D points to .ply file
+    for i in range(xyz_points.shape[0]):
+        fid.write(bytearray(struct.pack("fffccc",xyz_points[i,0],xyz_points[i,1],xyz_points[i,2],
+                                        rgb_points[i,0].tostring(),rgb_points[i,1].tostring(),
+                                        rgb_points[i,2].tostring())))
+    fid.close()
+    
     
     
     

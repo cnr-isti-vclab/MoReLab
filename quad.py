@@ -20,6 +20,19 @@ class Quad_Tool(QObject):
         self.new_points = []
         self.order = []
         self.data_val = []
+        self.primitive_count = 1
+        self.quad_counts = []
+        self.deleted = []
+        self.tangents = []
+        self.binormals = []
+        self.normals = []
+        self.centers = []
+        self.scaling_factor = 1.2
+        self.min_Ts = []
+        self.max_Ts = []
+        self.min_Bs = []
+        self.max_Bs = []
+
         
         
     def select_feature(self, x, y):
@@ -42,37 +55,20 @@ class Quad_Tool(QObject):
 
                             if len(self.data_val) == 4:
                                 self.occurence_groups.append(self.order)
-                                c = self.getRGBfromI(self.group_num+1)
+                                # print("Primitive count : "+str(self.primitive_count))
+                                self.quad_counts.append(self.primitive_count)
+                                c = self.getRGBfromI(self.primitive_count)
                                 self.colors.append(c)
                                 xp = self.compute_new_points(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                 self.new_points.append(xp)
+                                self.deleted.append(False)
                                 self.quad_tree.add_quad(self.order, self.group_num + 1)
                                 self.order = []
                                 self.data_val = []
                                 self.group_num += 1
+                                self.primitive_count += 1
 
              
-            elif self.ctrl_wdg.kf_method == "Network":
-                for i, fc in enumerate(v.features_network[t]):
-                    if not v.hide_network[t][i]:
-                        d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
-                        if d < self.dist_thresh_select and v.quad_groups_network[t][i] == -1:
-                            self.order.append(i)
-                            self.data_val.append(data[i,:])
-                            v.quad_groups_network[t][i] = self.group_num
-                            feature_selected = True
-
-                            if len(self.data_val) == 4:
-                                self.occurence_groups.append(self.order)
-                                self.all_data_val.append(self.data_val)
-                                c = self.getRGBfromI(self.group_num+1)
-                                self.colors.append(c)
-                                xp = self.compute_new_points(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
-                                self.new_points.append(xp)
-                                self.quad_tree.add_quad(self.order, self.group_num + 1)
-                                self.order = []
-                                self.data_val = []
-                                self.group_num += 1
         return feature_selected
 
 
@@ -93,6 +89,15 @@ class Quad_Tool(QObject):
         
         T = (F1-F2)/np.linalg.norm(F1-F2)
         B = np.cross(T, n_avg)
+        
+        # print("T : "+str(T))
+        # print("B : "+str(B))
+        # print("N : "+str(n_avg))
+        
+        self.tangents.append(T)
+        self.binormals.append(B)
+        self.normals.append(n_avg)
+        self.centers.append(center)
 
         
         CF1 = F1 - center
@@ -116,14 +121,15 @@ class Quad_Tool(QObject):
         max_T = max(projection1_T, projection2_T, projection3_T, projection4_T)
         min_B = min(projection1_B, projection2_B, projection3_B, projection4_B)
         max_B = max(projection1_B, projection2_B, projection3_B, projection4_B)
-                
-        P1 = max_T*T + max_B*B + center
-        P2 = min_T*T + max_B*B + center
-        P3 = min_T*T + min_B*B + center
-        P4 = max_T*T + min_B*B + center
         
-        x = (P1, P2, P3, P4)
-        return x
+        self.min_Ts.append(min_T)
+        self.max_Ts.append(max_T)
+        self.min_Bs.append(min_B)
+        self.max_Bs.append(max_B)
+                
+        return self.get_quad_points(len(self.new_points))
+        
+
     
     
     def getRGBfromI(self, RGBint):
@@ -138,3 +144,48 @@ class Quad_Tool(QObject):
         RGBint = int(r * 256*256 + g * 256 + b)
         # print("ID : "+str(RGBint))
         return RGBint
+    
+    def get_quad_points(self, i):
+        P1 = self.max_Ts[i]*self.tangents[i] + self.max_Bs[i]*self.binormals[i] + self.centers[i]
+        P2 = self.min_Ts[i]*self.tangents[i] + self.max_Bs[i]*self.binormals[i] + self.centers[i]
+        P3 = self.min_Ts[i]*self.tangents[i] + self.min_Bs[i]*self.binormals[i] + self.centers[i]
+        P4 = self.max_Ts[i]*self.tangents[i] + self.min_Bs[i]*self.binormals[i] + self.centers[i] 
+        x = [P1, P2, P3, P4]
+        return x
+    
+    def delete_quad(self, idx):
+        if idx != -1:
+            self.deleted[idx] = True
+            occ = self.occurence_groups[idx]
+            v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+            t = self.ctrl_wdg.selected_thumbnail_index
+            if self.ctrl_wdg.kf_method == "Regular":
+                for i, c in enumerate(occ):
+                    v.quad_groups_regular[t][c] = -1
+            elif self.ctrl_wdg.kf_method == "Network":
+                for i, c in enumerate(occ):
+                    v.quad_groups_network[t][c] = -1
+                    
+            self.quad_tree.selected_quad_idx = -1
+                    
+    def scale_up(self):
+        i = self.quad_tree.selected_quad_idx
+        if i != -1:
+            # print("Scaling up "+str(i)+"st/th quad")
+            self.max_Ts[i] *= self.scaling_factor
+            self.min_Ts[i] *= self.scaling_factor
+            self.max_Bs[i] *= self.scaling_factor
+            self.min_Bs[i] *= self.scaling_factor
+            self.new_points[i] = self.get_quad_points(i)
+
+
+    def scale_down(self):
+        i = self.quad_tree.selected_quad_idx
+        if i != -1:
+            # print("Scaling down "+str(i)+"st/th quad")
+            self.max_Ts[i] /= self.scaling_factor
+            self.min_Ts[i] /= self.scaling_factor
+            self.max_Bs[i] /= self.scaling_factor
+            self.min_Bs[i] /= self.scaling_factor
+            self.new_points[i] = self.get_quad_points(i)
+            

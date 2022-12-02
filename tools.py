@@ -1,8 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from feature_crosshair import FeatureCrosshair
-from util.util import feature_absent_dialogue, numFeature_dialogue, write_pointcloud, save_feature_locs, after_BA_dialogue
+from util.util import feature_absent_dialogue, numFeature_dialogue, save_feature_locs, after_BA_dialogue
 from util.sfm import *
 from util.optimize_K import find_optimized_K
 from util.bundle_adjustment import bundle_adjustment
@@ -29,8 +28,6 @@ class Tools(QObject):
                 QToolTip { background-color: white; color: black); }
         """
         self.wdg_tree = ObjectPanel(self)
-        self.feature_pixmap = QPixmap("icons/small_crosshair.png")
-        self.output_name = '3d_output.ply'
         self.add_tool_icons()
         self.cam_btn = QPushButton("Compute SfM")
         self.cam_btn.setStyleSheet("""
@@ -38,11 +35,13 @@ class Tools(QObject):
                                   QPushButton {background-color: rgb(230,230,230); border-radius: 20px; padding: 15px; border: 1px solid black; color:black; font-size: 15px;}
                                   """)
         self.cam_btn.clicked.connect(self.calibrate)
+        self.move_bool = False
         self.cross_hair = False
         self.up_pt_bool = False
         self.cylinder_bool = False
         self.measure_bool = False
         self.pick_bool = False
+        self.new_cyl_bool = False
         self.labels = []
         self.locs = []
         self.associated_frames = []
@@ -154,200 +153,16 @@ class Tools(QObject):
 
             array_camera_poses = np.asarray(cam_pos_list)
             ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
-            # write_pointcloud(self.output_name, ply_pts) 
-            after_BA_dialogue(self.output_name)
             # print(opt_points)
             self.ply_pts.append(opt_points)
-     
-
-        
-
-    def add_tool_icons(self):
-        icon_size = 30
-        
-        self.np_tool = QPushButton()
-        self.np_tool.setIcon(QIcon("./icons/new_project.png"))
-        self.np_tool.setIconSize(QSize(icon_size, icon_size))
-        self.np_tool.setStyleSheet(self.tool_btn_style)
-        self.np_tool.setToolTip("New Project")
-
-        self.op_tool = QPushButton()
-        self.op_tool.setIcon(QIcon("./icons/open_project.png"))
-        self.op_tool.setIconSize(QSize(icon_size, icon_size))
-        self.op_tool.setStyleSheet(self.tool_btn_style)
-        self.op_tool.setToolTip("Open Project")
-
-        self.om_tool = QPushButton()
-        self.om_tool.setIcon(QIcon("./icons/open_movie.png"))
-        self.om_tool.setIconSize(QSize(icon_size, icon_size))
-        self.om_tool.setStyleSheet(self.tool_btn_style)
-        self.om_tool.setToolTip("Open Movie")
-        # self.om_tool.setStyleSheet("color: black; border: none; padding: 10px;")
-        
-        self.sp_tool = QPushButton()
-        self.sp_tool.setIcon(QIcon("./icons/save_project.png"))
-        self.sp_tool.setIconSize(QSize(icon_size, icon_size))
-        self.sp_tool.setStyleSheet(self.tool_btn_style)
-        self.sp_tool.setToolTip("Save Project")
-        
-        self.sp_as_tool = QPushButton()
-        self.sp_as_tool.setIcon(QIcon("./icons/save_as.png"))
-        self.sp_as_tool.setIconSize(QSize(icon_size, icon_size))
-        self.sp_as_tool.setStyleSheet(self.tool_btn_style)
-        self.sp_as_tool.setToolTip("Save as")
-
-        self.ep_tool = QPushButton()
-        self.ep_tool.setIcon(QIcon("./icons/exit_project.png"))
-        self.ep_tool.setIconSize(QSize(icon_size, icon_size))
-        self.ep_tool.setStyleSheet(self.tool_btn_style)
-        self.ep_tool.setToolTip("Exit Project")
-
-
-        self.mv_tool = QPushButton()
-        self.mv_tool.setIcon(QIcon("./icons/cursor.png"))
-        self.mv_tool.setIconSize(QSize(icon_size, icon_size))
-        self.mv_tool.clicked.connect(self.move_tool)
-        self.mv_tool.setStyleSheet(self.tool_btn_style)
-        self.mv_tool.setToolTip("Move Tool")
-        
-        self.ft_tool = QPushButton()
-        self.ft_tool.setIcon(QIcon("./icons/crosshair.png"))
-        self.ft_tool.setIconSize(QSize(icon_size, icon_size))
-        self.ft_tool.clicked.connect(self.feature_tool)
-        self.ft_tool.setStyleSheet(self.tool_btn_style)
-        self.ft_tool.setToolTip("Feature Tool")
-        
-        self.qd_tool = QPushButton()
-        self.qd_tool.setIcon(QIcon("./icons/point_up.png"))
-        self.qd_tool.setIconSize(QSize(icon_size, icon_size))
-        self.qd_tool.clicked.connect(self.quad_tool)
-        self.qd_tool.setStyleSheet(self.tool_btn_style)
-        self.qd_tool.setToolTip("Quad Tool")
-        
-        self.meas_tool = QPushButton()
-        self.meas_tool.setIcon(QIcon("./icons/tape_measure.png"))
-        self.meas_tool.setIconSize(QSize(icon_size, icon_size))
-        self.meas_tool.clicked.connect(self.measure_tool)
-        self.meas_tool.setStyleSheet(self.tool_btn_style)
-        self.meas_tool.setToolTip("Measure Tool")
-        
-        self.cylinder_tool = QPushButton()
-        self.cylinder_tool.setIcon(QIcon("./icons/cylinder.png"))
-        self.cylinder_tool.setIconSize(QSize(icon_size, icon_size))
-        self.cylinder_tool.clicked.connect(self.draw_cylinder_tool)
-        self.cylinder_tool.setStyleSheet(self.tool_btn_style)
-        self.cylinder_tool.setToolTip("Cylinder Tool")
-
-        self.picking_tool = QPushButton()
-        self.picking_tool.setIcon(QIcon("./icons/picking.png"))
-        self.picking_tool.setIconSize(QSize(icon_size, icon_size))
-        self.picking_tool.clicked.connect(self.pick_primitive_tool)
-        self.picking_tool.setStyleSheet(self.tool_btn_style)
-        self.picking_tool.setToolTip("Cylinder Tool")
-        
-    def move_tool(self):
-        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ft_tool.setStyleSheet(self.tool_btn_style)
-            self.qd_tool.setStyleSheet(self.tool_btn_style)
-            self.meas_tool.setStyleSheet(self.tool_btn_style)
-            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
-            self.picking_tool.setStyleSheet(self.tool_btn_style)
-            self.mv_tool.setStyleSheet(self.selected_btn_style)
-            
-            self.cross_hair = False
-            self.up_pt_bool = False
-            self.measure_bool = False
-            self.cylinder_bool = False
-            self.pick_bool = False
-            self.display_data()
-            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
-        
-    def feature_tool(self):
-        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.mv_tool.setStyleSheet(self.tool_btn_style)
-            self.qd_tool.setStyleSheet(self.tool_btn_style)
-            self.meas_tool.setStyleSheet(self.tool_btn_style)
-            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
-            self.picking_tool.setStyleSheet(self.tool_btn_style)
-            self.ft_tool.setStyleSheet(self.selected_btn_style)
-            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
-            self.cross_hair = True
-            self.up_pt_bool = False
-            self.measure_bool = False
-            self.cylinder_bool = False
-            self.pick_bool = False
-            self.display_data()
-            
-        
-    def quad_tool(self):
-        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.mv_tool.setStyleSheet(self.tool_btn_style)
-            self.ft_tool.setStyleSheet(self.tool_btn_style)
-            self.qd_tool.setStyleSheet(self.selected_btn_style)
-            self.meas_tool.setStyleSheet(self.tool_btn_style)
-            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
-            self.picking_tool.setStyleSheet(self.tool_btn_style)
-            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
-            self.cross_hair = False
-            self.measure_bool = False
-            self.up_pt_bool = True
-            self.cylinder_bool = False
-            self.pick_bool = False
-        
-    def measure_tool(self):
-        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.mv_tool.setStyleSheet(self.tool_btn_style)
-            self.ft_tool.setStyleSheet(self.tool_btn_style)
-            self.qd_tool.setStyleSheet(self.tool_btn_style)
-            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
-            self.meas_tool.setStyleSheet(self.selected_btn_style)
-            self.picking_tool.setStyleSheet(self.tool_btn_style)
-            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
-            self.cross_hair = False
-            self.up_pt_bool = False
-            self.measure_bool = True
-            self.cylinder_bool = False
-            self.pick_bool = False
-            
-    def pick_primitive_tool(self):
-        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.mv_tool.setStyleSheet(self.tool_btn_style)
-            self.ft_tool.setStyleSheet(self.tool_btn_style)
-            self.qd_tool.setStyleSheet(self.tool_btn_style)
-            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
-            self.meas_tool.setStyleSheet(self.tool_btn_style)
-            self.picking_tool.setStyleSheet(self.selected_btn_style)
-            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
-            self.cross_hair = False
-            self.up_pt_bool = False
-            self.measure_bool = False
-            self.cylinder_bool = False
-            self.pick_bool = True
-        
-            
-            
-    def draw_cylinder_tool(self):
-        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.mv_tool.setStyleSheet(self.tool_btn_style)
-            self.ft_tool.setStyleSheet(self.tool_btn_style)
-            self.qd_tool.setStyleSheet(self.tool_btn_style)
-            self.meas_tool.setStyleSheet(self.tool_btn_style)            
-            self.cylinder_tool.setStyleSheet(self.selected_btn_style)
-            self.picking_tool.setStyleSheet(self.tool_btn_style)
-            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
-            self.cross_hair = False
-            self.up_pt_bool = False
-            self.measure_bool = False
-            self.cylinder_bool = True
-            self.pick_bool = False
-
 
     
     def add_feature(self, x, y):
         if self.cross_hair:
             t = self.ctrl_wdg.selected_thumbnail_index
-            v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
             m_idx = self.ctrl_wdg.mv_panel.selected_movie_idx
+            v = self.ctrl_wdg.mv_panel.movie_caps[m_idx]
+
             if self.ctrl_wdg.kf_method == "Regular":
                 v.n_objects_kf_regular[t] += 1
                 label = v.n_objects_kf_regular[t]
@@ -355,7 +170,7 @@ class Tools(QObject):
                 v.n_objects_kf_network[t] += 1
                 label = v.n_objects_kf_network[t]
                 
-            fc = FeatureCrosshair(self.feature_pixmap, x, y, label, self)
+            fc = FeatureCrosshair(x, y, label)
             
             if label not in self.labels:
                 if len(self.labels) > label:
@@ -440,25 +255,19 @@ class Tools(QObject):
         if self.cross_hair:
             found = False
             if self.ctrl_wdg.kf_method == "Regular" and len(v.hide_regular[t]) > i:
-                if not v.hide_regular[t][i] and i == (int(v.features_regular[t][i].label.label) - 1):
+                if not v.hide_regular[t][i] and i == (int(v.features_regular[t][i].label) - 1):
                     found = True
                 
             elif self.ctrl_wdg.kf_method == "Network" and len(v.hide_network[t]) > i:
-                if not v.hide_network[t][i] and i == (int(v.features_network[t][i].label.label) - 1):
+                if not v.hide_network[t][i] and i == (int(v.features_network[t][i].label) - 1):
                     found = True
                     
             if found:
                 if self.ctrl_wdg.kf_method == "Regular":
-                    v.features_regular[t][i].label.setVisible(False)
-                    v.features_regular[t][i].setVisible(False)
                     v.hide_regular[t][i] = True
-                    # v.features_regular[t].pop(i)
                     
                 elif self.ctrl_wdg.kf_method == "Network":
-                    v.features_network[t][i].label.setVisible(False)
-                    v.features_network[t][i].setVisible(False)
                     v.hide_network[t][i] = True
-                    # v.features_network[t].pop(i)
                     
                 if len(self.associated_frames[i]) > 1:
                     pic_idx = self.find_idx(i,t)
@@ -475,7 +284,7 @@ class Tools(QObject):
                     
                     
                 self.wdg_tree.label_index = 0
-                self.selected_feature_index = int(self.wdg_tree.items[self.wdg_tree.label_index].child(0).text(1)) - 1
+                self.selected_feature_index = 0
                 self.display_data()
             else:
                 feature_absent_dialogue()
@@ -490,18 +299,18 @@ class Tools(QObject):
             move = False
     
             if self.ctrl_wdg.kf_method == "Regular":
-                if not v.hide_regular[t][f] and f == (int(fc.label.label) - 1):
+                if not v.hide_regular[t][f] and f == (int(fc.label) - 1):
                     move = True
                 
             elif self.ctrl_wdg.kf_method == "Network":
-                if not v.hide_network[t][f] and f == (int(fc.label.label) - 1):
+                if not v.hide_network[t][f] and f == (int(fc.label) - 1):
                     move = True
                                     
             if move:                
                 fc.x_loc = int(updated_cursor_x)
                 fc.y_loc = int(updated_cursor_y)
                 
-                self.selected_feature_index = int(fc.label.label) - 1
+                self.selected_feature_index = int(fc.label) - 1
                 pic_idx = self.find_idx(f,t)
                 self.locs[f][pic_idx][0] = fc.x_loc
                 self.locs[f][pic_idx][1] = fc.y_loc
@@ -509,7 +318,243 @@ class Tools(QObject):
                 self.display_data()
 
 
- 
+
+    def add_tool_icons(self):
+        icon_size = 30
+        
+        self.np_tool = QPushButton()
+        self.np_tool.setIcon(QIcon("./icons/new_project.png"))
+        self.np_tool.setIconSize(QSize(icon_size, icon_size))
+        self.np_tool.setStyleSheet(self.tool_btn_style)
+        self.np_tool.setToolTip("New Project")
+
+        self.op_tool = QPushButton()
+        self.op_tool.setIcon(QIcon("./icons/open_project.png"))
+        self.op_tool.setIconSize(QSize(icon_size, icon_size))
+        self.op_tool.setStyleSheet(self.tool_btn_style)
+        self.op_tool.setToolTip("Open Project")
+
+        self.om_tool = QPushButton()
+        self.om_tool.setIcon(QIcon("./icons/open_movie.png"))
+        self.om_tool.setIconSize(QSize(icon_size, icon_size))
+        self.om_tool.setStyleSheet(self.tool_btn_style)
+        self.om_tool.setToolTip("Open Movie")
+        # self.om_tool.setStyleSheet("color: black; border: none; padding: 10px;")
+        
+        self.sp_tool = QPushButton()
+        self.sp_tool.setIcon(QIcon("./icons/save_project.png"))
+        self.sp_tool.setIconSize(QSize(icon_size, icon_size))
+        self.sp_tool.setStyleSheet(self.tool_btn_style)
+        self.sp_tool.setToolTip("Save Project")
+        
+        self.sp_as_tool = QPushButton()
+        self.sp_as_tool.setIcon(QIcon("./icons/save_as.png"))
+        self.sp_as_tool.setIconSize(QSize(icon_size, icon_size))
+        self.sp_as_tool.setStyleSheet(self.tool_btn_style)
+        self.sp_as_tool.setToolTip("Save as")
+
+        self.ep_tool = QPushButton()
+        self.ep_tool.setIcon(QIcon("./icons/exit_project.png"))
+        self.ep_tool.setIconSize(QSize(icon_size, icon_size))
+        self.ep_tool.setStyleSheet(self.tool_btn_style)
+        self.ep_tool.setToolTip("Exit Project")
+
+
+        self.mv_tool = QPushButton()
+        self.mv_tool.setIcon(QIcon("./icons/cursor.png"))
+        self.mv_tool.setIconSize(QSize(icon_size, icon_size))
+        self.mv_tool.clicked.connect(self.move_tool)
+        self.mv_tool.setStyleSheet(self.tool_btn_style)
+        self.mv_tool.setToolTip("Move Tool")
+        
+        self.ft_tool = QPushButton()
+        self.ft_tool.setIcon(QIcon("./icons/crosshair.png"))
+        self.ft_tool.setIconSize(QSize(icon_size, icon_size))
+        self.ft_tool.clicked.connect(self.feature_tool)
+        self.ft_tool.setStyleSheet(self.tool_btn_style)
+        self.ft_tool.setToolTip("Feature Tool")
+        
+        self.qd_tool = QPushButton()
+        self.qd_tool.setIcon(QIcon("./icons/square.png"))
+        self.qd_tool.setIconSize(QSize(icon_size, icon_size))
+        self.qd_tool.clicked.connect(self.quad_tool)
+        self.qd_tool.setStyleSheet(self.tool_btn_style)
+        self.qd_tool.setToolTip("Quad Tool")
+        
+        self.meas_tool = QPushButton()
+        self.meas_tool.setIcon(QIcon("./icons/tape_measure.png"))
+        self.meas_tool.setIconSize(QSize(icon_size, icon_size))
+        self.meas_tool.clicked.connect(self.measure_tool)
+        self.meas_tool.setStyleSheet(self.tool_btn_style)
+        self.meas_tool.setToolTip("Measure Tool")
+        
+        self.cylinder_tool = QPushButton()
+        self.cylinder_tool.setIcon(QIcon("./icons/cylinder.png"))
+        self.cylinder_tool.setIconSize(QSize(icon_size, icon_size))
+        self.cylinder_tool.clicked.connect(self.draw_cylinder_tool)
+        self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+        self.cylinder_tool.setToolTip("Cylinder Tool")
+
+        self.picking_tool = QPushButton()
+        self.picking_tool.setIcon(QIcon("./icons/picking.png"))
+        self.picking_tool.setIconSize(QSize(icon_size, icon_size))
+        self.picking_tool.clicked.connect(self.pick_primitive_tool)
+        self.picking_tool.setStyleSheet(self.tool_btn_style)
+        self.picking_tool.setToolTip("Cylinder Tool")
+        
+
+        self.new_cyl_tool = QPushButton()
+        self.new_cyl_tool.setIcon(QIcon("./icons/new_cylinder.png"))
+        self.new_cyl_tool.setIconSize(QSize(icon_size, icon_size))
+        self.new_cyl_tool.clicked.connect(self.draw_new_cylinder_tool)
+        self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+        self.new_cyl_tool.setToolTip("New Cylinder Tool")
+
+
+    def move_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.tool_btn_style)
+            self.meas_tool.setStyleSheet(self.tool_btn_style)
+            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+            self.picking_tool.setStyleSheet(self.tool_btn_style)
+            self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+            self.mv_tool.setStyleSheet(self.selected_btn_style)
+            self.move_bool = True
+            self.cross_hair = False
+            self.up_pt_bool = False
+            self.measure_bool = False
+            self.cylinder_bool = False
+            self.pick_bool = False
+            self.new_cyl_bool = False
+            self.display_data()
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
+        
+    def feature_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.tool_btn_style)
+            self.meas_tool.setStyleSheet(self.tool_btn_style)
+            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+            self.picking_tool.setStyleSheet(self.tool_btn_style)
+            self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet(self.selected_btn_style)
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
+            self.move_bool = False
+            self.cross_hair = True
+            self.up_pt_bool = False
+            self.measure_bool = False
+            self.cylinder_bool = False
+            self.pick_bool = False
+            self.new_cyl_bool = False
+            self.display_data()
             
-    
+        
+    def quad_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.selected_btn_style)
+            self.meas_tool.setStyleSheet(self.tool_btn_style)
+            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+            self.picking_tool.setStyleSheet(self.tool_btn_style)
+            self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
+            self.move_bool = False
+            self.cross_hair = False
+            self.measure_bool = False
+            self.up_pt_bool = True
+            self.cylinder_bool = False
+            self.pick_bool = False
+            self.new_cyl_bool = False
+            self.display_data()
+        
+    def measure_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.tool_btn_style)
+            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+            self.meas_tool.setStyleSheet(self.selected_btn_style)
+            self.picking_tool.setStyleSheet(self.tool_btn_style)
+            self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
+            self.move_bool = False
+            self.cross_hair = False
+            self.up_pt_bool = False
+            self.measure_bool = True
+            self.cylinder_bool = False
+            self.pick_bool = False
+            self.new_cyl_bool = False
+            self.display_data()
             
+            
+    def draw_cylinder_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.tool_btn_style)
+            self.meas_tool.setStyleSheet(self.tool_btn_style)            
+            self.cylinder_tool.setStyleSheet(self.selected_btn_style)
+            self.picking_tool.setStyleSheet(self.tool_btn_style)
+            self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
+            self.move_bool = False
+            self.cross_hair = False
+            self.up_pt_bool = False
+            self.measure_bool = False
+            self.cylinder_bool = True
+            self.pick_bool = False
+            self.new_cyl_bool = False
+            self.display_data()
+
+
+    def pick_primitive_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.tool_btn_style)
+            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+            self.meas_tool.setStyleSheet(self.tool_btn_style)
+            self.picking_tool.setStyleSheet(self.selected_btn_style)
+            self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
+            self.move_bool = False
+            self.cross_hair = False
+            self.up_pt_bool = False
+            self.measure_bool = False
+            self.cylinder_bool = False
+            self.pick_bool = True
+            self.new_cyl_bool = False
+            self.display_data()
+
+            
+            
+    def draw_new_cylinder_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.tool_btn_style)
+            self.meas_tool.setStyleSheet(self.tool_btn_style)            
+            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+            self.picking_tool.setStyleSheet(self.tool_btn_style)
+            self.new_cyl_tool.setStyleSheet(self.selected_btn_style)
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
+            self.move_bool = False
+            self.cross_hair = False
+            self.up_pt_bool = False
+            self.measure_bool = False
+            self.cylinder_bool = False
+            self.pick_bool = False
+            self.new_cyl_bool = True
+            self.display_data()
+
+
+
+class FeatureCrosshair():
+    def __init__(self, x, y, num_str):
+        super().__init__()
+        self.l = 10
+        self.x_loc = x
+        self.y_loc = y
+        self.label = str(num_str)

@@ -35,3 +35,8 @@ class QuadPanel(QTreeWidget):
             # print("selected Quad # "+str(self.selected_quad_idx))
             self.items[self.selected_quad_idx].setSelected(True)
             
+            
+    # def refresh_data(self);:
+    #     if len(self.items) > 0:
+    #         for i,item in enumerate(self.items):        
+            

@@ -3,7 +3,7 @@ import cv2, platform
 import numpy as np
 from util.video import Video
 from util.util import split_path, adjust_op
-from feature_crosshair import FeatureCrosshair
+from tools import FeatureCrosshair
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -121,12 +121,12 @@ class Document():
                     bool_list = v.hide_regular[j]
                     for k in range(val):
                         if bool_list[k]:
-                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, 0, 0, k+1, self.ctrl_wdg.gl_viewer.obj)
+                            fc = FeatureCrosshair(0, 0, k+1)
                             v.features_regular[j].append(fc)
                             v.quad_groups_regular[j].append(-1)
                         else:
                             loccc = self.ctrl_wdg.gl_viewer.obj.locs[k][self.ctrl_wdg.gl_viewer.obj.find_idx(k, j)]
-                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.gl_viewer.obj)
+                            fc = FeatureCrosshair(loccc[0], loccc[1], k+1)
                             v.features_regular[j].append(fc)
                             v.quad_groups_regular[j].append(-1)
                             v.cylinder_groups_regular[j].append(-1)
@@ -140,11 +140,11 @@ class Document():
                     bool_list = v.hide_network[j]
                     for k in range(val):
                         if bool_list[k]:
-                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, 0, 0, k+1, self.ctrl_wdg.gl_viewer.obj)
+                            fc = FeatureCrosshair(0, 0, k+1)
                             v.features_network[j].append(fc)
                         else:
                             loccc = self.ctrl_wdg.gl_viewer.obj.locs[k][self.ctrl_wdg.gl_viewer.obj.find_idx(k, j)]
-                            fc = FeatureCrosshair(self.ctrl_wdg.gl_viewer.obj.feature_pixmap, loccc[0], loccc[1], k+1, self.ctrl_wdg.gl_viewer.obj)
+                            fc = FeatureCrosshair(loccc[0], loccc[1], k+1)
                             v.features_network[j].append(fc)
                             v.quad_groups_network[j].append(-1)
                             v.cylinder_groups_network[j].append(-1)

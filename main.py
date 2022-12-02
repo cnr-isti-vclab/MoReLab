@@ -8,7 +8,7 @@ import json
 import glob
 import cv2
 from central_widget import Widget
-from util.util import movie_dialogue, split_path, empty_gui, adjust_op, confirm_exit, write_pointcloud
+from util.util import movie_dialogue, split_path, empty_gui, adjust_op, confirm_exit, write_faces_ply, write_vertices_ply
 from GL_widget_viewer import GL_Widget
 
 from util.video import Video
@@ -33,7 +33,10 @@ class Window(QMainWindow):
     def create_layout(self):
         self.vboxLayout3 = QVBoxLayout()
         self.vboxLayout3.addWidget(self.widget.mv_panel, 3)
-        self.vboxLayout3.addWidget(self.widget.quad_obj.quad_tree, 2)
+        # self.vboxLayout3.addWidget(self.widget.scale_up_btn)
+        # self.vboxLayout3.addWidget(self.widget.scale_down_btn)
+        # self.vboxLayout3.addWidget(self.widget.scale_up_binormal_btn)
+        # self.vboxLayout3.addWidget(self.widget.scale_down_binormal_btn)
         self.vboxLayout3.addWidget(self.widget.btn_kf)
 
         self.vboxLayout2 = QVBoxLayout()
@@ -77,6 +80,7 @@ class Window(QMainWindow):
         toolbar.addWidget(self.widget.gl_viewer.obj.meas_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.cylinder_tool)
         toolbar.addWidget(self.widget.gl_viewer.obj.picking_tool)
+        toolbar.addWidget(self.widget.gl_viewer.obj.new_cyl_tool)
 
         self.addToolBarBreak(Qt.TopToolBarArea)
 
@@ -181,6 +185,11 @@ class Window(QMainWindow):
             else:
                 ply_data_all = bundle_adjustment_ply_data
             
+            # Write vertex data
+            write_vertices_ply('vertex_data.ply', ply_data_all)
+            
+            
+            
             
             # Face data for quads
             face_data = np.zeros(shape=(2*len(quad_data_list), 3), dtype=int)
@@ -193,8 +202,7 @@ class Window(QMainWindow):
                 face_data[i+1,0] = face_data[i,0] + 2
                 face_data[i+1,1] = face_data[i,0] + 1
                 face_data[i+1,2] = face_data[i,0] + 3
-            
-            # print(face_data)
+
             
             # Face data for cylinders
             start = bundle_adjustment_ply_data.shape[0] + 4*len(quad_data_list)
@@ -225,11 +233,10 @@ class Window(QMainWindow):
                     face_data_cyl[sectorCount*4*i+3*sectorCount+j, 1] = start + i + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount)*i + j + 1
                     face_data_cyl[sectorCount*4*i+3*sectorCount+j, 2] = start + i + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount)*i + j
                     
-                
-                # print(face_data_cyl)
-     
             all_faces = np.concatenate((face_data, face_data_cyl))
-            write_pointcloud('3d_data.ply', ply_data_all, all_faces )
+            
+            if all_faces.shape[0] > 0:
+                write_faces_ply('face_data.ply', ply_data_all, all_faces )
         else:
             print("Please compute 3D data points")
 

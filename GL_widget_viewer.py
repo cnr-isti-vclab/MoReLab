@@ -15,6 +15,7 @@ import numpy as np
 from PIL import Image
 from PIL.ImageQt import ImageQt 
 from util.sfm import scale_data
+from util.util import straight_line_dialogue
 
 
 
@@ -45,15 +46,7 @@ class GL_Widget(QOpenGLWidget):
         self.last_pos = np.array([0.0,0.0])
         self.current_pos = np.array([0.0,0.0])
         self.setMouseTracking(True)
-        
         self.setMinimumSize(1077, 804)
-        # sizeObject = QDesktopWidget().screenGeometry(-1)
-        # print(" Screen size : "  + str(sizeObject.height()) + "x"  + str(sizeObject.width()))
-        # ws, hs = parent.scroll_area.width(), parent.scroll_area.height()
-        # ww = sizeObject.width() - ws
-        # hw = sizeObject.height() - hs
-        # print(ww, hw)
-        # self.setMinimumSize(ww, hw)
 
         self._zoom = 1
         self.painter = QPainter()
@@ -122,10 +115,10 @@ class GL_Widget(QOpenGLWidget):
                 if tup[0] == t:
                     self.render_points()
                     
-                    if self.obj.up_pt_bool or self.obj.measure_bool or self.obj.cylinder_bool:
+                    if self.obj.up_pt_bool or self.obj.measure_bool or self.obj.cylinder_bool or self.obj.new_cyl_bool or self.obj.pick_bool:
                         self.render_quads(True)
                         
-                    if self.obj.cylinder_bool or self.obj.measure_bool or self.obj.pick_bool:
+                    if self.obj.cylinder_bool or self.obj.measure_bool or self.obj.pick_bool or self.obj.new_cyl_bool:
                         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
                         self.render_cylinders(True, True)
                         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
@@ -150,13 +143,18 @@ class GL_Widget(QOpenGLWidget):
             px = (0, 0, 0)
             if dd < 1.0:
                 px = gluUnProject(self.move_x, self.height()-self.move_y, dd)
-                if len(self.obj.cylinder_obj.data_val) == 2:
-                    bases, center = self.obj.cylinder_obj.make_circle(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], np.array(px))
-                elif len(self.obj.cylinder_obj.data_val) == 3:
-                    cyl_bases, cyl_tops, center_base, center_top = self.obj.cylinder_obj.make_cylinder(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], self.obj.cylinder_obj.data_val[2], np.array(px))
+                if self.obj.new_cyl_bool:
+                    if len(self.obj.cylinder_obj.data_val) == 2:
+                        bases, center = self.obj.cylinder_obj.make_new_circle(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], np.array(px))
 
-        
-        
+                    elif len(self.obj.cylinder_obj.data_val) == 3:
+                        cyl_bases, cyl_tops, center_base, center_top = self.obj.cylinder_obj.make_new_cylinder(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], self.obj.cylinder_obj.data_val[2], np.array(px))
+
+                else:
+                    if len(self.obj.cylinder_obj.data_val) == 2:
+                        bases, center = self.obj.cylinder_obj.make_circle(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], np.array(px))
+                    elif len(self.obj.cylinder_obj.data_val) == 3:
+                        cyl_bases, cyl_tops, center_base, center_top = self.obj.cylinder_obj.make_cylinder(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], self.obj.cylinder_obj.data_val[2], np.array(px))
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
@@ -193,20 +191,19 @@ class GL_Widget(QOpenGLWidget):
                     glLoadMatrixf(load_mat)
                     
                     self.render_points()
-                    
 
-                    if self.obj.up_pt_bool or self.obj.measure_bool:
+                    if self.obj.up_pt_bool or self.obj.measure_bool or self.obj.pick_bool:
                         self.render_quads(False)
                             
                             
-                    if self.obj.cylinder_bool or self.obj.measure_bool or self.obj.pick_bool:
+                    if self.obj.cylinder_bool or self.obj.measure_bool or self.obj.pick_bool or self.obj.new_cyl_bool:
                         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
-                        if self.obj.cylinder_bool:
+                        if self.obj.cylinder_bool or self.obj.new_cyl_bool:
                             self.render_transient_circle(bases, center, self.fill_color)
                             self.render_transient_cylinders(cyl_bases, cyl_tops, center_base, center_top, self.fill_color)
                         self.render_cylinders(False, True)
                         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
-                        if self.obj.cylinder_bool:
+                        if self.obj.cylinder_bool or self.obj.new_cyl_bool:
                             self.render_transient_circle(bases, center, self.boundary_color)
                             self.render_transient_cylinders(cyl_bases, cyl_tops, center_base, center_top, self.boundary_color)
                         self.render_cylinders(False, False)
@@ -284,7 +281,6 @@ class GL_Widget(QOpenGLWidget):
         if self.obj.cross_hair:
             if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
                 self.obj.delete_feature()
-                self.obj.delete_feature()
     
             elif event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
                 if event.key() == Qt.Key_Left:
@@ -306,12 +302,17 @@ class GL_Widget(QOpenGLWidget):
                 self.obj.move_feature(x, y, v.features_regular[t][f])
                 
         if self.obj.pick_bool:
-            self.obj.cylinder_obj.delete_cylinder(self.obj.cylinder_obj.selected_cylinder_idx)
+            if self.obj.cylinder_obj.selected_cylinder_idx != -1: 
+                self.obj.cylinder_obj.delete_cylinder(self.obj.cylinder_obj.selected_cylinder_idx)
+            elif self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx != -1:
+                self.obj.ctrl_wdg.quad_obj.delete_quad(self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx)
+            else:
+                print("No 3D object has been selected")
 
         super(GL_Widget, self).keyPressEvent(event)
 
     def wheelEvent(self, event):
-        if self.img_file is not None and not self.obj.up_pt_bool and not self.obj.measure_bool:
+        if self.img_file is not None and (self.obj.move_bool or self.obj.cross_hair):
             if event.angleDelta().y() > 0:
                 self._zoom += 0.1
             else:
@@ -322,6 +323,13 @@ class GL_Widget(QOpenGLWidget):
                 self.offset_x = 0
                 self.offset_y = 0
                 self.set_default_view_param()
+                
+                
+        if self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx != -1 and self.obj.pick_bool:
+            if event.angleDelta().y() > 0:
+                self.obj.ctrl_wdg.quad_obj.scale_up()
+            else:
+                self.obj.ctrl_wdg.quad_obj.scale_down()
 
 
     # overriding the mousePressEvent method
@@ -338,7 +346,7 @@ class GL_Widget(QOpenGLWidget):
                 self.pick = True
 
                 
-        if self.obj.cylinder_bool:
+        if self.obj.cylinder_bool or self.obj.new_cyl_bool:
             x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
             y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
             selected_feature = self.obj.cylinder_obj.select_feature(x, y)
@@ -370,7 +378,7 @@ class GL_Widget(QOpenGLWidget):
     # overriding the mousePressEvent method
     def mouseReleaseEvent(self, event):
         a = event.pos()
-        if (not self.obj.up_pt_bool) and (not self.obj.measure_bool):
+        if self.obj.move_bool or self.obj.cross_hair:
             self.release_loc = (a.x(), a.y())
             if self._zoom >= 1:
                 self.offset_x += (self.release_loc[0] - self.press_loc[0])
@@ -432,27 +440,26 @@ class GL_Widget(QOpenGLWidget):
         dd = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_DEPTH_COMPONENT, GL_FLOAT)[0][0]
         px = gluUnProject(self.x, self.height()-self.y, dd)
         if dd < 1:
-            if self.obj.cylinder_bool:
+            if self.obj.cylinder_bool or self.obj.new_cyl_bool:
                 self.obj.cylinder_obj.data_val.append(np.array(px))
                 if len(self.obj.cylinder_obj.data_val) == 4:
                     self.obj.cylinder_obj.refresh_cylinder_data()
                     
             if self.obj.pick_bool:
                 co = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_RGB, GL_UNSIGNED_BYTE)
-                # print(co)
-                ID = self.obj.cylinder_obj.getIfromRGB(co[0], co[1], co[2])
-                # print("Cylinder ID : "+str(ID))
-                if ID > 0:
-                    self.obj.cylinder_obj.selected_cylinder_idx = ID-1
-
-
-        if self.obj.up_pt_bool:
-            co = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_RGB, GL_UNSIGNED_BYTE)
-            ID = self.obj.ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
-            if ID > 0:
-                self.obj.ctrl_wdg.quad_obj.quad_tree.select_quad(self.obj.ctrl_wdg.quad_obj.quad_tree.items[ID-1])
-
                 
+                ID = self.obj.ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
+                # print("ID : "+str(ID))
+                if ID in self.obj.ctrl_wdg.quad_obj.quad_counts:
+                    quad_idx = self.obj.ctrl_wdg.quad_obj.quad_counts.index(ID)
+                    self.obj.ctrl_wdg.quad_obj.quad_tree.select_quad(self.obj.ctrl_wdg.quad_obj.quad_tree.items[quad_idx])
+                    self.obj.cylinder_obj.selected_cylinder_idx = -1
+                    
+                elif ID in self.obj.cylinder_obj.cylinder_count:
+                    cyl_idx = self.obj.cylinder_obj.cylinder_count.index(ID)
+                    self.obj.cylinder_obj.selected_cylinder_idx = cyl_idx
+                    self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx = -1
+
 
         if self.obj.measure_bool:
             if self.clicked_once:
@@ -495,7 +502,7 @@ class GL_Widget(QOpenGLWidget):
                         if not v.hide_regular[t][i]:
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
     
             elif self.obj.ctrl_wdg.kf_method == "Network":
                 if len(v.features_network) > 0:
@@ -503,21 +510,29 @@ class GL_Widget(QOpenGLWidget):
                         if not v.hide_network[t][i]:
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+
+            pen = QPen(QColor(0, 0, 255))
+            pen.setWidth(2)
+            self.painter.setPen(pen)
+            if self.obj.selected_feature_index != -1 and self.obj.cross_hair:
+                if self.obj.ctrl_wdg.kf_method == "Regular":    
+                    fc = v.features_regular[t][self.obj.selected_feature_index]
+                elif self.obj.ctrl_wdg.kf_method == "Network":
+                    fc = v.features_network[t][self.obj.selected_feature_index]
+                                
+                self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
+                self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
             # Painting for Quad Tool
-            
-            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.up_pt_bool or self.obj.measure_bool) :
-                pen = QPen(QColor(0, 0, 255))
-                pen.setWidth(2)
-                self.painter.setPen(pen)
-                
+            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.up_pt_bool or self.obj.measure_bool or self.obj.pick_bool) :
                 if self.obj.ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
                         if v.quad_groups_regular[t][i] != -1:
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
                     
                 elif self.obj.ctrl_wdg.kf_method == "Network":
@@ -525,22 +540,19 @@ class GL_Widget(QOpenGLWidget):
                         if v.quad_groups_network[t][i] != -1:
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))                      
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))                      
 
             # self.painter.end()
             
             # Painting for Sphere Tool
             
-            if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) and (self.obj.cylinder_bool or self.obj.pick_bool or self.obj.measure_bool) :
-                pen = QPen(QColor(0, 0, 255))
-                pen.setWidth(2)
-                self.painter.setPen(pen)
+            if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) and (self.obj.cylinder_bool or self.obj.pick_bool or self.obj.measure_bool or self.obj.new_cyl_bool) :
                 if self.obj.ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
                         if v.cylinder_groups_regular[t][i] != -1:
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
                     
                 elif self.obj.ctrl_wdg.kf_method == "Network":
@@ -548,7 +560,7 @@ class GL_Widget(QOpenGLWidget):
                         if v.cylinder_groups_network[t][i] != -1:
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label.label))                      
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))                      
 
             self.painter.end()  
 
@@ -618,7 +630,7 @@ class GL_Widget(QOpenGLWidget):
     def render_transient_circle(self, bases, center, color):
         if len(bases) > 0:
             glColor4f(color[0], color[1], color[2], 0.1)
-            glBegin(GL_TRIANGLES)
+            glBegin(GL_TRIANGLES)                
 
             for i in range(1,len(bases)):                           
                 glVertex3f(center[0], center[1], center[2])
@@ -679,31 +691,40 @@ class GL_Widget(QOpenGLWidget):
 
     def render_quads(self, offscreen_bool = False):
         for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
-            if offscreen_bool:
-                co = self.obj.ctrl_wdg.quad_obj.colors[i+1]
-                glColor3f(co[0]/255, co[1]/255, co[2]/255)
-            else:
-                if i==self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx:
-                    glColor3f(0.38, 0.85, 0.211)
+            if not self.obj.ctrl_wdg.quad_obj.deleted[i]:
+                if offscreen_bool:
+                    co = self.obj.ctrl_wdg.quad_obj.colors[i+1]
+                    glColor3f(co[0]/255, co[1]/255, co[2]/255)
                 else:
-                    glColor3f(0, 0.6352, 1)                
-            glBegin(GL_TRIANGLES)      
-            glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-    
-            glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-            glEnd()
-            
-            glLineWidth(2.0)
-            glColor3f(0.0, 0.0, 0.0)
-            glBegin(GL_LINE_LOOP)
-            glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-            glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-    
-            glEnd()    
-    
+                    if i==self.obj.ctrl_wdg.quad_obj.quad_tree.selected_quad_idx:
+                        glColor3f(0.38, 0.85, 0.211)
+                    else:
+                        glColor3f(0, 0.6352, 1)                
+                glBegin(GL_TRIANGLES)      
+                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+        
+                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                glEnd()
+                
+                glLineWidth(2.0)
+                glColor3f(0.0, 0.0, 0.0)
+                glBegin(GL_LINE_LOOP)
+                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                glEnd()
+                
+                # glBegin(GL_LINES)
+                # glVertex3f(self.obj.ctrl_wdg.quad_obj.centers[i][0], self.obj.ctrl_wdg.quad_obj.centers[i][1], self.obj.ctrl_wdg.quad_obj.centers[i][2])
+                # glVertex3f(self.obj.ctrl_wdg.quad_obj.tangents[i][0]+self.obj.ctrl_wdg.quad_obj.centers[i][0], self.obj.ctrl_wdg.quad_obj.tangents[i][1]+self.obj.ctrl_wdg.quad_obj.centers[i][1], self.obj.ctrl_wdg.quad_obj.tangents[i][2]+self.obj.ctrl_wdg.quad_obj.centers[i][2])
+                # glColor3f(1.0, 0.0, 0.0)
+                # glVertex3f(self.obj.ctrl_wdg.quad_obj.centers[i][0], self.obj.ctrl_wdg.quad_obj.centers[i][1], self.obj.ctrl_wdg.quad_obj.centers[i][2])
+                # glVertex3f(self.obj.ctrl_wdg.quad_obj.binormals[i][0]+self.obj.ctrl_wdg.quad_obj.centers[i][0], self.obj.ctrl_wdg.quad_obj.binormals[i][1]+self.obj.ctrl_wdg.quad_obj.centers[i][1], self.obj.ctrl_wdg.quad_obj.binormals[i][2]+self.obj.ctrl_wdg.quad_obj.centers[i][2])
+                # glEnd()
+                
+                

@@ -61,19 +61,18 @@ class MoviePanel(QTreeWidget):
     
                 
     def select_movie(self, selection):
-        self.deselect_movies()
-        # self.ctrl_wdg.viewer.obj.hide_features(False)
-        
-        self.selected_movie_idx = self.items.index(selection)
-        self.selected_movie_path = self.movie_paths[self.selected_movie_idx]
-        
-        # print("selected : "+str(self.selected_movie_idx))
-                
-        self.switch_kf_method()        
-        self.items[self.selected_movie_idx].setSelected(True)
-        self.ctrl_wdg.populate_scrollbar()
-        
-        self.ctrl_wdg.gl_viewer.setPhoto()
-        self.ctrl_wdg.gl_viewer.obj.display_data()
-        
-    
+        if selection in self.items:
+            self.deselect_movies()
+            # self.ctrl_wdg.viewer.obj.hide_features(False)
+            
+            self.selected_movie_idx = self.items.index(selection)
+            self.selected_movie_path = self.movie_paths[self.selected_movie_idx]
+            
+            # print("selected : "+str(self.selected_movie_idx))
+                    
+            self.switch_kf_method()        
+            self.items[self.selected_movie_idx].setSelected(True)
+            self.ctrl_wdg.populate_scrollbar()
+            
+            self.ctrl_wdg.gl_viewer.setPhoto()
+            self.ctrl_wdg.gl_viewer.obj.display_data()
