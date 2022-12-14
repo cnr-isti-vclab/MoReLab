@@ -117,6 +117,7 @@ class Document():
                 v.features_regular.append([])
                 v.quad_groups_regular.append([])
                 v.cylinder_groups_regular.append([])
+                v.bezier_groups_regular.append([])
                 if val > 0:
                     bool_list = v.hide_regular[j]
                     for k in range(val):
@@ -130,12 +131,14 @@ class Document():
                             v.features_regular[j].append(fc)
                             v.quad_groups_regular[j].append(-1)
                             v.cylinder_groups_regular[j].append(-1)
+                            v.bezier_groups_regular[j].append(-1)
 
 
             for j, val in enumerate(v.n_objects_kf_network):
                 v.features_network.append([])
                 v.quad_groups_network.append([])
                 v.cylinder_groups_network.append([])
+                v.bezier_groups_network.append([])
                 if val > 0:
                     bool_list = v.hide_network[j]
                     for k in range(val):
@@ -148,6 +151,7 @@ class Document():
                             v.features_network[j].append(fc)
                             v.quad_groups_network[j].append(-1)
                             v.cylinder_groups_network[j].append(-1)
+                            v.bezier_groups_network.append(-1)
                             
                             
         self.ctrl_wdg.mv_panel.selected_movie_path = adjust_op([data["selected_movie"]], op)[0]

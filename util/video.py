@@ -21,12 +21,14 @@ class Video:
         self.hide_regular = []
         self.quad_groups_regular = []
         self.cylinder_groups_regular = []
+        self.bezier_groups_regular = []
         
         self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
         self.quad_groups_network = []
         self.cylinder_groups_network = []
+        self.bezier_groups_network = []
         
         self.summary = ""
 
@@ -48,6 +50,7 @@ class Video:
         self.hide_regular = []
         self.quad_groups_regular = []
         self.cylinder_groups_regular = []
+        self.bezier_groups_regular = []
         
         self.cap = cv2.VideoCapture(self.video_path)
         count = 0
@@ -71,6 +74,7 @@ class Video:
             self.hide_regular.append([])
             self.quad_groups_regular.append([])
             self.cylinder_groups_regular.append([])
+            self.bezier_groups_regular.append([])
     
             
     def fromVideoFrameToNP(self, frame):
@@ -132,6 +136,7 @@ class Video:
         self.hide_network = []
         self.quad_groups_network = []
         self.cylinder_groups_network = []
+        self.bezier_groups_network = []
 
         bLoad = True
         j = 0
@@ -205,5 +210,6 @@ class Video:
             self.hide_network.append([])
             self.quad_groups_network.append([])
             self.cylinder_groups_network.append([])
+            self.bezier_groups_network.append([])
 
 

@@ -49,17 +49,8 @@ class Widget(QWidget):
         self.btn_kf.clicked.connect(self.extract)
 
 
-        # self.scale_up_btn = QPushButton("Scale up along tangent")
-        # self.scale_up_btn.clicked.connect(self.quad_obj.scale_up_tangent)
-
-        # self.scale_down_btn = QPushButton("Scale down along tangent")
-        # self.scale_down_btn.clicked.connect(self.quad_obj.scale_down_tangent)
-        
-        # self.scale_up_binormal_btn = QPushButton("Scale up along binormal")
-        # self.scale_up_binormal_btn.clicked.connect(self.quad_obj.scale_up_binormal)
-
-        # self.scale_down_binormal_btn = QPushButton("Scale down along binormal")
-        # self.scale_down_binormal_btn.clicked.connect(self.quad_obj.scale_down_binormal)  
+        # self.scale_up_btn = QPushButton("Copy features")
+        # self.scale_up_btn.clicked.connect(self.quad_obj.draw_bezier)
        
     def find_kfs(self):
         if self.kf_method == "Regular":
@@ -114,8 +105,7 @@ class Widget(QWidget):
             text_label.setStyleSheet(self.thumbnail_text_stylesheet)
 
         ## Select the single clicked thumbnail
-        text_label_of_thumbnail = self.grid_layout.itemAt(index)\
-            .itemAt(1).widget()
+        text_label_of_thumbnail = self.grid_layout.itemAt(index).itemAt(1).widget()
         text_label_of_thumbnail.setStyleSheet("background-color:rgb(135, 206, 235);"
                                               "font-weight:bold;")
         
@@ -124,6 +114,7 @@ class Widget(QWidget):
         elif self.kf_method == "Network":
             img_file = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_network[self.selected_thumbnail_index]
         
+        # print(img_file.shape)
         self.gl_viewer.setPhoto(img_file)
         self.gl_viewer.obj.display_data()
 

@@ -188,4 +188,5 @@ class Quad_Tool(QObject):
             self.max_Bs[i] /= self.scaling_factor
             self.min_Bs[i] /= self.scaling_factor
             self.new_points[i] = self.get_quad_points(i)
+        
             

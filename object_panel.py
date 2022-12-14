@@ -54,19 +54,22 @@ class ObjectPanel(QTreeWidget):
                     count = count + 1
                     self.items.append(item)
                     
-            
+                
             self.insertTopLevelItems(0, self.items)
             self.itemClicked.connect(self.item_selected)
-            
-            if self.tool_obj.cross_hair:
-                self.item_selected(self.items[self.label_index])
-        
+
+
+    def deselect_features(self):
+        if len(self.items) > 0:
+            for i,item in enumerate(self.items):
+                item.setSelected(False)        
         
         
     def item_selected(self, selection):
         if self.tool_obj.cross_hair:
             if selection in self.items:
                 self.label_index = self.items.index(selection)
+                self.deselect_features()
                 selection.setSelected(True)
                 ch = selection.child(0)
                 label = ch.text(1)
@@ -106,4 +109,9 @@ class ObjectPanel(QTreeWidget):
         y2 = self.tool_obj.ctrl_wdg.gl_viewer.h1 + (y/self.factor_y)
         # y2 = y
         return int(y2)
+    
+    
+    
+    # def copy_features(self):
+        
 

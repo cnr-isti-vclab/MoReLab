@@ -11,8 +11,9 @@ import cv2, copy
 from scipy import optimize
 from util.util import calc_near_far
 from cylinder import Cylinder_Tool
+from bezier import Bezier_Tool
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 class Tools(QObject):
     def __init__(self, ctrl_wdg):
@@ -42,6 +43,7 @@ class Tools(QObject):
         self.measure_bool = False
         self.pick_bool = False
         self.new_cyl_bool = False
+        self.bezier_bool = False
         self.labels = []
         self.locs = []
         self.associated_frames = []
@@ -52,6 +54,7 @@ class Tools(QObject):
         self.camera_poses = []
         self.K = np.eye(3)
         self.cylinder_obj = Cylinder_Tool(self.ctrl_wdg)
+        self.bezier_obj = Bezier_Tool(self.ctrl_wdg)
         
         # self.associated_frames2 = [[]]
         self.selected_feature_index =-1
@@ -210,6 +213,7 @@ class Tools(QObject):
                 v.cylinder_groups_network[t].append(-1)
                 
             self.display_data()
+            self.selected_feature_index = -1
             
             
     def display_data(self):
@@ -400,7 +404,7 @@ class Tools(QObject):
         self.picking_tool.setIconSize(QSize(icon_size, icon_size))
         self.picking_tool.clicked.connect(self.pick_primitive_tool)
         self.picking_tool.setStyleSheet(self.tool_btn_style)
-        self.picking_tool.setToolTip("Cylinder Tool")
+        self.picking_tool.setToolTip("Picking Tool")
         
 
         self.new_cyl_tool = QPushButton()
@@ -409,6 +413,13 @@ class Tools(QObject):
         self.new_cyl_tool.clicked.connect(self.draw_new_cylinder_tool)
         self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
         self.new_cyl_tool.setToolTip("New Cylinder Tool")
+        
+        self.bezier_tool = QPushButton()
+        self.bezier_tool.setIcon(QIcon("./icons/bezier.png"))
+        self.bezier_tool.setIconSize(QSize(icon_size, icon_size))
+        self.bezier_tool.clicked.connect(self.draw_bezier)
+        self.bezier_tool.setStyleSheet(self.tool_btn_style)
+        self.bezier_tool.setToolTip("Bezier Tool")
 
 
     def move_tool(self):
@@ -420,6 +431,7 @@ class Tools(QObject):
             self.picking_tool.setStyleSheet(self.tool_btn_style)
             self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
             self.mv_tool.setStyleSheet(self.selected_btn_style)
+            self.bezier_tool.setStyleSheet(self.tool_btn_style)
             self.move_bool = True
             self.cross_hair = False
             self.up_pt_bool = False
@@ -427,6 +439,7 @@ class Tools(QObject):
             self.cylinder_bool = False
             self.pick_bool = False
             self.new_cyl_bool = False
+            self.bezier_bool = False
             self.display_data()
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
         
@@ -439,6 +452,7 @@ class Tools(QObject):
             self.picking_tool.setStyleSheet(self.tool_btn_style)
             self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
             self.ft_tool.setStyleSheet(self.selected_btn_style)
+            self.bezier_tool.setStyleSheet(self.tool_btn_style)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
             self.move_bool = False
             self.cross_hair = True
@@ -447,6 +461,7 @@ class Tools(QObject):
             self.cylinder_bool = False
             self.pick_bool = False
             self.new_cyl_bool = False
+            self.bezier_bool = False
             self.display_data()
             
         
@@ -459,6 +474,7 @@ class Tools(QObject):
             self.cylinder_tool.setStyleSheet(self.tool_btn_style)
             self.picking_tool.setStyleSheet(self.tool_btn_style)
             self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+            self.bezier_tool.setStyleSheet(self.tool_btn_style)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             self.move_bool = False
             self.cross_hair = False
@@ -467,6 +483,7 @@ class Tools(QObject):
             self.cylinder_bool = False
             self.pick_bool = False
             self.new_cyl_bool = False
+            self.bezier_bool = False
             self.display_data()
         
     def measure_tool(self):
@@ -478,6 +495,7 @@ class Tools(QObject):
             self.meas_tool.setStyleSheet(self.selected_btn_style)
             self.picking_tool.setStyleSheet(self.tool_btn_style)
             self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+            self.bezier_tool.setStyleSheet(self.tool_btn_style)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
             self.move_bool = False
             self.cross_hair = False
@@ -486,6 +504,7 @@ class Tools(QObject):
             self.cylinder_bool = False
             self.pick_bool = False
             self.new_cyl_bool = False
+            self.bezier_bool = False
             self.display_data()
             
             
@@ -498,6 +517,7 @@ class Tools(QObject):
             self.cylinder_tool.setStyleSheet(self.selected_btn_style)
             self.picking_tool.setStyleSheet(self.tool_btn_style)
             self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+            self.bezier_tool.setStyleSheet(self.tool_btn_style)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             self.move_bool = False
             self.cross_hair = False
@@ -506,6 +526,7 @@ class Tools(QObject):
             self.cylinder_bool = True
             self.pick_bool = False
             self.new_cyl_bool = False
+            self.bezier_bool = False
             self.display_data()
 
 
@@ -518,6 +539,7 @@ class Tools(QObject):
             self.meas_tool.setStyleSheet(self.tool_btn_style)
             self.picking_tool.setStyleSheet(self.selected_btn_style)
             self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+            self.bezier_tool.setStyleSheet(self.tool_btn_style)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
             self.move_bool = False
             self.cross_hair = False
@@ -526,6 +548,7 @@ class Tools(QObject):
             self.cylinder_bool = False
             self.pick_bool = True
             self.new_cyl_bool = False
+            self.bezier_bool = False
             self.display_data()
 
             
@@ -539,6 +562,7 @@ class Tools(QObject):
             self.cylinder_tool.setStyleSheet(self.tool_btn_style)
             self.picking_tool.setStyleSheet(self.tool_btn_style)
             self.new_cyl_tool.setStyleSheet(self.selected_btn_style)
+            self.bezier_tool.setStyleSheet(self.tool_btn_style)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             self.move_bool = False
             self.cross_hair = False
@@ -547,6 +571,29 @@ class Tools(QObject):
             self.cylinder_bool = False
             self.pick_bool = False
             self.new_cyl_bool = True
+            self.bezier_bool = False
+            self.display_data()
+            
+    def draw_bezier(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.mv_tool.setStyleSheet(self.tool_btn_style)
+            self.ft_tool.setStyleSheet(self.tool_btn_style)
+            self.qd_tool.setStyleSheet(self.tool_btn_style)
+            self.meas_tool.setStyleSheet(self.tool_btn_style)            
+            self.cylinder_tool.setStyleSheet(self.tool_btn_style)
+            self.picking_tool.setStyleSheet(self.tool_btn_style)
+            self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
+            self.bezier_tool.setStyleSheet(self.selected_btn_style)
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
+            self.move_bool = False
+            self.cross_hair = False
+            self.up_pt_bool = False
+            self.measure_bool = False
+            self.cylinder_bool = False
+            self.pick_bool = False
+            self.new_cyl_bool = False
+            self.bezier_bool = True
+            
             self.display_data()
 
 

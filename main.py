@@ -58,8 +58,8 @@ class Window(QMainWindow):
         self.setCentralWidget(self.widget)
 
     def create_toolbar(self):
-        toolbar = QToolBar("&ToolBar", self)
-        self.addToolBar(Qt.TopToolBarArea, toolbar)
+        self.toolbar = QToolBar("&ToolBar", self)
+        self.addToolBar(Qt.TopToolBarArea, self.toolbar)
 
         self.widget.gl_viewer.obj.np_tool.clicked.connect(self.new_project)
         self.widget.gl_viewer.obj.op_tool.clicked.connect(self.open_project)
@@ -68,19 +68,20 @@ class Window(QMainWindow):
         self.widget.gl_viewer.obj.sp_as_tool.clicked.connect(self.save_as_project)
         self.widget.gl_viewer.obj.ep_tool.clicked.connect(self.exit_project)
 
-        toolbar.addWidget(self.widget.gl_viewer.obj.np_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.op_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.om_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.sp_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.sp_as_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.ep_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.mv_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.ft_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.qd_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.meas_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.cylinder_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.picking_tool)
-        toolbar.addWidget(self.widget.gl_viewer.obj.new_cyl_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.np_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.op_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.om_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.sp_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.sp_as_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.ep_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.mv_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.ft_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.qd_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.meas_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.cylinder_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.picking_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.new_cyl_tool)
+        self.toolbar.addWidget(self.widget.gl_viewer.obj.bezier_tool)
 
         self.addToolBarBreak(Qt.TopToolBarArea)
 
@@ -94,11 +95,11 @@ class Window(QMainWindow):
         # self.project_name_label = QLabel(os.path.join(os.getcwd(), "Untitled.json"))
         self.project_name_label = QLabel("untitled.json")
 
-        toolbar2 = QToolBar()
-        self.addToolBar(Qt.TopToolBarArea, toolbar2)
-        toolbar2.addWidget(left_spacer)
-        toolbar2.addWidget(self.project_name_label)
-        toolbar2.addWidget(right_spacer)
+        self.toolbar2 = QToolBar()
+        self.addToolBar(Qt.TopToolBarArea, self.toolbar2)
+        self.toolbar2.addWidget(left_spacer)
+        self.toolbar2.addWidget(self.project_name_label)
+        self.toolbar2.addWidget(right_spacer)
 
     def create_menu(self):
         menuBar = self.menuBar()
@@ -188,9 +189,6 @@ class Window(QMainWindow):
             # Write vertex data
             write_vertices_ply('vertex_data.ply', ply_data_all)
             
-            
-            
-            
             # Face data for quads
             face_data = np.zeros(shape=(2*len(quad_data_list), 3), dtype=int)
             for i in range(0,face_data.shape[0], 2):
@@ -255,6 +253,10 @@ class Window(QMainWindow):
         self.widget = Widget()
         self.setCentralWidget(QWidget())
         self.project_name_label.setText("untitled.json")
+        self.removeToolBar(self.toolbar2)
+        self.removeToolBar(self.toolbar)
+        # self.create_statusbar()
+        self.create_toolbar()
 
     def exit_project(self):
         if confirm_exit():
@@ -280,9 +282,7 @@ class Window(QMainWindow):
             self.create_layout()
             v = self.widget.mv_panel.movie_caps[self.widget.mv_panel.selected_movie_idx]
             if self.widget.selected_thumbnail_index != -1:
-                # self.widget.gl_viewer.setMinimumSize(1077, 750)
-                self.widget.displayThumbnail(
-                    self.widget.selected_thumbnail_index)
+                self.widget.displayThumbnail(self.widget.selected_thumbnail_index)
 
             if self.widget.gl_viewer.obj.cross_hair:
                 self.widget.gl_viewer.obj.feature_tool()
@@ -291,6 +291,8 @@ class Window(QMainWindow):
 
             display_msg = "Opened "+split_path(project_path)
             self.statusBar.showMessage(display_msg, 2000)
+
+
 
     def implement_save(self, p):
         name_project = os.path.relpath(p, os.getcwd())
@@ -309,6 +311,8 @@ class Window(QMainWindow):
         with open(name_project, "w") as outfile:
             outfile.write(json_object)
 
+
+
     def save_project(self):
         if self.project_name_label.text() == 'untitled.json':
             file_types = "json (*.json)"
@@ -322,8 +326,9 @@ class Window(QMainWindow):
             name_project = os.path.relpath(self.save_response[0], os.getcwd())
             disp_name_project = split_path(name_project)
             self.project_name_label.setText(disp_name_project)
-
             self.implement_save(self.save_response[0])
+
+
 
     def save_as_project(self):
         if self.project_name_label.text() == 'untitled.json':
@@ -338,6 +343,8 @@ class Window(QMainWindow):
             )
             if save_as_response[0] != '':
                 self.implement_save(save_as_response[0])
+
+
 
     def open_movie(self):
         # file_types = "Video files (*.asf *.mp4 *.mov)"
@@ -356,14 +363,18 @@ class Window(QMainWindow):
                 movie_name = split_path(movie_path)
                 display_msg = "Opened "+movie_name
                 self.statusBar.showMessage(display_msg, 2000)
+                self.widget.selected_thumbnail_index = -1
                 self.widget.mv_panel.add_movie(movie_path)
 
                 if len(self.widget.mv_panel.movie_paths) == 1:
                     self.create_layout()
 
+
+
     def create_statusbar(self):
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
+
 
 
 if __name__ == "__main__":
