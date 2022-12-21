@@ -15,6 +15,7 @@ class MoviePanel(QTreeWidget):
         self.selected_movie_idx = -1
         self.movie_caps = []
         self.ctrl_wdg = parent
+        self.setMinimumSize(self.ctrl_wdg.monitor_width*0.15, self.ctrl_wdg.monitor_height*0.7)
         self.items = []
         self.itemClicked.connect(self.select_movie)
     
@@ -72,5 +73,5 @@ class MoviePanel(QTreeWidget):
 
             self.ctrl_wdg.gl_viewer.setPhoto()
             
-            self.ctrl_wdg.gl_viewer.obj.display_data()
-            self.ctrl_wdg.gl_viewer.obj.move_tool()
+            # self.ctrl_wdg.gl_viewer.obj.display_data()
+            # self.ctrl_wdg.gl_viewer.obj.move_tool()

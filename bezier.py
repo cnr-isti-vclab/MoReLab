@@ -123,7 +123,6 @@ class Bezier_Tool(QObject):
         return RGBint
     
     
-    # def triangulate(self, K, Rt, x2d):
         
         
     

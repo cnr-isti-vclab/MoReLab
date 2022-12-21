@@ -50,7 +50,9 @@ class GL_Widget(QOpenGLWidget):
         self.last_pos = np.array([0.0,0.0])
         self.current_pos = np.array([0.0,0.0])
         self.setMouseTracking(True)
-        self.setMinimumSize(1077, 804)
+        self.setMinimumSize(self.obj.ctrl_wdg.monitor_width*0.56, self.obj.ctrl_wdg.monitor_height*0.67)
+        # print("Width : "+str(self.obj.ctrl_wdg.monitor_width*0.56))
+        # print("Height : "+str(self.obj.ctrl_wdg.monitor_height*0.67))
 
         self._zoom = 1
         self.painter = QPainter()
@@ -78,7 +80,13 @@ class GL_Widget(QOpenGLWidget):
         t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
 
-######################################################################################        
+######################################################################################
+        
+        # # self.obj.display_data()
+        # if not self.obj.cross_hair:
+        #     # print('aaaa')
+        #     self.obj.selected_feature_index = -1
+        #     self.obj.wdg_tree.deselect_features()
 
         # picking texture and a frame buffer object
         
@@ -260,6 +268,7 @@ class GL_Widget(QOpenGLWidget):
 
             diff = self.height() - (self.width()/v.width)*v.height
             self.h1 = diff/2
+            # print(self.h1)
             self.h2 = self.height() - self.h1
             
         else:
@@ -310,8 +319,15 @@ class GL_Widget(QOpenGLWidget):
                 else:
                     x = v.features_regular[t][f].x_loc
                     y = v.features_regular[t][f].y_loc
-    
+                    
                 self.obj.move_feature(x, y, v.features_regular[t][f])
+                
+            elif event.modifiers() & Qt.ControlModifier:
+                if event.key() == Qt.Key_C:
+                    self.obj.ctrl_wdg.copy_features()
+                elif event.key() == Qt.Key_V:
+                    self.obj.ctrl_wdg.paste_features()
+            
                 
         if self.obj.pick_bool:
             if self.obj.cylinder_obj.selected_cylinder_idx != -1: 
@@ -363,13 +379,10 @@ class GL_Widget(QOpenGLWidget):
                             d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                             if d < self.dist_thresh:
                                 self.obj.selected_feature_index = i
-                                self.obj.wdg_tree.item_selected(self.obj.wdg_tree.items[i])
-                                # self.press_loc = (a.x(), a.y())
                                 self.move_feature_bool = True
-                                
-                                
-                                
-                    
+                                self.obj.display_data()
+
+
             elif self.obj.ctrl_wdg.kf_method == "Network":
                 if len(v.features_network) > 0:
                     for i, fc in enumerate(v.features_network[t]):
@@ -377,9 +390,12 @@ class GL_Widget(QOpenGLWidget):
                             d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                             if d < self.dist_thresh:
                                 self.obj.selected_feature_index = i
-                                self.obj.wdg_tree.item_selected(self.obj.wdg_tree.items[i])
-                                # self.press_loc = (x, y)
                                 self.move_feature_bool = True
+                                self.obj.display_data()
+            
+
+
+            
                                 
             
             
@@ -428,9 +444,12 @@ class GL_Widget(QOpenGLWidget):
         if self.obj.cross_hair:
             if self.obj.ctrl_wdg.kf_method == "Regular":
                 if len(v.features_regular) > 0 and self.move_feature_bool:
-                    v.features_regular[self.obj.ctrl_wdg.selected_thumbnail_index][self.obj.selected_feature_index].x_loc = x
-                    v.features_regular[self.obj.ctrl_wdg.selected_thumbnail_index][self.obj.selected_feature_index].y_loc = y
-                    
+                    self.obj.move_feature(x, y, v.features_regular[self.obj.ctrl_wdg.selected_thumbnail_index][self.obj.selected_feature_index])
+               
+            elif self.obj.ctrl_wdg.kf_method == "Network":
+                if len(v.features_network) > 0 and self.move_feature_bool:
+                    self.obj.move_feature(x, y, v.features_network[self.obj.ctrl_wdg.selected_thumbnail_index][self.obj.selected_feature_index])
+
 
             
 
@@ -478,8 +497,8 @@ class GL_Widget(QOpenGLWidget):
         perspective = np.zeros((4,4))
         
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        width = v.width        
-        height = v.height*(self.width()/self.height())
+        width = v.width*(self.width()/(self.w2 - self.w1))
+        height = v.height*(self.height()/(self.h2-self.h1))
 
 
         perspective[0][0] =  2.0 * K[0,0] / width
@@ -508,7 +527,7 @@ class GL_Widget(QOpenGLWidget):
             if self.obj.bezier_bool:
                 co = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_RGB, GL_UNSIGNED_BYTE)
                 ID = self.obj.ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
-                print("ID : "+str(ID))
+                # print("ID : "+str(ID))
                 
                 if ID in self.obj.bezier_obj.bezier_count:
                     idx = self.obj.bezier_obj.bezier_count.index(ID)
@@ -575,7 +594,7 @@ class GL_Widget(QOpenGLWidget):
     def paint_image(self, v, t):
         if self.img_file is not None:
             self.painter.begin(self)
-            pen = QPen(QColor(255, 0, 0))
+            pen = QPen(QColor(0, 0, 0))
             pen.setWidth(2)
             self.painter.setPen(pen)
             self.painter.setFont(self.painter.font())
@@ -611,14 +630,17 @@ class GL_Widget(QOpenGLWidget):
             pen.setWidth(2)
             self.painter.setPen(pen)
             if self.obj.selected_feature_index != -1 and self.obj.cross_hair:
-                if self.obj.ctrl_wdg.kf_method == "Regular":    
+                if self.obj.ctrl_wdg.kf_method == "Regular" and len(v.features_regular[t]) > 0:
                     fc = v.features_regular[t][self.obj.selected_feature_index]
-                elif self.obj.ctrl_wdg.kf_method == "Network":
+                    self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
+                    self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                    self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                elif self.obj.ctrl_wdg.kf_method == "Network" and len(v.features_network[t]) > 0:
                     fc = v.features_network[t][self.obj.selected_feature_index]
-                                
-                self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
-                self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                    self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
+                    self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                    self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+
 
             # Painting for Quad Tool
             if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.up_pt_bool or self.obj.measure_bool or self.obj.pick_bool) :

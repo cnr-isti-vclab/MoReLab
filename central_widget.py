@@ -4,14 +4,14 @@ from PyQt5.QtGui import *
 from util.video import Video
 from util.photoviewer import PhotoViewer
 from util.kf_dialogue import KF_dialogue
-from util.util import show_dialogue
+from util.util import show_dialogue, copy_dialogue
 from document import Document
 from movie_panel import MoviePanel
 from GL_widget_viewer import GL_Widget
 from quad import Quad_Tool
 
 import json, os, glob
-import cv2
+import cv2, pyautogui
 import numpy as np
 
 
@@ -21,6 +21,8 @@ class Widget(QWidget):
         super().__init__()
             
         self.selected_thumbnail_index = -1
+        self.monitor_width = pyautogui.size()[0]
+        self.monitor_height = pyautogui.size()[1]
 
         self.create_scroll_area()
         self.gl_viewer = GL_Widget(self)
@@ -37,6 +39,7 @@ class Widget(QWidget):
         self.thumbnail_height = 96
         self.thumbnail_width = 120
         self.kf_method = ""
+        self.copied_data = {}
         
 
         
@@ -50,7 +53,7 @@ class Widget(QWidget):
 
 
         # self.scale_up_btn = QPushButton("Copy features")
-        # self.scale_up_btn.clicked.connect(self.quad_obj.draw_bezier)
+        # self.scale_up_btn.clicked.connect(self.copy_features)
        
     def find_kfs(self):
         if self.kf_method == "Regular":
@@ -116,7 +119,10 @@ class Widget(QWidget):
         
         # print(img_file.shape)
         self.gl_viewer.setPhoto(img_file)
+        self.gl_viewer.obj.selected_feature_index = 0
         self.gl_viewer.obj.display_data()
+        self.gl_viewer.obj.selected_feature_index = -1
+        self.gl_viewer.obj.wdg_tree.deselect_features()
 
         
 
@@ -125,6 +131,7 @@ class Widget(QWidget):
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setMinimumSize(self.monitor_width*0.56, self.monitor_height*0.13)
         
     
             
@@ -161,3 +168,41 @@ class Widget(QWidget):
         else:
             self.kf_method = dlg.kf_met
             
+            
+    def copy_features(self):
+        # print("Copy features")
+        t = self.selected_thumbnail_index
+        if t != -1:
+            self.copied_data = {"img_index" : t}
+            copy_dialogue()
+        else:
+            self.copied_data = {}
+            print("No image selected")
+        
+    def paste_features(self):
+        # print("Past features")
+        if len(self.copied_data)==0:
+            print("Data not copied")
+        else:
+            v = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
+            t = self.copied_data["img_index"]
+            if t == self.selected_thumbnail_index:
+                print("Same image")
+            else:
+                if self.kf_method == "Regular":
+                    for i, fc in enumerate(v.features_regular[t]):
+                        if not v.hide_regular[t][i]:
+                            self.gl_viewer.obj.add_feature(fc.x_loc, fc.y_loc)
+                        else:
+                            self.gl_viewer.obj.add_feature(fc.x_loc, fc.y_loc)
+                            self.gl_viewer.obj.selected_feature_index = i
+                            self.gl_viewer.obj.delete_feature()
+                elif self.kf_method == "Network":
+                    for i, fc in enumerate(v.features_network[t]):
+                        if not v.hide_network[t][i]:
+                            self.gl_viewer.obj.add_feature(fc.x_loc, fc.y_loc)
+                        else:
+                            v.hide_network[self.selected_thumbnail_index].append(True)
+                            v.n_objects_kf_network[self.selected_thumbnail_index] += 1
+
+                        

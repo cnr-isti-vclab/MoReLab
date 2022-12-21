@@ -122,7 +122,15 @@ def straight_line_dialogue():
     msgBox.setStandardButtons(QMessageBox.Ok)                 
     returnValue = msgBox.exec()
     
-    
+
+def copy_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Feature data has been copied")
+    msgBox.setWindowTitle("Copy feature data")
+    msgBox.setStandardButtons(QMessageBox.Ok)                 
+    returnValue = msgBox.exec()
+
+
 
 def split_path(complete_path):
     op_sys = platform.system()

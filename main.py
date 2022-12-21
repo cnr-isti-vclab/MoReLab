@@ -150,7 +150,11 @@ class Window(QMainWindow):
         if len(self.widget.gl_viewer.obj.ply_pts) > 0:
             bundle_adjustment_ply_data = self.widget.gl_viewer.obj.ply_pts[-1]
     
-            quad_data_list = self.widget.quad_obj.new_points
+            quad_pts = self.widget.quad_obj.new_points
+            quad_data_list = []
+            for i, quad_ in enumerate(quad_pts):
+                if not self.widget.quad_obj.deleted[i]:
+                    quad_data_list.append(quad_)
             if len(quad_data_list) > 0:
                 quad_data = np.vstack(quad_data_list)
 

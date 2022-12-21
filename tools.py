@@ -214,6 +214,7 @@ class Tools(QObject):
                 
             self.display_data()
             self.selected_feature_index = -1
+            self.wdg_tree.deselect_features()
             
             
     def display_data(self):
@@ -225,7 +226,7 @@ class Tools(QObject):
                    "Locations": self.locs}
         
             # print("Feature index: "+str(self.selected_feature_index))
-            self.wdg_tree.add_feature_data(self.features_data, self.selected_feature_index)
+            self.wdg_tree.add_feature_data(self.features_data)
         else:
             print("Mismatch in dimensions!")
             print(self.labels)
@@ -288,8 +289,10 @@ class Tools(QObject):
                     
                     
                 self.wdg_tree.label_index = 0
-                self.selected_feature_index = 0
+                self.selected_feature_index = -1
                 self.display_data()
+                # self.wdg_tree.deselect_features()
+                # self.selected_feature_index = -1
             else:
                 feature_absent_dialogue()
                 

@@ -1,6 +1,6 @@
 # Files and folders to be ignored.
 
-
+feedwatersparger
 __pycache__/
 util/__pycache__/
 .DS_Store
@@ -13,10 +13,10 @@ util/__pycache__/
 *.zip
 *.bz2
 *.obj
+*.asf
 
 experiment.py
-exp2.py
-exp3.py
+exp1.py
 exp4.py
 Side 1.mp4
 .python-version
