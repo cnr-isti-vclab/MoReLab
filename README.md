@@ -1,7 +1,26 @@
 # Installation instructions
-This software is being developed in Python 3.8 and can be installed by performing the following steps in an anaconda environment or a python virtual environment:
+This software is being developed in Python 3.8.
 
-## Steps
+## Guideline for Windows, Linux and MacBook with Intel Chip
+
+# Anaconda installation
+Anaconda free community edition can be downloaded from [Anaconda Website](https://www.anaconda.com/products/distribution). For Windows, please follow this [tutorial](https://www.datacamp.com/tutorial/installing-anaconda-windows) to install Anaconda and make sure to check 'Add Anaconda to my PATH environment variable' in Step 6. After following the tutorial, you should be able to search and open 'Anaconda PowerShell Prompt' and get a prompt similar to the following screenshot:
+<p align="center">
+  <img width="550" height="320" src="https://github.com/cnr-isti-vclab/MoReLab/blob/main/readme_images/prompt_screenshot.png">
+</p>
+
+# Environment setup and installation of requirements
+Open Anaconda Powershell prompt and enter the following commands:
+
+- Create a Python 3.8 environment by entering the command:
+~~~
+conda create --name morelab_env python=3.8
+~~~
+
+- Activate the environment by entering the command
+~~~
+conda activate morelab_env
+~~~
 
 - Clone this repository using the command:
 ~~~
@@ -38,3 +57,5 @@ pip install PyQt5
 ~~~
 pip install -r requirements.txt
 ~~~
+
+
