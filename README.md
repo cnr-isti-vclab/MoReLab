@@ -10,9 +10,8 @@ Anaconda free community edition can be downloaded from [Anaconda Website](https:
 </p>
 
 ### Environment setup and installation of requirements
-Open Anaconda Powershell prompt and enter the following commands:
 
-- Create a Python 3.8 environment by entering the command:
+- Open Anaconda Powershell prompt and create a Python 3.8 environment by entering the command:
 ~~~
 conda create --name morelab_env python=3.8
 ~~~
