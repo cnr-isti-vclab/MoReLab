@@ -49,6 +49,7 @@ class Tools(QObject):
         self.associated_frames = []
         self.associated_videos = []
         self.ply_pts = []
+        self.camera_poses = []
         self.camera_projection_mat = []
         self.near_far = []
         self.camera_poses = []
@@ -131,7 +132,10 @@ class Tools(QObject):
         if len(img_indices) > 0:
             print("Performing Bundle adjustment")
             opt_cameras, opt_points = bundle_adjustment(all_pts, visible_labels, self.K)
-            opt_points_ext = np.concatenate((opt_points, np.ones((opt_points.shape[0], 1))), axis=1)             
+            opt_points_ext = np.concatenate((opt_points, np.ones((opt_points.shape[0], 1))), axis=1)
+            self.camera_projection_mat = []
+            self.near_far = []
+            self.camera_poses = []
 
             # print(self.near_far)
             print("Bundle adjustment has been computed.")
@@ -150,12 +154,12 @@ class Tools(QObject):
                 self.camera_projection_mat.append((img_indices[i], cam_ext))                
                 cm = calc_camera_pos(R, t)
                 self.near_far.append(calc_near_far(cm, opt_points))
-                self.camera_poses.append(cm)
                 cam_pos_list.append([cm[0,0], cm[0,1], cm[0,2]])
             
 
             array_camera_poses = np.asarray(cam_pos_list)
-            ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
+            self.camera_poses.append(array_camera_poses)
+            # ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
             # print(opt_points)
             self.ply_pts.append(opt_points)
 

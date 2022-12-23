@@ -149,6 +149,7 @@ class Window(QMainWindow):
     def export_ply_data(self):
         if len(self.widget.gl_viewer.obj.ply_pts) > 0:
             bundle_adjustment_ply_data = self.widget.gl_viewer.obj.ply_pts[-1]
+            cam_pos = self.widget.gl_viewer.obj.camera_poses[-1]
     
             quad_pts = self.widget.quad_obj.new_points
             quad_data_list = []
@@ -180,15 +181,15 @@ class Window(QMainWindow):
                 top_cylinder_data = np.vstack(new_top_vertices)
 
                 cylinder_data = np.concatenate((center_cylinder_data, base_cylinder_data, top_center_data, top_cylinder_data))
-                print(cylinder_data.shape)
+                # print(cylinder_data.shape)
             if len(quad_data_list) > 0 and len(new_base_centers) > 0:
-                ply_data_all = np.concatenate((bundle_adjustment_ply_data, quad_data, cylinder_data))
+                ply_data_all = np.concatenate((bundle_adjustment_ply_data, cam_pos, quad_data, cylinder_data))
             elif len(quad_data_list) == 0 and len(new_base_centers) > 0:
-                ply_data_all = np.concatenate((bundle_adjustment_ply_data, cylinder_data))
+                ply_data_all = np.concatenate((bundle_adjustment_ply_data, cam_pos, cylinder_data))
             elif len(quad_data_list) > 0 and len(new_base_centers) == 0:
-                ply_data_all = np.concatenate((bundle_adjustment_ply_data, quad_data))
+                ply_data_all = np.concatenate((bundle_adjustment_ply_data, cam_pos, quad_data))
             else:
-                ply_data_all = bundle_adjustment_ply_data
+                ply_data_all = np.concatenate((bundle_adjustment_ply_data, cam_pos))
             
             # Write vertex data
             write_vertices_ply('vertex_data.ply', ply_data_all)
