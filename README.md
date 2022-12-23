@@ -3,16 +3,15 @@ This software is being developed in Python 3.8.
 
 ## Guideline for Windows, Linux and MacBook with Intel Chip
 
-# Anaconda installation
+### Anaconda installation
 Anaconda free community edition can be downloaded from [Anaconda Website](https://www.anaconda.com/products/distribution). For Windows, please follow this [tutorial](https://www.datacamp.com/tutorial/installing-anaconda-windows) to install Anaconda and make sure to check 'Add Anaconda to my PATH environment variable' in Step 6. After following the tutorial, you should be able to search and open 'Anaconda PowerShell Prompt' and get a prompt similar to the following screenshot:
 <p align="center">
   <img width="550" height="320" src="https://github.com/cnr-isti-vclab/MoReLab/blob/main/readme_images/prompt_screenshot.png">
 </p>
 
-# Environment setup and installation of requirements
-Open Anaconda Powershell prompt and enter the following commands:
+### Environment setup and installation of requirements
 
-- Create a Python 3.8 environment by entering the command:
+- Open Anaconda Powershell prompt and create a Python 3.8 environment by entering the command:
 ~~~
 conda create --name morelab_env python=3.8
 ~~~
