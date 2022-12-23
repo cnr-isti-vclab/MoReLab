@@ -182,6 +182,7 @@ class GL_Widget(QOpenGLWidget):
 
 
 
+
         glEnable(GL_CULL_FACE)
         glCullFace(GL_BACK) 
         glFrontFace(GL_CCW)
@@ -229,16 +230,19 @@ class GL_Widget(QOpenGLWidget):
                                 glVertex3f(point[0], point[1], point[2])
                             glEnd()
 
+        glDisable(GL_CULL_FACE)
+
         # Draw Measuring Line
         if self.obj.measure_bool and self.clicked_once and len(self.obj.ply_pts) > 0:
             self.painter.begin(self)
             pen = QPen(QColor(0, 0, 255))
             pen.setWidth(2)
             self.painter.setPen(pen)
+            # print(self.last_pos)
+            # print(self.current_pos)
+            # print("===================================")
             self.painter.drawLine(QLineF(self.last_pos[0], self.last_pos[1], self.current_pos[0], self.current_pos[1]))
             self.painter.end()
-            
-        glDisable(GL_CULL_FACE)
             
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -577,14 +581,18 @@ class GL_Widget(QOpenGLWidget):
 
         if self.obj.measure_bool:
             if self.clicked_once:
-                dist = np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
+                dist = round(np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos))), 2)
+                
+                print("Distance is measured as : "+str(dist))
                 self.last_pos = np.array([0.0,0.0])
                 self.last_3d_pos = np.array([0.0,0.0,0.0])
             else:
                 self.last_pos = np.array([self.x, self.y])
                 self.last_3d_pos = np.array(px)
                 
+            # print(self.clicked_once)
             self.clicked_once = not self.clicked_once
+
 
 
         self.pick = False
