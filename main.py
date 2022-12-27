@@ -58,10 +58,10 @@ class Window(QMainWindow):
             self.create_statusbar()
             self.removeToolBar(self.toolbar2)
             self.removeToolBar(self.toolbar)
-            print(self.bLoad)
-            print(len(last_wdg.mv_panel.movie_paths))
+            # print(self.bLoad)
+            # print(len(last_wdg.mv_panel.movie_paths))
             if (not self.bLoad) and len(last_wdg.mv_panel.movie_paths) > 0:
-                print("Create menu")
+                # print("Create menu")
                 self.widget.ui.create_menu()
             self.create_toolbar()
             
