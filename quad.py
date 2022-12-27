@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from scipy.spatial import distance
-from quad_panel import QuadPanel
 import numpy as np
 
 
@@ -10,7 +9,6 @@ class Quad_Tool(QObject):
     def __init__(self, ctrl_wdg):
         super().__init__(ctrl_wdg)
         self.ctrl_wdg = ctrl_wdg
-        self.quad_tree = QuadPanel(self)
         self.dist_thresh_select = 10.0
         self.group_num = 0
         self.occurence_groups = []
@@ -32,6 +30,7 @@ class Quad_Tool(QObject):
         self.max_Ts = []
         self.min_Bs = []
         self.max_Bs = []
+        self.selected_quad_idx = -1
 
         
         
@@ -62,7 +61,6 @@ class Quad_Tool(QObject):
                                 xp = self.compute_new_points(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                 self.new_points.append(xp)
                                 self.deleted.append(False)
-                                self.quad_tree.add_quad(self.order, self.group_num + 1)
                                 self.order = []
                                 self.data_val = []
                                 self.group_num += 1
@@ -166,10 +164,10 @@ class Quad_Tool(QObject):
                 for i, c in enumerate(occ):
                     v.quad_groups_network[t][c] = -1
                     
-            self.quad_tree.selected_quad_idx = -1
+            self.selected_quad_idx = -1
                     
     def scale_up(self):
-        i = self.quad_tree.selected_quad_idx
+        i = self.selected_quad_idx
         if i != -1:
             # print("Scaling up "+str(i)+"st/th quad")
             self.max_Ts[i] *= self.scaling_factor
@@ -180,7 +178,7 @@ class Quad_Tool(QObject):
 
 
     def scale_down(self):
-        i = self.quad_tree.selected_quad_idx
+        i = self.selected_quad_idx
         if i != -1:
             # print("Scaling down "+str(i)+"st/th quad")
             self.max_Ts[i] /= self.scaling_factor

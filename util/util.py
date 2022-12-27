@@ -5,6 +5,7 @@ import platform, struct
 import numpy as np
 from scipy.spatial import distance
 from plyfile import PlyData, PlyElement
+import cv2
 
 
 
@@ -37,6 +38,18 @@ class Feature_Dialogue(QDialog):
         layout.addLayout(h_layout)
         layout.addWidget(self.buttonBox)
         self.setLayout(layout)
+        
+        
+    
+def convert_cv_qt(cv_img, width, height):
+    """Convert from an opencv image to QPixmap"""
+    rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+    h, w, ch = rgb_image.shape
+    bytes_per_line = ch * w
+    convert_to_Qt_format = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+            
+    p = convert_to_Qt_format.scaled(width, height, Qt.KeepAspectRatio)
+    return QPixmap.fromImage(p)
 
 
 def duplicate_dialogue():
@@ -66,6 +79,41 @@ def feature_absent_dialogue():
     # msgBox.buttonClicked.connect(msgButtonClick)
     returnValue = msgBox.exec()
     
+    
+def exportPLY_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Please compute 3D data points and then export 3D data. ")
+    msgBox.setWindowTitle("3D data")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+    returnValue = msgBox.exec()
+    
+    
+def noImage_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Please compute select an image and then copy features. ")
+    msgBox.setWindowTitle("select Image")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+    returnValue = msgBox.exec()
+    
+def copy_features_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Please copy features first. ")
+    msgBox.setWindowTitle("copy features")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+    returnValue = msgBox.exec()
+    
+    
+def filledImage_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Please select a frame containing no feature. Copied features can only be pasted on a frame with no feature. ")
+    msgBox.setWindowTitle("paste features")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+    returnValue = msgBox.exec()
+    
 
 def show_dialogue():
     msgBox = QMessageBox()
@@ -84,6 +132,18 @@ def confirm_exit():
     msgBox = QMessageBox()
     msgBox.setText("Are you sure you want to exit ?")
     msgBox.setWindowTitle("Exit Project")
+    msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    returnValue = msgBox.exec()
+    b = False
+    if returnValue == QMessageBox.Yes:
+       b = True
+    return b
+
+
+def confirm_new():
+    msgBox = QMessageBox()
+    msgBox.setText("Are you sure you want to create new project ?")
+    msgBox.setWindowTitle("New Project")
     msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
     returnValue = msgBox.exec()
     b = False
@@ -127,6 +187,20 @@ def copy_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("Feature data has been copied")
     msgBox.setWindowTitle("Copy feature data")
+    msgBox.setStandardButtons(QMessageBox.Ok)                 
+    returnValue = msgBox.exec()
+    
+def switch_kf_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Extraction method has been switched. Features can be pasted on the frames of same extraction method.")
+    msgBox.setWindowTitle("Switch extraction method")
+    msgBox.setStandardButtons(QMessageBox.Ok)                 
+    returnValue = msgBox.exec()
+    
+def switch_movie_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("You have changed the movie. Features can be pasted only within the same movie")
+    msgBox.setWindowTitle("Switch movie")
     msgBox.setStandardButtons(QMessageBox.Ok)                 
     returnValue = msgBox.exec()
 

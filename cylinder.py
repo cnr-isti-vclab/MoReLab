@@ -62,7 +62,7 @@ class Cylinder_Tool(QObject):
     
     
     def refresh_cylinder_data(self):
-        if self.ctrl_wdg.gl_viewer.obj.new_cyl_bool:
+        if self.ctrl_wdg.ui.bnCylinder:
             bases, tops, center, top_c = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
         else:
             bases, tops, center, top_c = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])

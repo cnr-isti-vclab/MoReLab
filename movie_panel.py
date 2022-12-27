@@ -10,17 +10,14 @@ class MoviePanel(QTreeWidget):
         super().__init__()
         self.setColumnCount(2)
         self.setHeaderLabels(["Movies", "Info"])
-        self.selected_movie_path = ""
         self.movie_paths = []
         self.selected_movie_idx = -1
         self.movie_caps = []
         self.ctrl_wdg = parent
-        self.setMinimumSize(self.ctrl_wdg.monitor_width*0.15, self.ctrl_wdg.monitor_height*0.7)
         self.items = []
-        self.itemClicked.connect(self.select_movie)
-    
-    
-    
+        self.setMinimumSize(self.ctrl_wdg.monitor_width*0.15, self.ctrl_wdg.monitor_height*0.7)
+        self.itemClicked.connect(self.select_movie_child)
+        
     def add_movie(self, movie_path):
         self.movie_paths.append(movie_path)
         v = Video(movie_path)
@@ -37,41 +34,26 @@ class MoviePanel(QTreeWidget):
         self.items.append(item)
         
         self.insertTopLevelItems(len(self.movie_paths) - 1, [item])
-        self.select_movie(item)
+        self.select_movie_child(item)
         
         
     def deselect_movies(self):
         if len(self.items) > 0:
             for i,item in enumerate(self.items):
                 item.setSelected(False)
-                
-    def switch_kf_method(self):
-        kfs_regular = self.movie_caps[self.selected_movie_idx].key_frames_regular
-        kfs_network = self.movie_caps[self.selected_movie_idx].key_frames_network
-        # print(len(kfs_regular))
-        # print(len(kfs_network))
-        if len(kfs_regular) > 0 and len(kfs_network) > 0:
-            return
-        elif len(kfs_regular) == 0 and len(kfs_network) == 0:
-            return 
-        elif len(kfs_regular) > 0 and len(kfs_network) == 0:
-            self.ctrl_wdg.kf_method = "Regular"
-        elif len(kfs_regular) == 0 and len(kfs_network) > 0:
-            self.ctrl_wdg.kf_method = "Network"            
-                
-    
-                
-    def select_movie(self, selection):
+        
+        
+    def select_movie_child(self, selection):
         if selection in self.items:
-            self.selected_movie_idx = self.items.index(selection)
             self.deselect_movies()
-            self.selected_movie_path = self.movie_paths[self.selected_movie_idx]
-                                
-            self.switch_kf_method()        
+            self.selected_movie_idx = self.items.index(selection)
             self.items[self.selected_movie_idx].setSelected(True)
             self.ctrl_wdg.populate_scrollbar()
 
-            self.ctrl_wdg.gl_viewer.setPhoto()
-            
-            # self.ctrl_wdg.gl_viewer.obj.display_data()
-            # self.ctrl_wdg.gl_viewer.obj.move_tool()
+    def select_movie(self): # assuming that selected movie_idx has already been set
+        if self.selected_movie_idx != -1:
+            self.deselect_movies()
+            self.items[self.selected_movie_idx].setSelected(True)
+            self.ctrl_wdg.ui.setClick()
+            self.ctrl_wdg.populate_scrollbar()
+                

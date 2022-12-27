@@ -35,7 +35,7 @@ class Video:
     
     def video_summary(self):
         self.fps = round(self.cap.get(cv2.CAP_PROP_FPS))
-        self.n_frames = int(self.cap.get(cv2. CAP_PROP_FRAME_COUNT))
+        self.n_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         self.duration = round(self.n_frames/self.fps, 2)
         success, frame_cv = self.cap.read()
         if success:
@@ -76,59 +76,91 @@ class Video:
             self.cylinder_groups_regular.append([])
             self.bezier_groups_regular.append([])
     
-            
-    def fromVideoFrameToNP(self, frame):
-        frame = frame.astype(dtype = np.float32)
-        frame = frame / 255.0
-        out = np.zeros(frame.shape, dtype = np.float32)
-        out[:,:,0] = frame[:,:,2]
-        out[:,:,1] = frame[:,:,1]
-        out[:,:,2] = frame[:,:,0]
-        return out
+    
+    
+    # ========================== Network Implementation =======================
+    
+    def luma(self, img, bBGR = False):
+        r, c, col = img.shape
+        if col == 3:
+            if bBGR:
+                return 0.299 * img[:, :, 2] + 0.587 * img[:, :, 1] + 0.114 * img[:, :, 0]
+            else:
+                return 0.299 * img[:, :, 0] + 0.587 * img[:, :, 1] + 0.114 * img[:, :, 2]
+        else:
+            return []
+        
+    def writeCV2(self, img, filename, bBGR = True):
+        if bBGR:
+            out = np.zeros(img.shape, dtype = np.float32)
+            out[:,:,0] = img[:,:,2]
+            out[:,:,1] = img[:,:,1]
+            out[:,:,2] = img[:,:,0]
+            img = out
+
+        cv2.imwrite(filename, self.fromFloatToUint8(img))
+        
+    def checkLaplaicanBluriness(self, img, thr = 100.0):
+        L = self.luma(img)
+        value = cv2.Laplacian(L, cv2.CV_32F).var()
+        return (value > thr), value
     
     def fromFloatToUint8(self, img):
         formatted = (img * 255).astype('uint8')
         return formatted
     
-    def checkMTB(self, img1, img2, thr = 4):
-        gray1_u8 = self.fromFloatToUint8(self.luminance(img1))
-        gray2_u8 = self.fromFloatToUint8(self.luminance(img2))
+    
+    def checkSimilarity(self, img1, img2, thr = 0.925, bBGR = False):
+
+        if(thr < 0.0):
+            thr = 0.925
+
+        ssim_none = ssim(self.luma(img1, bBGR), self.luma(img2, bBGR), data_range=1.0, multichannel = False)
+        return (ssim_none >= thr), ssim_none
+    
+    def checkMTB(self, img1, img2, thr = 4, bBGR = False):
+        gray1_u8 = self.fromFloatToUint8(self.luma(img1, bBGR))
+        gray2_u8 = self.fromFloatToUint8(self.luma(img2, bBGR))
         mtb = cv2.createAlignMTB()
         shift = mtb.calculateShift(gray1_u8, gray2_u8)
         len = np.sqrt(shift[0] * shift[0] + shift[1] * shift[1])
-        # print(len)
         return len < thr, len
     
-    def luminance(self, img):
-        r, c, col = img.shape
-        if col == 3:
-            return (img[:, :, 0] + img[:, :, 1] + img[:, :, 2]) / 3.0
-        else:
-            return []
-    
-    def checkSimilarity(self, img1, img2, thr = 0.925):
-        
-        if(thr < 0.0):
-            thr = 0.925
-    
-        ssim_none = ssim(self.luminance(img1), self.luminance(img2), data_range=1.0, multichannel = False)
-        # print(ssim_none)
-        return (ssim_none >= thr), ssim_none
-    
-    def checkKeyPointBluriness(self, img, thr = 16):
-        gray = self.luminance(img)
-        gray_u8 = self.fromFloatToUint8(gray)
-        orb = cv2.ORB_create()
-        kp = orb.detect(gray_u8, None)
-        len_kp = len(kp)
-        kp, des = orb.compute(img, kp)
-        
-        return (len_kp >= thr), len_kp
+    def setFrame(self, frame):
+                    
+        if (frame > -1):
+            frame = frame % self.n
             
-    def cleanSequence(self, shift_threshold = 8):
-        # print("Extracting frames by network")
-        n = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.counter = frame
+            
+            if (self.cap != []):
+                self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame)
+    
+    
+    def getNextFrame(self, frame = -1, bBGR = True):
+        self.setFrame(frame)
+        
+        counter = self.counter
+    
+        success, frame_cv = self.cap.read()
+        
+        if success and bBGR:
+            frame = np.zeros(frame_cv.shape, dtype = np.float32)
+            frame[:,:,0] = frame_cv[:,:,2]
+            frame[:,:,1] = frame_cv[:,:,1]
+            frame[:,:,2] = frame_cv[:,:,0]
+        else:
+            frame = frame_cv
+        self.counter = (self.counter + 1) % self.n_frames
+
+        return success, frame, counter, frame_cv
+
+            
+    def cleanSequence(self, shift_threshold = 8, bBGR = False, bSave = True, folder_out = 'images', name_base = 'frame'):
         self.cap = cv2.VideoCapture(self.video_path)
+        # print("Extracting frames by network")
+        n = self.n_frames
+        # print("n : "+str(n))
         self.key_frames_network = []
         self.key_frame_indices_network = []
         self.n_objects_kf_network = []
@@ -138,64 +170,59 @@ class Video:
         self.cylinder_groups_network = []
         self.bezier_groups_network = []
 
-        bLoad = True
-        j = 0
-        lst_m = []
-        lst_s = []
-        bFirst = True
+
+
+        c = 0
+        id_list = []
+        lst = []
+        self.counter = 0
+        
+        lap = False
+        threshold = 15.0
+        while lap == False:
+            success, img, j, img_cv = self.getNextFrame()
+            if (success == False) or (j >= (n - 1)):
+                break
+            lap, value = self.checkLaplaicanBluriness(img, threshold)
+        self.key_frame_indices_network.append(j)
+        self.key_frames_network.append(img_cv)
+        
+        # if bSave:
+        #     writeCV2(img / 255.0, folder_out + '/' + name_base + '_' + format(j,'06d') + '.jpg')
+    
+        if shift_threshold < 0:
+            shape_max = np.max(img.shape)
+            shift_threshold = np.max([8, np.round(shape_max / 40.0)])
+    
+        # print('Threshold: ' + str(shift_threshold))
         
         while(j < (n - 1)):
-            succces, img_cv = self.cap.read()
             
-            if not succces:
-                break
-
-            bLoad = True
-            img = self.fromVideoFrameToNP(img_cv)
-            bFlag, nKey = self.checkKeyPointBluriness(img)
-                
-            j += 1
-            bWhile = True
-            
-            
-            while(bWhile and (j < (n - 1))):
-                # print(j)
-                j_old = j
-                success, img_n_cv = self.cap.read()
-                
-                if not success:
-                    j = n
+            lap = False
+            while (lap == False):
+                success, img_n, k, img_n_cv = self.getNextFrame()
+                if (success == False) or (k >= (n - 1)):
+                    j = n + 1
                     break
-                img_n = self.fromVideoFrameToNP(img_n_cv)
-                
-                bTest1, ssim = self.checkSimilarity(img, img_n)
+                lap, value = self.checkLaplaicanBluriness(img_n, threshold)
+    
+            if success:
+                removed_str = ' removed '
+                bTest1, ssim = self.checkSimilarity(img, img_n, 0.925, bBGR)
                 tmp = " "
                 
-                if(bTest1):
-                    bWhile = True
-                    j += 1
-                else:
-                    bTest2, shift = self.checkMTB(img, img_n, shift_threshold)
+                if(bTest1 == False):
+            
+                    bTest2, shift = self.checkMTB(img, img_n, shift_threshold, bBGR)
                     tmp += "Shift: " + str(shift) + " "
-                    if(bTest2):
-                        bWhile = True
-                        j += 1
-                    else:
-                        # Key frame found.
-                        bWhile = False
-                        bLoad = False
+    
+                    if(bTest2 == False):
                         img = img_n
+                        j = k
                         self.key_frame_indices_network.append(str(j-1).zfill(6))
                         self.key_frames_network.append(img_n_cv)
-                        # print("Index : "+str(j-1))
-
-                if(bFirst):
-                    bFirst = False
-                    lst_m.append(j_old)
-                    self.key_frame_indices_network.append(str(j-1).zfill(6))
-                    self.key_frames_network.append(img_cv)
-                    # print("First frame")
-                    # print('Frame ' + str(j_old) + ' is kept')
+    
+                # print('Ref: ' + str(j) + ' Cur: ' + str(k) + removed_str + " SSIM: " + str(ssim) + tmp)
         
         self.init_features_network(len(self.key_frames_network))
         self.cap.release()
