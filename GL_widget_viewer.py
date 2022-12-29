@@ -26,8 +26,8 @@ class GL_Widget(QOpenGLWidget):
         self.showMaximized()
         
 
-        self.util_ = Util_viewer(self)
         self.obj = Features(parent)
+        self.util_ = Util_viewer(self)
         self.setMouseTracking(True)
         self.setMinimumSize(self.obj.ctrl_wdg.monitor_width*0.56, self.obj.ctrl_wdg.monitor_height*0.67)
         self.util_.setPhoto()
@@ -35,20 +35,12 @@ class GL_Widget(QOpenGLWidget):
         self.painter = QPainter()
         self.setAutoFillBackground(False) 
         
-        self._zoom = 1
-        self.offset_x = 0
-        self.offset_y = 0
+        self._zoom, self.offset_x, self.offset_y = 1, 0, 0
 
-
-        self.dist_thresh = 10
-        self.mv_pix = 1
-        self.pick = False
-        self.move_feature_bool = False
-        self.move_pick = False
-        self.x = 1
-        self.y = 1
-        self.move_x = 1
-        self.move_y = 1
+        self.dist_thresh, self.mv_pix = 10, 1
+        self.pick, self.move_feature_bool, self.move_pick = False, False, False
+        self.x, self.y = 1, 1
+        self.move_x, self.move_y = 1, 1
         self.cylinder_point = []
         self.clicked_once = False
         self.last_3d_pos = np.array([0.0,0.0, 0.0])
@@ -56,6 +48,8 @@ class GL_Widget(QOpenGLWidget):
         self.current_pos = np.array([0.0,0.0])
 
         self.flag_g = False
+        self.bCalibrate = True
+        self.calibration_factor, self.dist = 1.0, 0.0
         self.fill_color = (0.0, 0.6252, 1.0)
         self.boundary_color = (0.0, 0.0, 0.0)
         self.selected_color = (0.38, 0.85, 0.211)
@@ -177,7 +171,7 @@ class GL_Widget(QOpenGLWidget):
                     
                     self.render_points()
         
-                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bPick:
+                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure:
                         self.render_quads(False)
                         
                     if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bnCylinder:
@@ -279,11 +273,62 @@ class GL_Widget(QOpenGLWidget):
                     self.obj.move_feature(x, y, v.features_network[t][f])
                 
         if self.obj.ctrl_wdg.ui.cross_hair and event.modifiers() & Qt.ControlModifier:
+            self.obj.feature_panel.selected_feature_idx = -1
             if event.key() == Qt.Key_C:
                 self.obj.ctrl_wdg.copy_features()
             elif event.key() == Qt.Key_V:
                 self.obj.ctrl_wdg.paste_features()
-                
+            
+            if self.obj.ctrl_wdg.kf_method == "Regular":
+                if event.key() == Qt.Key_Left:
+                    for i,fc in enumerate(v.features_regular[t]):
+                        if not v.hide_regular[t][i]:
+                            fc.x_loc = fc.x_loc - self.mv_pix
+                            fc.y_loc = fc.y_loc
+                            
+                elif event.key() == Qt.Key_Right:
+                    for i,fc in enumerate(v.features_regular[t]):
+                        if not v.hide_regular[t][i]:
+                            fc.x_loc = fc.x_loc + self.mv_pix
+                            fc.y_loc = fc.y_loc
+                            
+                elif event.key() == Qt.Key_Up:
+                    for i,fc in enumerate(v.features_regular[t]):
+                        if not v.hide_regular[t][i]:
+                            fc.x_loc = fc.x_loc 
+                            fc.y_loc = fc.y_loc - self.mv_pix
+                elif event.key() == Qt.Key_Down:
+                    for i,fc in enumerate(v.features_regular[t]):
+                        if not v.hide_regular[t][i]:
+                            fc.x_loc = fc.x_loc 
+                            fc.y_loc = fc.y_loc + self.mv_pix
+                            
+            elif self.obj.ctrl_wdg.kf_method == "Network":
+                if event.key() == Qt.Key_Left:
+                    for i,fc in enumerate(v.features_network[t]):
+                        if not v.hide_network[t][i]:
+                            fc.x_loc = fc.x_loc - self.mv_pix
+                            fc.y_loc = fc.y_loc
+                            
+                elif event.key() == Qt.Key_Right:
+                    for i,fc in enumerate(v.features_network[t]):
+                        if not v.hide_network[t][i]:
+                            fc.x_loc = fc.x_loc + self.mv_pix
+                            fc.y_loc = fc.y_loc
+                            
+                elif event.key() == Qt.Key_Up:
+                    for i,fc in enumerate(v.features_network[t]):
+                        if not v.network[t][i]:
+                            fc.x_loc = fc.x_loc 
+                            fc.y_loc = fc.y_loc - self.mv_pix
+                        
+                elif event.key() == Qt.Key_Down:
+                    for i,fc in enumerate(v.features_network[t]):
+                        if not v.hide_network[t][i]:
+                            fc.x_loc = fc.x_loc 
+                            fc.y_loc = fc.y_loc + self.mv_pix
+            
+            self.obj.feature_panel.display_data()
                 
         if self.obj.ctrl_wdg.ui.bPick:
             if self.obj.cylinder_obj.selected_cylinder_idx != -1: 
@@ -469,7 +514,7 @@ class GL_Widget(QOpenGLWidget):
             
             
             # Painting for Quad Tool
-            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bPick) :
+            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick) :
                 if self.obj.ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
                         if v.quad_groups_regular[t][i] != -1:
@@ -772,20 +817,30 @@ class GL_Widget(QOpenGLWidget):
                     self.obj.ctrl_wdg.quad_obj.selected_quad_idx = -1
 
 
-        if self.obj.ctrl_wdg.ui.bMeasure:
-            if self.clicked_once:
-                dist = round(np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos))), 2)
+        if self.obj.ctrl_wdg.ui.bMeasure and dd < 1:
+            if self.bCalibrate:
+                if self.clicked_once:
+                    self.bCalibrate = False
+                    self.util_.create_calibration_panel()
+                    if self.util_.cal_dialog.exec():
+                        measured_dist = int(self.util_.e1.text())
+                        dist = np.sqrt(np.sum(np.square(np.array(px)-self.calc_last_3d_pos)))
+                        self.calibration_factor = measured_dist/dist
+                        self.util_.set_distance(measured_dist)
+                    self.clicked_once = not self.clicked_once
+                else:
+                    self.last_pos = np.array([self.x, self.y])
+                    self.calc_last_3d_pos = np.array(px)
                 
-                print("Distance is measured as : "+str(dist))
-                self.last_pos = np.array([0.0,0.0])
-                self.last_3d_pos = np.array([0.0,0.0,0.0])
-            else:
-                self.last_pos = np.array([self.x, self.y])
-                self.last_3d_pos = np.array(px)
-                
-            # print(self.clicked_once)
+            else:                
+                if self.clicked_once and self.calibration_factor != 1:
+                    self.dist = round(self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos))), 2)
+                    self.util_.set_distance(self.dist)
+                    # print("Distance is measured as : "+str(self.dist))
+                else:
+                    self.last_pos = np.array([self.x, self.y])
+                    self.last_3d_pos = np.array(px)
+ 
             self.clicked_once = not self.clicked_once
-
-
 
         self.pick = False

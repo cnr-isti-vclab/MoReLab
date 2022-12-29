@@ -35,6 +35,7 @@ class Window(QMainWindow):
 
         self.vboxLayout3 = QVBoxLayout()
         self.vboxLayout3.addWidget(self.widget.gl_viewer.obj.feature_panel)
+        self.vboxLayout3.addWidget(self.widget.gl_viewer.util_.dist_label)
         self.vboxLayout3.addWidget(self.widget.gl_viewer.obj.btn_sfm)
 
         self.hboxLayout = QHBoxLayout()
@@ -58,10 +59,7 @@ class Window(QMainWindow):
             self.create_statusbar()
             self.removeToolBar(self.toolbar2)
             self.removeToolBar(self.toolbar)
-            # print(self.bLoad)
-            # print(len(last_wdg.mv_panel.movie_paths))
             if (not self.bLoad) and len(last_wdg.mv_panel.movie_paths) > 0:
-                # print("Create menu")
                 self.widget.ui.create_menu()
             self.create_toolbar()
             
@@ -209,8 +207,6 @@ class Window(QMainWindow):
 
 
     def export_ply_data(self):
-        print("export ")
-        print(len(self.widget.gl_viewer.obj.ply_pts))
         if len(self.widget.gl_viewer.obj.ply_pts) > 0:
             bundle_adjustment_ply_data = self.widget.gl_viewer.obj.ply_pts[-1]
             cam_data = self.widget.gl_viewer.obj.camera_poses[-1]
@@ -245,7 +241,6 @@ class Window(QMainWindow):
                 top_cylinder_data = np.vstack(new_top_vertices)
 
                 cylinder_data = np.concatenate((center_cylinder_data, base_cylinder_data, top_center_data, top_cylinder_data))
-                print(cylinder_data.shape)
             if len(quad_data_list) > 0 and len(new_base_centers) > 0:
                 ply_data_all = np.concatenate((bundle_adjustment_ply_data, cam_data, quad_data, cylinder_data))
             elif len(quad_data_list) == 0 and len(new_base_centers) > 0:

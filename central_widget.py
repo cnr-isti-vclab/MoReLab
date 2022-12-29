@@ -73,8 +73,8 @@ class Widget(QWidget):
 
                 self.populate_scrollbar()
 
-        else:
-            self.kf_method = dlg.kf_met
+            else:
+                self.kf_method = dlg.kf_met
             
             
     def populate_scrollbar(self):

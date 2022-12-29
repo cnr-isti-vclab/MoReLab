@@ -1,11 +1,12 @@
 # Files and folders to be ignored.
 
-feedwatersparger
+
 __pycache__/
 util/__pycache__/
 .DS_Store
 
 
+*.asf
 *.pyc
 *.ply
 *.json
@@ -13,7 +14,6 @@ util/__pycache__/
 *.zip
 *.bz2
 *.obj
-*.asf
 
 experiment.py
 exp1.py
@@ -23,13 +23,14 @@ Side 1.mp4
 Li1R19_Feedwater Bracket  3D Mapping Project _.5.MP4
 
 
-
+feedwatersparger/
 test1/
 test2/
 test3/
 test4/
 test5/
 test6/
+
 
 before_BA/
 epri_test1/

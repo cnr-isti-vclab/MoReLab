@@ -11,7 +11,7 @@ class FeaturePanel(QTreeWidget):
         self.selected_feature_idx = -1
         self.ctrl_wdg = parent
         self.items = []
-        self.setMinimumSize(self.ctrl_wdg.monitor_width*0.2, self.ctrl_wdg.monitor_height*0.75)
+        self.setMinimumSize(self.ctrl_wdg.monitor_width*0.2, self.ctrl_wdg.monitor_height*0.73)
         self.itemClicked.connect(self.select_feature_child)
         self.factor_x = 1
         self.factor_y = 1

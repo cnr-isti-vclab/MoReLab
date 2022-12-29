@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import *
-
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 from PIL import Image
 from PIL.ImageQt import ImageQt 
 import cv2
@@ -16,6 +17,9 @@ class Util_viewer(QWidget):
         self.aspect_widget = self.parent_viewer.width()/self.parent_viewer.height()
         self.opengl_intrinsics = np.eye(4)
         self.opengl_extrinsics = np.eye(4)
+        self.dist_label = QLabel("Measured distance : "+str(0.00))
+        self.dist_label.setMinimumSize(self.parent_viewer.obj.ctrl_wdg.monitor_width*0.2, self.parent_viewer.obj.ctrl_wdg.monitor_height*0.02)
+        self.dist_label.setAlignment(Qt.AlignCenter)
 
         
         
@@ -98,3 +102,30 @@ class Util_viewer(QWidget):
 
         self.opengl_extrinsics = out #np.matmul(self.opengl_intrinsics, Rt)
 
+    def create_calibration_panel(self):
+        self.cal_dialog = QDialog()
+        
+        self.cal_dialog.setWindowTitle("Calibration panel")
+
+        QBtn = QDialogButtonBox.Ok
+
+        buttonBox = QDialogButtonBox(QBtn)
+        buttonBox.accepted.connect(self.cal_dialog.accept)
+        
+        label = QLabel("Enter measured distance : ")
+        
+        self.e1 = QLineEdit("1")
+        self.e1.setValidator(QIntValidator())
+        self.e1.setMaxLength(6)
+        self.e1.setFont(QFont("Arial",20))
+        
+        self.cal_layout = QVBoxLayout()
+        self.cal_layout.addWidget(label)
+        self.cal_layout.addWidget(self.e1)
+        self.cal_layout.addWidget(buttonBox)
+        self.cal_dialog.setLayout(self.cal_layout)
+        
+        
+    def set_distance(self, d):
+        self.dist_label.setText("Measured distance : "+str(d))
+        
