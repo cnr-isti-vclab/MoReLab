@@ -112,7 +112,7 @@ class Util_viewer(QWidget):
         buttonBox = QDialogButtonBox(QBtn)
         buttonBox.accepted.connect(self.cal_dialog.accept)
         
-        label = QLabel("Enter measured distance : ")
+        label = QLabel("Enter the distance in cm : ")
         
         self.e1 = QLineEdit("1")
         self.e1.setValidator(QIntValidator())

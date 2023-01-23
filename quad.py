@@ -46,10 +46,34 @@ class Quad_Tool(QObject):
                 for i, fc in enumerate(v.features_regular[t]):
                     if not v.hide_regular[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
-                        if d < self.dist_thresh_select and v.quad_groups_regular[t][i] == -1:
+                        if d < self.dist_thresh_select:
                             self.order.append(i)
                             self.data_val.append(data[i,:])
                             v.quad_groups_regular[t][i] = self.group_num
+                            feature_selected = True
+
+                            if len(self.data_val) == 4:
+                                self.occurence_groups.append(self.order)
+                                # print("Primitive count : "+str(self.primitive_count))
+                                self.quad_counts.append(self.primitive_count)
+                                c = self.getRGBfromI(self.primitive_count)
+                                self.colors.append(c)
+                                xp = self.compute_new_points(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                self.new_points.append(xp)
+                                self.deleted.append(False)
+                                self.order = []
+                                self.data_val = []
+                                self.group_num += 1
+                                self.primitive_count += 1
+                                
+            elif self.ctrl_wdg.kf_method == "Network":
+                for i, fc in enumerate(v.features_network[t]):
+                    if not v.hide_network[t][i]:
+                        d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
+                        if d < self.dist_thresh_select:
+                            self.order.append(i)
+                            self.data_val.append(data[i,:])
+                            v.quad_groups_network[t][i] = self.group_num
                             feature_selected = True
 
                             if len(self.data_val) == 4:

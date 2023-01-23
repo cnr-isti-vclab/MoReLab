@@ -40,7 +40,7 @@ class Cylinder_Tool(QObject):
                 for i, fc in enumerate(v.features_regular[t]):
                     if not v.hide_regular[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
-                        if d < self.dist_thresh_select and v.cylinder_groups_regular[t][i] == -1:
+                        if d < self.dist_thresh_select:
                             self.data_val.append(data[i,:])
                             v.cylinder_groups_regular[t][i] = self.group_num
                             self.order.append(i)
@@ -57,6 +57,15 @@ class Cylinder_Tool(QObject):
                 for i, fc in enumerate(v.features_network[t]):
                     if not v.hide_network[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
+                        if d < self.dist_thresh_select:
+                            self.data_val.append(data[i,:])
+                            v.cylinder_groups_regular[t][i] = self.group_num
+                            self.order.append(i)
+                            feature_selected = True
+                            
+                            if len(self.data_val) == 4:
+                                self.refresh_cylinder_data()
+
 
         return feature_selected
     

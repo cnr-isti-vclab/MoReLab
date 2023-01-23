@@ -46,6 +46,8 @@ class GL_Widget(QOpenGLWidget):
         self.last_3d_pos = np.array([0.0,0.0, 0.0])
         self.last_pos = np.array([0.0,0.0])
         self.current_pos = np.array([0.0,0.0])
+        self.measured_pos = []
+        self.measured_distances = []
 
         self.flag_g = False
         self.bCalibrate = True
@@ -171,7 +173,7 @@ class GL_Widget(QOpenGLWidget):
                     
                     self.render_points()
         
-                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure:
+                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bCylinder:
                         self.render_quads(False)
                         
                     if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bnCylinder:
@@ -199,17 +201,27 @@ class GL_Widget(QOpenGLWidget):
 
         glDisable(GL_CULL_FACE)
 
-        # Draw Measuring Line
-        if self.obj.ctrl_wdg.ui.bMeasure and self.clicked_once and len(self.obj.ply_pts) > 0:
-            self.painter.begin(self)
-            pen = QPen(QColor(0, 0, 255))
-            pen.setWidth(2)
-            self.painter.setPen(pen)
-            # print(self.last_pos)
-            # print(self.current_pos)
-            # print("===================================")
+
+        self.painter.begin(self)
+        pen = QPen(QColor(0, 0, 255))
+        pen.setWidth(2)
+        self.painter.setPen(pen)
+        
+        # Draw all lines
+        if len(self.measured_pos) > 1 and self.obj.ctrl_wdg.ui.bMeasure:
+            for i in range(1,len(self.measured_pos),2):
+                p1 = self.measured_pos[i-1]
+                p2 = self.measured_pos[i]
+                self.painter.drawLine(QLineF(p1[0], p1[1], p2[0], p2[1]))
+                idx_t = int(i/2)
+                if len(self.measured_distances) > 0:
+                    self.painter.drawText(p2[0]+1, p2[1]-3, str(self.measured_distances[idx_t]))
+
+        # Draw transient Measuring Line
+        if self.obj.ctrl_wdg.ui.bMeasure and self.clicked_once and len(self.obj.ply_pts) > 0:            
             self.painter.drawLine(QLineF(self.last_pos[0], self.last_pos[1], self.current_pos[0], self.current_pos[1]))
-            self.painter.end()
+        
+        self.painter.end()
 
 
     def mouseDoubleClickEvent(self, event):
@@ -331,12 +343,13 @@ class GL_Widget(QOpenGLWidget):
             self.obj.feature_panel.display_data()
                 
         if self.obj.ctrl_wdg.ui.bPick:
-            if self.obj.cylinder_obj.selected_cylinder_idx != -1: 
-                self.obj.cylinder_obj.delete_cylinder(self.obj.cylinder_obj.selected_cylinder_idx)
-            elif self.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
-                self.obj.ctrl_wdg.quad_obj.delete_quad(self.obj.ctrl_wdg.quad_obj.selected_quad_idx)
-            else:
-                print("No 3D object has been selected")
+            if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+                if self.obj.cylinder_obj.selected_cylinder_idx != -1: 
+                    self.obj.cylinder_obj.delete_cylinder(self.obj.cylinder_obj.selected_cylinder_idx)
+                elif self.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
+                    self.obj.ctrl_wdg.quad_obj.delete_quad(self.obj.ctrl_wdg.quad_obj.selected_quad_idx)
+                else:
+                    print("No 3D object has been selected")
 
         super(GL_Widget, self).keyPressEvent(event)
 
@@ -464,7 +477,7 @@ class GL_Widget(QOpenGLWidget):
     def paint_image(self, v, t):
         if self.util_.img_file is not None:
             self.painter.begin(self)
-            pen = QPen(QColor(0, 0, 0))
+            pen = QPen(QColor(250.0, 255.0, 255.0))
             pen.setWidth(2)
             self.painter.setPen(pen)
             self.painter.setFont(self.painter.font())
@@ -505,6 +518,7 @@ class GL_Widget(QOpenGLWidget):
                     self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
                     self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                     self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                
                 elif self.obj.ctrl_wdg.kf_method == "Network" and len(v.features_network[t]) > 0 and not v.hide_network[t][self.obj.feature_panel.selected_feature_idx]:
                     fc = v.features_network[t][self.obj.feature_panel.selected_feature_idx]
                     self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
@@ -514,7 +528,7 @@ class GL_Widget(QOpenGLWidget):
             
             
             # Painting for Quad Tool
-            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick) :
+            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bPick) :
                 if self.obj.ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
                         if v.quad_groups_regular[t][i] != -1:
@@ -827,19 +841,28 @@ class GL_Widget(QOpenGLWidget):
                         dist = np.sqrt(np.sum(np.square(np.array(px)-self.calc_last_3d_pos)))
                         self.calibration_factor = measured_dist/dist
                         self.util_.set_distance(measured_dist)
+                        self.measured_distances.append(measured_dist)
+
                     self.clicked_once = not self.clicked_once
                 else:
                     self.last_pos = np.array([self.x, self.y])
+                    self.measured_pos.append((self.x, self.y))
                     self.calc_last_3d_pos = np.array(px)
                 
             else:                
                 if self.clicked_once and self.calibration_factor != 1:
                     self.dist = round(self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos))), 2)
+                    self.measured_distances.append(self.dist)
                     self.util_.set_distance(self.dist)
+                    self.measured_pos.append((self.x, self.y))
                     # print("Distance is measured as : "+str(self.dist))
                 else:
                     self.last_pos = np.array([self.x, self.y])
+                    self.measured_pos.append((self.x, self.y))
                     self.last_3d_pos = np.array(px)
+                    
+            # print(self.measured_pos)
+            # print(self.measured_distances)
  
             self.clicked_once = not self.clicked_once
 
