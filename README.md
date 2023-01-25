@@ -35,3 +35,8 @@ cd MoReLab
 ~~~
 pip install -r requirements.txt
 ~~~
+
+- If previous command installs all libraries, then run the following command to run software:
+~~~
+python main.py
+~~~
