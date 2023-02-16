@@ -185,6 +185,7 @@ class Window(QMainWindow):
         self.toolbar.addWidget(self.widget.ui.bz_tool)
         self.toolbar.addWidget(self.widget.ui.measure_tool)
         self.toolbar.addWidget(self.widget.ui.pick_tool)
+        self.toolbar.addWidget(self.widget.ui.dot_connecting_tool)
 
 
         self.addToolBarBreak(Qt.TopToolBarArea)
@@ -218,6 +219,13 @@ class Window(QMainWindow):
                     quad_data_list.append(quad_)
             if len(quad_data_list) > 0:
                 quad_data = np.vstack(quad_data_list)
+                
+                
+            connects_data_list = []
+            for i, quad_ in enumerate(self.widget.connect_obj.all_pts):
+                if not self.widget.connect_obj.deleted[i]:
+                    connects_data_list.append(quad_)
+
 
             num_cyl = 0
             face_verts = []
@@ -294,8 +302,26 @@ class Window(QMainWindow):
                     face_data_cyl[sectorCount*4*i+3*sectorCount+j, 0] = start + (sectorCount+1)*i + num_cyl + j + 1
                     face_data_cyl[sectorCount*4*i+3*sectorCount+j, 1] = start + i + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount)*i + j + 1
                     face_data_cyl[sectorCount*4*i+3*sectorCount+j, 2] = start + i + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount)*i + j
-                    
-            all_faces = np.concatenate((face_data, face_data_cyl))
+
+            # Face data for Point connectors
+            print(len(connects_data_list))
+            print(self.widget.connect_obj.occurence_groups)
+            face_data_connects = np.zeros(shape=(2*len(connects_data_list), 3), dtype=int)
+            for i in range(len(connects_data_list)):
+                idx_list = self.widget.connect_obj.occurence_groups[i]
+                print(idx_list)
+                face_data_connects[2*i,0] = idx_list[0]
+                # print(face_data[i,0])
+                face_data_connects[2*i,1] = idx_list[3]
+                face_data_connects[2*i,2] = idx_list[1]
+                
+                face_data_connects[2*i+1,0] = idx_list[2]
+                face_data_connects[2*i+1,1] = idx_list[1]
+                face_data_connects[2*i+1,2] = idx_list[3]
+
+            # print(face_data)
+                        
+            all_faces = np.concatenate((face_data, face_data_cyl, face_data_connects))
             
             if all_faces.shape[0] > 0:
                 write_faces_ply('face_data.ply', ply_data_all, all_faces )

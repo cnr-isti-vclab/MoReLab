@@ -92,10 +92,13 @@ class GL_Widget(QOpenGLWidget):
                 if tup[0] == t:
                     self.render_points()
                     
-                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier:
+                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bConnect:
                         self.render_quads(True)
+
+                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bConnect:
+                        self.render_dot_connects(True)
                         
-                    if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier:
+                    if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bConnect:
                         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
                         self.render_cylinders(True, True)
                         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
@@ -173,10 +176,13 @@ class GL_Widget(QOpenGLWidget):
                     
                     self.render_points()
         
-                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bCylinder:
+                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure:
                         self.render_quads(False)
-                        
-                    if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bnCylinder:
+                    
+                    if self.obj.ctrl_wdg.ui.bConnect or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure :
+                        self.render_dot_connects(False)
+                    
+                    if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bMeasure:
                         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
                         if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder:
                             self.render_transient_circle(bases, center, self.fill_color)
@@ -203,7 +209,7 @@ class GL_Widget(QOpenGLWidget):
 
 
         self.painter.begin(self)
-        pen = QPen(QColor(0, 0, 255))
+        pen = QPen(QColor(255, 255, 255))
         pen.setWidth(2)
         self.painter.setPen(pen)
         
@@ -215,7 +221,7 @@ class GL_Widget(QOpenGLWidget):
                 self.painter.drawLine(QLineF(p1[0], p1[1], p2[0], p2[1]))
                 idx_t = int(i/2)
                 if len(self.measured_distances) > 0:
-                    self.painter.drawText(p2[0]+1, p2[1]-3, str(self.measured_distances[idx_t]))
+                    self.painter.drawText(p2[0]+1, p2[1]-3, str(round(self.measured_distances[idx_t], 3)))
 
         # Draw transient Measuring Line
         if self.obj.ctrl_wdg.ui.bMeasure and self.clicked_once and len(self.obj.ply_pts) > 0:            
@@ -348,6 +354,8 @@ class GL_Widget(QOpenGLWidget):
                     self.obj.cylinder_obj.delete_cylinder(self.obj.cylinder_obj.selected_cylinder_idx)
                 elif self.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
                     self.obj.ctrl_wdg.quad_obj.delete_quad(self.obj.ctrl_wdg.quad_obj.selected_quad_idx)
+                elif self.obj.ctrl_wdg.connect_obj.selected_connect_idx != -1:
+                    self.obj.ctrl_wdg.connect_obj.delete_connect_group(self.obj.ctrl_wdg.connect_obj.selected_connect_idx)
                 else:
                     print("No 3D object has been selected")
 
@@ -410,6 +418,13 @@ class GL_Widget(QOpenGLWidget):
 
         if self.obj.ctrl_wdg.ui.bQuad:
             selected_feature = self.obj.ctrl_wdg.quad_obj.select_feature(x, y)
+            if not selected_feature:
+                self.x = a.x()
+                self.y = a.y()
+                self.pick = True
+                
+        if self.obj.ctrl_wdg.ui.bConnect:
+            selected_feature = self.obj.ctrl_wdg.connect_obj.select_feature(x, y)
             if not selected_feature:
                 self.x = a.x()
                 self.y = a.y()
@@ -512,6 +527,9 @@ class GL_Widget(QOpenGLWidget):
             pen = QPen(QColor(0, 0, 255))
             pen.setWidth(2)
             self.painter.setPen(pen)
+            
+            # Painting the selected feature
+            
             if self.obj.feature_panel.selected_feature_idx != -1 and self.obj.ctrl_wdg.ui.cross_hair:
                 if self.obj.ctrl_wdg.kf_method == "Regular" and len(v.features_regular[t]) > 0 and not v.hide_regular[t][self.obj.feature_panel.selected_feature_idx]:
                     fc = v.features_regular[t][self.obj.feature_panel.selected_feature_idx]
@@ -528,7 +546,7 @@ class GL_Widget(QOpenGLWidget):
             
             
             # Painting for Quad Tool
-            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bPick) :
+            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure) :
                 if self.obj.ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
                         if v.quad_groups_regular[t][i] != -1:
@@ -542,10 +560,29 @@ class GL_Widget(QOpenGLWidget):
                         if v.quad_groups_network[t][i] != -1:
                             self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
                             self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))                      
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                            
+                            
+            # Painting for Dots Connecting Tool
+            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.ctrl_wdg.ui.bConnect or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure):
+                if self.obj.ctrl_wdg.kf_method == "Regular":
+                    for i, fc in enumerate(v.features_regular[t]):
+                        if v.connect_groups_regular[t][i] != -1:
+                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+
+                    
+                elif self.obj.ctrl_wdg.kf_method == "Network":
+                    for i, fc in enumerate(v.features_network[t]):
+                        if v.connect_groups_network[t][i] != -1:
+                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                            
+   
 
             # Painting for Sphere Tool
-            
             if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) and (self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure) :
                 if self.obj.ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
@@ -739,6 +776,37 @@ class GL_Widget(QOpenGLWidget):
                 glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
                 glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
                 glEnd()
+                
+                
+    def render_dot_connects(self, offscreen_bool = False):
+        for i, pt_tup in enumerate(self.obj.ctrl_wdg.connect_obj.all_pts):
+            if not self.obj.ctrl_wdg.connect_obj.deleted[i]:
+                if offscreen_bool:
+                    co = self.obj.ctrl_wdg.connect_obj.colors[i+1]
+                    glColor3f(co[0]/255, co[1]/255, co[2]/255)
+                else:
+                    if i==self.obj.ctrl_wdg.connect_obj.selected_connect_idx:
+                        glColor3f(0.38, 0.85, 0.211)
+                    else:
+                        glColor3f(0, 0.6352, 1)                
+                glBegin(GL_TRIANGLES)      
+                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+        
+                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                glEnd()
+                
+                glLineWidth(2.0)
+                glColor3f(0.0, 0.0, 0.0)
+                glBegin(GL_LINE_LOOP)
+                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                glEnd()
 
     def render_bezier(self, offscreen_bool = False):
         if not offscreen_bool:
@@ -824,12 +892,20 @@ class GL_Widget(QOpenGLWidget):
                 if ID in self.obj.ctrl_wdg.quad_obj.quad_counts:
                     self.obj.ctrl_wdg.quad_obj.selected_quad_idx = self.obj.ctrl_wdg.quad_obj.quad_counts.index(ID)
                     self.obj.cylinder_obj.selected_cylinder_idx = -1
+                    self.obj.ctrl_wdg.connect_obj.selected_connect_idx = -1
                     
                 elif ID in self.obj.cylinder_obj.cylinder_count:
                     cyl_idx = self.obj.cylinder_obj.cylinder_count.index(ID)
                     self.obj.cylinder_obj.selected_cylinder_idx = cyl_idx
                     self.obj.ctrl_wdg.quad_obj.selected_quad_idx = -1
-
+                    self.obj.ctrl_wdg.connect_obj.selected_connect_idx = -1
+                    
+                elif ID in self.obj.ctrl_wdg.connect_obj.group_counts:
+                    connect_idx = self.obj.ctrl_wdg.connect_obj.group_counts.index(ID)
+                    self.obj.ctrl_wdg.connect_obj.selected_connect_idx = connect_idx
+                    self.obj.ctrl_wdg.quad_obj.selected_quad_idx = -1
+                    self.obj.cylinder_obj.selected_cylinder_idx = -1
+                    
 
         if self.obj.ctrl_wdg.ui.bMeasure and dd < 1:
             if self.bCalibrate:
@@ -837,8 +913,10 @@ class GL_Widget(QOpenGLWidget):
                     self.bCalibrate = False
                     self.util_.create_calibration_panel()
                     if self.util_.cal_dialog.exec():
-                        measured_dist = int(self.util_.e1.text())
+                        measured_dist = float(self.util_.e1.text())
+                        print("Measured distance : "+str(measured_dist))
                         dist = np.sqrt(np.sum(np.square(np.array(px)-self.calc_last_3d_pos)))
+                        print("Calculated distance : "+str(dist))
                         self.calibration_factor = measured_dist/dist
                         self.util_.set_distance(measured_dist)
                         self.measured_distances.append(measured_dist)
@@ -851,7 +929,8 @@ class GL_Widget(QOpenGLWidget):
                 
             else:                
                 if self.clicked_once and self.calibration_factor != 1:
-                    self.dist = round(self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos))), 2)
+                    self.dist = self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
+                    print("Calculated distance : "+str(self.dist))
                     self.measured_distances.append(self.dist)
                     self.util_.set_distance(self.dist)
                     self.measured_pos.append((self.x, self.y))

@@ -125,9 +125,6 @@ class Features(QWidget):
             ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
             # print(opt_points)
             self.ply_pts.append(opt_points)
-            
-        print(len(self.ply_pts))
-
         
         
     def add_feature(self,x,y):
@@ -151,6 +148,7 @@ class Features(QWidget):
                 v.features_regular[t].append(fc)
                 v.hide_regular[t].append(False)
                 v.quad_groups_regular[t].append(-1)
+                v.connect_groups_regular[t].append(-1)
                 v.cylinder_groups_regular[t].append(-1)
                 v.bezier_groups_regular[t].append(-1)
                 
@@ -159,6 +157,7 @@ class Features(QWidget):
                 v.features_network[t].append(fc)
                 v.hide_network[t].append(False)
                 v.quad_groups_network[t].append(-1)
+                v.connect_groups_network[t].append(-1)
                 v.cylinder_groups_network[t].append(-1)
                 v.bezier_groups_network[t].append(-1)
 

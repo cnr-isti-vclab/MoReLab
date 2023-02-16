@@ -175,7 +175,7 @@ class Document(QWidget):
 
         self.ctrl_wdg.mv_panel.selected_movie_idx = int(data["selected_movie"])
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
-        
+        print()
         self.ctrl_wdg.kf_method = data["selected_kf_method"]
         self.ctrl_wdg.mv_panel.select_movie()
         self.ctrl_wdg.ui.implement_move_tool()

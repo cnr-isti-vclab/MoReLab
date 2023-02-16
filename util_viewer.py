@@ -112,11 +112,11 @@ class Util_viewer(QWidget):
         buttonBox = QDialogButtonBox(QBtn)
         buttonBox.accepted.connect(self.cal_dialog.accept)
         
-        label = QLabel("Enter the distance in cm : ")
+        label = QLabel("Enter the distance in inches : ")
         
         self.e1 = QLineEdit("1")
-        self.e1.setValidator(QIntValidator())
-        self.e1.setMaxLength(6)
+        self.e1.setValidator(QDoubleValidator())
+        self.e1.setMaxLength(10)
         self.e1.setFont(QFont("Arial",20))
         
         self.cal_layout = QVBoxLayout()
@@ -127,5 +127,6 @@ class Util_viewer(QWidget):
         
         
     def set_distance(self, d):
+        d = round(d, 3)
         self.dist_label.setText("Measured distance : "+str(d))
         

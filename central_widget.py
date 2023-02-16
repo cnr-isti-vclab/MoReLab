@@ -6,6 +6,7 @@ from movie_panel import MoviePanel
 from GL_widget_viewer import GL_Widget
 from document import Document
 from quad import Quad_Tool
+from points_connecting import PointsConnecting
 from util.kf_dialogue import KF_dialogue
 from util.util import *
 
@@ -33,6 +34,7 @@ class Widget(QWidget):
         self.ui = UserInterface(self)
         self.mv_panel = MoviePanel(self)
         self.quad_obj = Quad_Tool(self)
+        self.connect_obj = PointsConnecting(self)
         self.copied_data = {}
 
         

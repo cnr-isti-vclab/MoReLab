@@ -20,6 +20,7 @@ class Video:
         self.features_regular = []
         self.hide_regular = []
         self.quad_groups_regular = []
+        self.connect_groups_regular = []
         self.cylinder_groups_regular = []
         self.bezier_groups_regular = []
         
@@ -27,6 +28,7 @@ class Video:
         self.features_network = []
         self.hide_network = []
         self.quad_groups_network = []
+        self.connect_groups_network = []
         self.cylinder_groups_network = []
         self.bezier_groups_network = []
         
@@ -49,6 +51,7 @@ class Video:
         self.features_regular = []
         self.hide_regular = []
         self.quad_groups_regular = []
+        self.connect_groups_regular = []
         self.cylinder_groups_regular = []
         self.bezier_groups_regular = []
         
@@ -73,6 +76,7 @@ class Video:
             self.features_regular.append([])
             self.hide_regular.append([])
             self.quad_groups_regular.append([])
+            self.connect_groups_regular.append([])
             self.cylinder_groups_regular.append([])
             self.bezier_groups_regular.append([])
     
@@ -167,6 +171,7 @@ class Video:
         self.features_network = []
         self.hide_network = []
         self.quad_groups_network = []
+        self.connect_groups_network = []
         self.cylinder_groups_network = []
         self.bezier_groups_network = []
 
@@ -236,6 +241,7 @@ class Video:
             self.features_network.append([])
             self.hide_network.append([])
             self.quad_groups_network.append([])
+            self.connect_groups_network.append([])
             self.cylinder_groups_network.append([])
             self.bezier_groups_network.append([])
 
