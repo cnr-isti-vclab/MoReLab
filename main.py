@@ -304,8 +304,6 @@ class Window(QMainWindow):
                     face_data_cyl[sectorCount*4*i+3*sectorCount+j, 2] = start + i + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount)*i + j
 
             # Face data for Point connectors
-            print(len(connects_data_list))
-            print(self.widget.connect_obj.occurence_groups)
             face_data_connects = np.zeros(shape=(2*len(connects_data_list), 3), dtype=int)
             for i in range(len(connects_data_list)):
                 idx_list = self.widget.connect_obj.occurence_groups[i]

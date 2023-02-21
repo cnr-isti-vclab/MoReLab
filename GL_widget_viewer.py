@@ -33,28 +33,17 @@ class GL_Widget(QOpenGLWidget):
         self.util_.setPhoto()
 
         self.painter = QPainter()
-        self.setAutoFillBackground(False) 
-        
-        self._zoom, self.offset_x, self.offset_y = 1, 0, 0
+        self.setAutoFillBackground(False)
 
-        self.dist_thresh, self.mv_pix = 10, 1
-        self.pick, self.move_feature_bool, self.move_pick = False, False, False
-        self.x, self.y = 1, 1
+        self.x_shift = -0.5
+
         self.move_x, self.move_y = 1, 1
-        self.cylinder_point = []
-        self.clicked_once = False
-        self.last_3d_pos = np.array([0.0,0.0, 0.0])
-        self.last_pos = np.array([0.0,0.0])
-        self.current_pos = np.array([0.0,0.0])
-        self.measured_pos = []
-        self.measured_distances = []
-
-        self.flag_g = False
-        self.bCalibrate = True
-        self.calibration_factor, self.dist = 1.0, 0.0
         self.fill_color = (0.0, 0.6252, 1.0)
         self.boundary_color = (0.0, 0.0, 0.0)
         self.selected_color = (0.38, 0.85, 0.211)
+
+        self.flag_g = False
+
   
 
             
@@ -108,8 +97,12 @@ class GL_Widget(QOpenGLWidget):
                     if self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bPick:
                         self.render_bezier(True)
 
-        if self.pick:
-            self.select_3d_point()
+        if self.util_.pick:
+            dd = glReadPixels(self.util_.x, self.height()-self.util_.y, 1, 1,GL_DEPTH_COMPONENT, GL_FLOAT)[0][0]
+            px = gluUnProject(self.util_.x, self.height()-self.util_.y, dd)
+            co = glReadPixels(self.util_.x, self.height()-self.util_.y, 1, 1,GL_RGB, GL_UNSIGNED_BYTE)
+            
+            self.util_.util_select_3d(dd, px, co, self.obj.ctrl_wdg)
         
         bases = []
         center = [0,0,0]
@@ -117,7 +110,7 @@ class GL_Widget(QOpenGLWidget):
         center_top = center
         cyl_bases, cyl_tops = [], []
         trans_bezier_points = []
-        if self.move_pick:
+        if self.util_.move_pick:
             # glEnable
             dd = glReadPixels(self.move_x, self.height()-self.move_y, 1, 1,GL_DEPTH_COMPONENT, GL_FLOAT)[0][0]
             px = (0, 0, 0)
@@ -153,7 +146,7 @@ class GL_Widget(QOpenGLWidget):
         glDepthFunc(GL_LEQUAL)
         
 
-        self.paint_image(v, t)
+        self.util_.paint_image(v, t, self.painter, self.obj.ctrl_wdg)
         
         
         glEnable(GL_CULL_FACE)
@@ -172,7 +165,11 @@ class GL_Widget(QOpenGLWidget):
                     glMatrixMode(GL_MODELVIEW)
                     glLoadIdentity()
                     load_mat = self.util_.opengl_extrinsics
+                    
                     glLoadMatrixf(load_mat)
+                    
+                    # glTranslatef(self.x_shift, 0.0, 0.0)
+                    # glScalef(0.9, 0.9, 0.7)
                     
                     self.render_points()
         
@@ -214,18 +211,18 @@ class GL_Widget(QOpenGLWidget):
         self.painter.setPen(pen)
         
         # Draw all lines
-        if len(self.measured_pos) > 1 and self.obj.ctrl_wdg.ui.bMeasure:
-            for i in range(1,len(self.measured_pos),2):
-                p1 = self.measured_pos[i-1]
-                p2 = self.measured_pos[i]
+        if len(self.util_.measured_pos) > 1 and self.obj.ctrl_wdg.ui.bMeasure:
+            for i in range(1,len(self.util_.measured_pos),2):
+                p1 = self.util_.measured_pos[i-1]
+                p2 = self.util_.measured_pos[i]
                 self.painter.drawLine(QLineF(p1[0], p1[1], p2[0], p2[1]))
                 idx_t = int(i/2)
-                if len(self.measured_distances) > 0:
-                    self.painter.drawText(p2[0]+1, p2[1]-3, str(round(self.measured_distances[idx_t], 3)))
+                if len(self.util_.measured_distances) > 0:
+                    self.painter.drawText(p2[0]+1, p2[1]-3, str(round(self.util_.measured_distances[idx_t], 3)))
 
         # Draw transient Measuring Line
-        if self.obj.ctrl_wdg.ui.bMeasure and self.clicked_once and len(self.obj.ply_pts) > 0:            
-            self.painter.drawLine(QLineF(self.last_pos[0], self.last_pos[1], self.current_pos[0], self.current_pos[1]))
+        if self.obj.ctrl_wdg.ui.bMeasure and self.util_.clicked_once and len(self.obj.ply_pts) > 0:            
+            self.painter.drawLine(QLineF(self.util_.last_pos[0], self.util_.last_pos[1], self.util_.current_pos[0], self.util_.current_pos[1]))
         
         self.painter.end()
 
@@ -236,143 +233,29 @@ class GL_Widget(QOpenGLWidget):
         if self.util_.img_file is not None and self.obj.ctrl_wdg.ui.cross_hair:
             # print(a.x(), a.y())
             if a.x() > 0 and a.y() > 0:
-                x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
-                y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
+                x = int((a.x()-self.width()/2 - self.util_.offset_x)/self.util_._zoom + self.width()/2) 
+                y = int((a.y()-self.height()/2 - self.util_.offset_y)/self.util_._zoom + self.height()/2)
                 if x > self.util_.w1 and y > self.util_.h1 and x < self.util_.w2 and y < self.util_.h2:
                     self.obj.add_feature(x, y)
 
 
     def keyPressEvent(self, event):
-        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        f = self.obj.feature_panel.selected_feature_idx
-        t = self.obj.ctrl_wdg.selected_thumbnail_index
-
-        if self.obj.ctrl_wdg.ui.cross_hair and f != -1:
-            if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
-                self.obj.delete_feature()
-                
-            elif event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
-                if self.obj.ctrl_wdg.kf_method == "Regular":
-                    if event.key() == Qt.Key_Left:
-                        x = v.features_regular[t][f].x_loc-self.mv_pix
-                        y = v.features_regular[t][f].y_loc
-                    elif event.key() == Qt.Key_Right:
-                        x = v.features_regular[t][f].x_loc+self.mv_pix
-                        y = v.features_regular[t][f].y_loc
-                    elif event.key() == Qt.Key_Up:
-                        x = v.features_regular[t][f].x_loc
-                        y = v.features_regular[t][f].y_loc-self.mv_pix
-                    elif event.key() == Qt.Key_Down:
-                        x = v.features_regular[t][f].x_loc
-                        y = v.features_regular[t][f].y_loc+self.mv_pix
-                    else:
-                        x = v.features_regular[t][f].x_loc
-                        y = v.features_regular[t][f].y_loc
-                        
-                    self.obj.move_feature(x, y, v.features_regular[t][f])
-
-                elif self.obj.ctrl_wdg.kf_method == "Network":
-                    if event.key() == Qt.Key_Left:
-                        x = v.features_network[t][f].x_loc-self.mv_pix
-                        y = v.features_network[t][f].y_loc
-                    elif event.key() == Qt.Key_Right:
-                        x = v.features_network[t][f].x_loc+self.mv_pix
-                        y = v.features_network[t][f].y_loc
-                    elif event.key() == Qt.Key_Up:
-                        x = v.features_network[t][f].x_loc
-                        y = v.features_network[t][f].y_loc-self.mv_pix
-                    elif event.key() == Qt.Key_Down:
-                        x = v.features_network[t][f].x_loc
-                        y = v.features_network[t][f].y_loc+self.mv_pix
-                    else:
-                        x = v.features_network[t][f].x_loc
-                        y = v.features_network[t][f].y_loc
-
-                    self.obj.move_feature(x, y, v.features_network[t][f])
-                
-        if self.obj.ctrl_wdg.ui.cross_hair and event.modifiers() & Qt.ControlModifier:
-            self.obj.feature_panel.selected_feature_idx = -1
-            if event.key() == Qt.Key_C:
-                self.obj.ctrl_wdg.copy_features()
-            elif event.key() == Qt.Key_V:
-                self.obj.ctrl_wdg.paste_features()
-            
-            if self.obj.ctrl_wdg.kf_method == "Regular":
-                if event.key() == Qt.Key_Left:
-                    for i,fc in enumerate(v.features_regular[t]):
-                        if not v.hide_regular[t][i]:
-                            fc.x_loc = fc.x_loc - self.mv_pix
-                            fc.y_loc = fc.y_loc
-                            
-                elif event.key() == Qt.Key_Right:
-                    for i,fc in enumerate(v.features_regular[t]):
-                        if not v.hide_regular[t][i]:
-                            fc.x_loc = fc.x_loc + self.mv_pix
-                            fc.y_loc = fc.y_loc
-                            
-                elif event.key() == Qt.Key_Up:
-                    for i,fc in enumerate(v.features_regular[t]):
-                        if not v.hide_regular[t][i]:
-                            fc.x_loc = fc.x_loc 
-                            fc.y_loc = fc.y_loc - self.mv_pix
-                elif event.key() == Qt.Key_Down:
-                    for i,fc in enumerate(v.features_regular[t]):
-                        if not v.hide_regular[t][i]:
-                            fc.x_loc = fc.x_loc 
-                            fc.y_loc = fc.y_loc + self.mv_pix
-                            
-            elif self.obj.ctrl_wdg.kf_method == "Network":
-                if event.key() == Qt.Key_Left:
-                    for i,fc in enumerate(v.features_network[t]):
-                        if not v.hide_network[t][i]:
-                            fc.x_loc = fc.x_loc - self.mv_pix
-                            fc.y_loc = fc.y_loc
-                            
-                elif event.key() == Qt.Key_Right:
-                    for i,fc in enumerate(v.features_network[t]):
-                        if not v.hide_network[t][i]:
-                            fc.x_loc = fc.x_loc + self.mv_pix
-                            fc.y_loc = fc.y_loc
-                            
-                elif event.key() == Qt.Key_Up:
-                    for i,fc in enumerate(v.features_network[t]):
-                        if not v.network[t][i]:
-                            fc.x_loc = fc.x_loc 
-                            fc.y_loc = fc.y_loc - self.mv_pix
-                        
-                elif event.key() == Qt.Key_Down:
-                    for i,fc in enumerate(v.features_network[t]):
-                        if not v.hide_network[t][i]:
-                            fc.x_loc = fc.x_loc 
-                            fc.y_loc = fc.y_loc + self.mv_pix
-            
-            self.obj.feature_panel.display_data()
-                
-        if self.obj.ctrl_wdg.ui.bPick:
-            if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
-                if self.obj.cylinder_obj.selected_cylinder_idx != -1: 
-                    self.obj.cylinder_obj.delete_cylinder(self.obj.cylinder_obj.selected_cylinder_idx)
-                elif self.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
-                    self.obj.ctrl_wdg.quad_obj.delete_quad(self.obj.ctrl_wdg.quad_obj.selected_quad_idx)
-                elif self.obj.ctrl_wdg.connect_obj.selected_connect_idx != -1:
-                    self.obj.ctrl_wdg.connect_obj.delete_connect_group(self.obj.ctrl_wdg.connect_obj.selected_connect_idx)
-                else:
-                    print("No 3D object has been selected")
+        self.util_.util_key_press(event, self.obj.ctrl_wdg)
 
         super(GL_Widget, self).keyPressEvent(event)
 
 
     def wheelEvent(self, event):
-        if self.util_.img_file is not None and (self.obj.ctrl_wdg.ui.move_bool or self.obj.ctrl_wdg.ui.cross_hair):
+        if self.util_.img_file is not None and self.obj.ctrl_wdg.quad_obj.selected_quad_idx==-1:
             if event.angleDelta().y() > 0:
-                self._zoom += 0.1
+                self.util_._zoom += 0.1
             else:
-                self._zoom -= 0.1
+                self.util_._zoom -= 0.1
             # print(self.width()/2)
-            if self._zoom < 1:
-                self._zoom = 1
-                self.offset_x = 0
-                self.offset_y = 0
+            if self.util_._zoom < 1:
+                self.util_._zoom = 1
+                self.util_.offset_x = 0
+                self.util_.offset_y = 0
                 self.util_.set_default_view_param()
                 
         if self.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1 and self.obj.ctrl_wdg.ui.bPick:
@@ -384,93 +267,29 @@ class GL_Widget(QOpenGLWidget):
 
     # overriding the mousePressEvent method
     def mousePressEvent(self, event):
-        a = event.pos()
-        x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
-        y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
-        
-        v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        t = self.obj.ctrl_wdg.selected_thumbnail_index
-        
-        if event.button() == Qt.RightButton:
-            self.press_loc = (a.x(), a.y())
-        
-        elif event.button() == Qt.LeftButton and self.obj.ctrl_wdg.ui.cross_hair:
-            if self.obj.ctrl_wdg.kf_method == "Regular":
-                if len(v.features_regular) > 0:
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if not v.hide_regular[t][i]:
-                            d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
-                            if d < self.dist_thresh:
-                                self.obj.feature_panel.selected_feature_idx = i
-                                self.obj.feature_panel.select_feature()
-                                self.move_feature_bool = True
-
-
-            elif self.obj.ctrl_wdg.kf_method == "Network":
-                if len(v.features_network) > 0:
-                    for i, fc in enumerate(v.features_network[t]):
-                        if not v.hide_network[t][i]:
-                            d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
-                            if d < self.dist_thresh:
-                                self.obj.feature_panel.selected_feature_idx = i
-                                self.obj.feature_panel.select_feature()
-                                self.move_feature_bool = True
-
-        if self.obj.ctrl_wdg.ui.bQuad:
-            selected_feature = self.obj.ctrl_wdg.quad_obj.select_feature(x, y)
-            if not selected_feature:
-                self.x = a.x()
-                self.y = a.y()
-                self.pick = True
-                
-        if self.obj.ctrl_wdg.ui.bConnect:
-            selected_feature = self.obj.ctrl_wdg.connect_obj.select_feature(x, y)
-            if not selected_feature:
-                self.x = a.x()
-                self.y = a.y()
-                self.pick = True
-                
-        if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder:
-            selected_feature = self.obj.cylinder_obj.select_feature(x, y)
-            if not selected_feature:
-                self.x = a.x()
-                self.y = a.y()
-                self.pick = True
-                
-        if self.obj.ctrl_wdg.ui.bBezier:
-            selected_feature = self.obj.bezier_obj.select_feature(x, y)
-            if not selected_feature:
-                self.x = a.x()
-                self.y = a.y()
-                self.pick = True
-
-            
-        if self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bPick:
-            self.x = a.x()
-            self.y = a.y()
-            self.pick = True
+        self.util_.util_mouse_press(event, self.obj.ctrl_wdg)
 
 
     def mouseMoveEvent(self, event):
         a = event.pos()
-        x = int((a.x()-self.width()/2 - self.offset_x)/self._zoom + self.width()/2) 
-        y = int((a.y()-self.height()/2 - self.offset_y)/self._zoom + self.height()/2)
+        x = int((a.x()-self.width()/2 - self.util_.offset_x)/self.util_._zoom + self.width()/2) 
+        y = int((a.y()-self.height()/2 - self.util_.offset_y)/self.util_._zoom + self.height()/2)
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
         if self.obj.ctrl_wdg.ui.bMeasure and len(self.obj.ply_pts) > 0:    
-            self.current_pos = np.array([a.x(), a.y()])
+            self.util_.current_pos = np.array([a.x(), a.y()])
             
         if len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0:
             self.move_x = a.x()
             self.move_y = a.y()
-            self.move_pick = True
+            self.util_.move_pick = True
             
         if self.obj.ctrl_wdg.ui.cross_hair:
             if self.obj.ctrl_wdg.kf_method == "Regular":
-                if len(v.features_regular) > 0 and self.move_feature_bool:
+                if len(v.features_regular) > 0 and self.util_.move_feature_bool:
                     self.obj.move_feature(x, y, v.features_regular[self.obj.ctrl_wdg.selected_thumbnail_index][self.obj.feature_panel.selected_feature_idx])
                
             elif self.obj.ctrl_wdg.kf_method == "Network":
-                if len(v.features_network) > 0 and self.move_feature_bool:
+                if len(v.features_network) > 0 and self.util_.move_feature_bool:
                     self.obj.move_feature(x, y, v.features_network[self.obj.ctrl_wdg.selected_thumbnail_index][self.obj.feature_panel.selected_feature_idx])
 
 
@@ -481,144 +300,14 @@ class GL_Widget(QOpenGLWidget):
         if self.obj.ctrl_wdg.ui.move_bool or self.obj.ctrl_wdg.ui.cross_hair:
             if event.button() == Qt.RightButton:
                 self.release_loc = (a.x(), a.y())
-                if self._zoom >= 1:
-                    self.offset_x += (self.release_loc[0] - self.press_loc[0])
-                    self.offset_y += (self.release_loc[1] - self.press_loc[1])
+                if self.util_._zoom >= 1:
+                    self.util_.offset_x += (self.release_loc[0] - self.util_.press_loc[0])
+                    self.util_.offset_y += (self.release_loc[1] - self.util_.press_loc[1])
                     
             elif event.button() == Qt.LeftButton:
-                self.move_feature_bool = False
+                self.util_.move_feature_bool = False
                 
 
-    def paint_image(self, v, t):
-        if self.util_.img_file is not None:
-            self.painter.begin(self)
-            pen = QPen(QColor(250.0, 255.0, 255.0))
-            pen.setWidth(2)
-            self.painter.setPen(pen)
-            self.painter.setFont(self.painter.font())
-            
-            if self._zoom >=1:
-                # Pan the scene
-                self.painter.translate(self.offset_x, self.offset_y)
-                # Zoom the scene
-                self.painter.translate(self.width()/2, self.height()/2)
-                self.painter.scale(self._zoom, self._zoom)
-                self.painter.translate(-self.width()/2, -self.height()/2)
-                
-            
-            self.painter.drawImage(self.util_.w1, self.util_.h1, self.util_.img_file)
-            
-            if self.obj.ctrl_wdg.kf_method == "Regular":
-                if len(v.features_regular) > 0:
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if not v.hide_regular[t][i]:
-                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-    
-            elif self.obj.ctrl_wdg.kf_method == "Network":
-                if len(v.features_network) > 0:
-                    for i, fc in enumerate(v.features_network[t]):
-                        if not v.hide_network[t][i]:
-                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
-                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-                                   
-            pen = QPen(QColor(0, 0, 255))
-            pen.setWidth(2)
-            self.painter.setPen(pen)
-            
-            # Painting the selected feature
-            
-            if self.obj.feature_panel.selected_feature_idx != -1 and self.obj.ctrl_wdg.ui.cross_hair:
-                if self.obj.ctrl_wdg.kf_method == "Regular" and len(v.features_regular[t]) > 0 and not v.hide_regular[t][self.obj.feature_panel.selected_feature_idx]:
-                    fc = v.features_regular[t][self.obj.feature_panel.selected_feature_idx]
-                    self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
-                    self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                    self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-                
-                elif self.obj.ctrl_wdg.kf_method == "Network" and len(v.features_network[t]) > 0 and not v.hide_network[t][self.obj.feature_panel.selected_feature_idx]:
-                    fc = v.features_network[t][self.obj.feature_panel.selected_feature_idx]
-                    self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
-                    self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                    self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-            
-            
-            
-            # Painting for Quad Tool
-            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure) :
-                if self.obj.ctrl_wdg.kf_method == "Regular":
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if v.quad_groups_regular[t][i] != -1:
-                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-
-                    
-                elif self.obj.ctrl_wdg.kf_method == "Network":
-                    for i, fc in enumerate(v.features_network[t]):
-                        if v.quad_groups_network[t][i] != -1:
-                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-                            
-                            
-            # Painting for Dots Connecting Tool
-            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (self.obj.ctrl_wdg.ui.bConnect or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure):
-                if self.obj.ctrl_wdg.kf_method == "Regular":
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if v.connect_groups_regular[t][i] != -1:
-                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-
-                    
-                elif self.obj.ctrl_wdg.kf_method == "Network":
-                    for i, fc in enumerate(v.features_network[t]):
-                        if v.connect_groups_network[t][i] != -1:
-                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-                            
-   
-
-            # Painting for Sphere Tool
-            if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) and (self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure) :
-                if self.obj.ctrl_wdg.kf_method == "Regular":
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if v.cylinder_groups_regular[t][i] != -1:
-                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-
-                    
-                elif self.obj.ctrl_wdg.kf_method == "Network":
-                    for i, fc in enumerate(v.features_network[t]):
-                        if v.cylinder_groups_network[t][i] != -1:
-                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-                            
-            # Bezier tool
-            if (len(v.bezier_groups_regular) > 0 or len(v.bezier_groups_network) > 0) and self.obj.ctrl_wdg.ui.bBezier:
-                if self.obj.ctrl_wdg.kf_method == "Regular":
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if v.bezier_groups_regular[t][i] != -1:
-                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-
-
-                    
-                elif self.obj.ctrl_wdg.kf_method == "Network":
-                    for i, fc in enumerate(v.features_network[t]):
-                        if v.bezier_groups_network[t][i] != -1:
-                            self.painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            self.painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            self.painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))            
-            
-            
-            self.painter.end()
                 
     def select_color(self, i, offscreen_bool = False, fill_flag = True):
         if offscreen_bool:
@@ -739,7 +428,7 @@ class GL_Widget(QOpenGLWidget):
         # # print(bezier_points)
         
         glColor3f(0.0, 1.0, 0.0)
-        glPointSize(5)
+        glPointSize(5*self.util_._zoom)
         glBegin(GL_POINTS)
         
         for i in range(data.shape[0]):
@@ -843,106 +532,3 @@ class GL_Widget(QOpenGLWidget):
         glEnd()         
                 
                 
-                
-    def select_3d_point(self):
-        dd = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_DEPTH_COMPONENT, GL_FLOAT)[0][0]
-        px = gluUnProject(self.x, self.height()-self.y, dd)
-        # print("select and pick")
-        if dd < 1:
-            if self.obj.ctrl_wdg.ui.bBezier:
-                co = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_RGB, GL_UNSIGNED_BYTE)
-                ID = self.obj.ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
-                # print("ID : "+str(ID))
-                
-                if ID in self.obj.bezier_obj.bezier_count:
-                    idx = self.obj.bezier_obj.bezier_count.index(ID)
-                    self.obj.bezier_obj.selected_curve_idx = int(idx/2)
-                    self.obj.bezier_obj.selected_point_idx = idx % 2 + 1
-
-                else:    
-                    dist = []
-                    min_d = 0.0
-                    for i, data_val in enumerate(self.obj.bezier_obj.all_data_val):
-                        for j, pt in enumerate(data_val):
-                            d = distance.euclidean(pt, px)
-                            # print("Distance : "+str(d))
-                            dist.append(d)
-                    if len(dist) > 0:
-                        min_d = min(dist)
-                        
-                    if min_d > 0.02 or len(dist) == 0:
-                        self.obj.bezier_obj.data_val.append(np.array(px))
-                        if len(self.obj.bezier_obj.data_val) == 4:
-                            self.obj.bezier_obj.refresh_bezier_data()
-                    # else:
-                    #     print("This must be a bezier curve point")
-
-
-            
-            if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder:
-                self.obj.cylinder_obj.data_val.append(np.array(px))
-                if len(self.obj.cylinder_obj.data_val) == 4:
-                    self.obj.cylinder_obj.refresh_cylinder_data()
-                    
-            if self.obj.ctrl_wdg.ui.bPick:
-                co = glReadPixels(self.x, self.height()-self.y, 1, 1,GL_RGB, GL_UNSIGNED_BYTE)
-                
-                ID = self.obj.ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
-                # print("ID : "+str(ID))
-                if ID in self.obj.ctrl_wdg.quad_obj.quad_counts:
-                    self.obj.ctrl_wdg.quad_obj.selected_quad_idx = self.obj.ctrl_wdg.quad_obj.quad_counts.index(ID)
-                    self.obj.cylinder_obj.selected_cylinder_idx = -1
-                    self.obj.ctrl_wdg.connect_obj.selected_connect_idx = -1
-                    
-                elif ID in self.obj.cylinder_obj.cylinder_count:
-                    cyl_idx = self.obj.cylinder_obj.cylinder_count.index(ID)
-                    self.obj.cylinder_obj.selected_cylinder_idx = cyl_idx
-                    self.obj.ctrl_wdg.quad_obj.selected_quad_idx = -1
-                    self.obj.ctrl_wdg.connect_obj.selected_connect_idx = -1
-                    
-                elif ID in self.obj.ctrl_wdg.connect_obj.group_counts:
-                    connect_idx = self.obj.ctrl_wdg.connect_obj.group_counts.index(ID)
-                    self.obj.ctrl_wdg.connect_obj.selected_connect_idx = connect_idx
-                    self.obj.ctrl_wdg.quad_obj.selected_quad_idx = -1
-                    self.obj.cylinder_obj.selected_cylinder_idx = -1
-                    
-
-        if self.obj.ctrl_wdg.ui.bMeasure and dd < 1:
-            if self.bCalibrate:
-                if self.clicked_once:
-                    self.bCalibrate = False
-                    self.util_.create_calibration_panel()
-                    if self.util_.cal_dialog.exec():
-                        measured_dist = float(self.util_.e1.text())
-                        print("Measured distance : "+str(measured_dist))
-                        dist = np.sqrt(np.sum(np.square(np.array(px)-self.calc_last_3d_pos)))
-                        print("Calculated distance : "+str(dist))
-                        self.calibration_factor = measured_dist/dist
-                        self.util_.set_distance(measured_dist)
-                        self.measured_distances.append(measured_dist)
-
-                    self.clicked_once = not self.clicked_once
-                else:
-                    self.last_pos = np.array([self.x, self.y])
-                    self.measured_pos.append((self.x, self.y))
-                    self.calc_last_3d_pos = np.array(px)
-                
-            else:                
-                if self.clicked_once and self.calibration_factor != 1:
-                    self.dist = self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
-                    print("Calculated distance : "+str(self.dist))
-                    self.measured_distances.append(self.dist)
-                    self.util_.set_distance(self.dist)
-                    self.measured_pos.append((self.x, self.y))
-                    # print("Distance is measured as : "+str(self.dist))
-                else:
-                    self.last_pos = np.array([self.x, self.y])
-                    self.measured_pos.append((self.x, self.y))
-                    self.last_3d_pos = np.array(px)
-                    
-            # print(self.measured_pos)
-            # print(self.measured_distances)
- 
-            self.clicked_once = not self.clicked_once
-
-        self.pick = False

@@ -69,7 +69,7 @@ class UserInterface(QWidget):
         self.exit_pr = QAction(QIcon("./icons/exit_project.png"), "&Exit", self)
         fileMenu.addAction(self.exit_pr)
         self.exit_pr.triggered.connect(self.ctrl_wdg.main_file.implement_exit_project)
-        self.exit_pr.setShortcut("Esc")
+        self.exit_pr.setShortcut("ctrl+q")
         
 
         

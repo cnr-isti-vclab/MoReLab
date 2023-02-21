@@ -118,6 +118,7 @@ class Cylinder_Tool(QObject):
             base_points.append(center + radius*np.cos(sectorAngle)*t_vec + radius*np.sin(sectorAngle)*b_vec)
             
         return base_points, center
+    
         
         
     
@@ -136,6 +137,14 @@ class Cylinder_Tool(QObject):
         N = N/max(0.00005, np.linalg.norm(N))
         
         height = np.dot(H_vec, N)
+        # print(height)
+        if height < 0:
+            # print("Center : "+str(center))
+            return self.make_cylinder(center, p2, p1, p3)
+            
+            
+
+            
         
         b_vec = np.cross(t_vec, N)          # t_vec, b_vec and N form our x,y,z coordinate system
         
@@ -213,6 +222,8 @@ class Cylinder_Tool(QObject):
         N = np.cross(t_vec, b_vec_temp)
         N = N/max(0.000005, np.linalg.norm(N))
         height = np.dot(H_vec, N)
+        if height < 0:
+            return self.make_new_cylinder(p1, p3, p2, p4)
 
         b_vec = np.cross(t_vec, N)          # t_vec, b_vec and N form our x,y,z coordinate system
         
