@@ -155,7 +155,8 @@ class GL_Widget(QOpenGLWidget):
         
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
             for j, tup in enumerate(self.obj.camera_projection_mat):
-                if tup[0] == t:                    
+                if tup[0] == t: 
+                    glViewport(int(self.util_.offset_x), -1*int(self.util_.offset_y), int(self.width()), int(self.height()))
                     self.util_.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
                     glMatrixMode(GL_PROJECTION)
                     glLoadIdentity()
@@ -297,15 +298,19 @@ class GL_Widget(QOpenGLWidget):
                 
     def mouseReleaseEvent(self, event):
         a = event.pos()
+
+        if event.button() == Qt.RightButton:
+            self.release_loc = (a.x(), a.y())
+            if self.util_._zoom >= 1:
+                self.util_.offset_x += (self.release_loc[0] - self.util_.press_loc[0])
+                self.util_.offset_y += (self.release_loc[1] - self.util_.press_loc[1])
+
         if self.obj.ctrl_wdg.ui.move_bool or self.obj.ctrl_wdg.ui.cross_hair:
-            if event.button() == Qt.RightButton:
-                self.release_loc = (a.x(), a.y())
-                if self.util_._zoom >= 1:
-                    self.util_.offset_x += (self.release_loc[0] - self.util_.press_loc[0])
-                    self.util_.offset_y += (self.release_loc[1] - self.util_.press_loc[1])
-                    
-            elif event.button() == Qt.LeftButton:
+            if event.button() == Qt.LeftButton:
                 self.util_.move_feature_bool = False
+
+                    
+
                 
 
                 

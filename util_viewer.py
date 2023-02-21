@@ -6,6 +6,10 @@ from PIL.ImageQt import ImageQt
 import cv2
 import numpy as np
 from scipy.spatial import distance
+# from OpenGL.GL import *
+# from OpenGL.GLU import *
+# from PyQt5.QtOpenGL import *
+
 
 
 
@@ -94,8 +98,8 @@ class Util_viewer(QWidget):
         scale = self._zoom
         # print(K)
         # print(scale, self.offset_x, self.offset_y)
-        cx = K[0,2] + self.offset_x*scale
-        cy = K[1,2] + self.offset_y*scale
+        cx = K[0,2]
+        cy = K[1,2]
         # print(cx, cy)
         perspective = np.zeros((4,4))
 
@@ -103,8 +107,7 @@ class Util_viewer(QWidget):
         v = self.parent_viewer.obj.ctrl_wdg.mv_panel.movie_caps[self.parent_viewer.obj.ctrl_wdg.mv_panel.selected_movie_idx]
         width = v.width*(self.parent_viewer.width()/(self.w2 - self.w1))
         height = v.height*(self.parent_viewer.height()/(self.h2-self.h1))
-
-
+        
         perspective[0][0] =  2.0 * scale * K[0,0] / width
         perspective[1][1] = -2.0 * scale * K[1,1] / height
         perspective[2][0] =  1.0 - 2.0 * cx / width
@@ -123,6 +126,7 @@ class Util_viewer(QWidget):
         out = Rt.transpose()
 
         self.opengl_extrinsics = out #np.matmul(self.opengl_intrinsics, Rt)
+        
 
     def create_calibration_panel(self):
         self.cal_dialog = QDialog()
@@ -312,41 +316,42 @@ class Util_viewer(QWidget):
                                 self.parent_viewer.obj.feature_panel.selected_feature_idx = i
                                 self.parent_viewer.obj.feature_panel.select_feature()
                                 self.move_feature_bool = True
-
-        if ctrl_wdg.ui.bQuad:
-            selected_feature = ctrl_wdg.quad_obj.select_feature(x, y)
-            if not selected_feature:
-                self.x = a.x()
-                self.y = a.y()
-                self.pick = True
+                                
+        if event.button() == Qt.LeftButton:
+            if ctrl_wdg.ui.bQuad:
+                selected_feature = ctrl_wdg.quad_obj.select_feature(x, y)
+                if not selected_feature:
+                    self.x = a.x()
+                    self.y = a.y()
+                    self.pick = True
+                    
+            if ctrl_wdg.ui.bConnect:
+                selected_feature = ctrl_wdg.connect_obj.select_feature(x, y)
+                if not selected_feature:
+                    self.x = a.x()
+                    self.y = a.y()
+                    self.pick = True
+                    
+            if ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder:
+                selected_feature = self.parent_viewer.obj.cylinder_obj.select_feature(x, y)
+                if not selected_feature:
+                    self.x = a.x()
+                    self.y = a.y()
+                    self.pick = True
+                    
+            if ctrl_wdg.ui.bBezier:
+                selected_feature = self.parent_viewer.obj.bezier_obj.select_feature(x, y)
+                if not selected_feature:
+                    self.x = a.x()
+                    self.y = a.y()
+                    self.pick = True
+    
                 
-        if ctrl_wdg.ui.bConnect:
-            selected_feature = ctrl_wdg.connect_obj.select_feature(x, y)
-            if not selected_feature:
+            if ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick:
                 self.x = a.x()
                 self.y = a.y()
                 self.pick = True
-                
-        if ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder:
-            selected_feature = self.parent_viewer.obj.cylinder_obj.select_feature(x, y)
-            if not selected_feature:
-                self.x = a.x()
-                self.y = a.y()
-                self.pick = True
-                
-        if ctrl_wdg.ui.bBezier:
-            selected_feature = self.parent_viewer.obj.bezier_obj.select_feature(x, y)
-            if not selected_feature:
-                self.x = a.x()
-                self.y = a.y()
-                self.pick = True
-
-            
-        if ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick:
-            self.x = a.x()
-            self.y = a.y()
-            self.pick = True
-         
+             
     
                 
     def paint_image(self, v, t, painter, ctrl_wdg):
