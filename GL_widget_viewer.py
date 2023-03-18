@@ -50,7 +50,7 @@ class GL_Widget(QOpenGLWidget):
     def paintGL(self):
         t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        
+        # print("Movie index : "+str(self.obj.ctrl_wdg.mv_panel.selected_movie_idx))
 ######################################################################################
         # Offscreen rendering
         if not self.flag_g:
@@ -94,8 +94,6 @@ class GL_Widget(QOpenGLWidget):
                         self.render_cylinders(True, False)
                         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
                         
-                    if self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bPick:
-                        self.render_bezier(True)
 
         if self.util_.pick:
             dd = glReadPixels(self.util_.x, self.height()-self.util_.y, 1, 1,GL_DEPTH_COMPONENT, GL_FLOAT)[0][0]
@@ -109,7 +107,6 @@ class GL_Widget(QOpenGLWidget):
         center_base = center
         center_top = center
         cyl_bases, cyl_tops = [], []
-        trans_bezier_points = []
         if self.util_.move_pick:
             # glEnable
             dd = glReadPixels(self.move_x, self.height()-self.move_y, 1, 1,GL_DEPTH_COMPONENT, GL_FLOAT)[0][0]
@@ -129,10 +126,6 @@ class GL_Widget(QOpenGLWidget):
                     elif len(self.obj.cylinder_obj.data_val) == 3:
                         cyl_bases, cyl_tops, center_base, center_top = self.obj.cylinder_obj.make_cylinder(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], self.obj.cylinder_obj.data_val[2], np.array(px))
                         
-                if self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bPick:
-                    if len(self.obj.bezier_obj.data_val) == 3:
-                        trans_bezier_points = self.obj.bezier_obj.bezier_curve_range(self.obj.bezier_obj.num_pts, self.obj.bezier_obj.data_val[0], self.obj.bezier_obj.data_val[1], self.obj.bezier_obj.data_val[2], np.array(px))
-
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBindTexture(GL_TEXTURE_2D, 0)
@@ -157,6 +150,7 @@ class GL_Widget(QOpenGLWidget):
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t: 
                     glViewport(int(self.util_.offset_x), -1*int(self.util_.offset_y), int(self.width()), int(self.height()))
+
                     self.util_.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
                     glMatrixMode(GL_PROJECTION)
                     glLoadIdentity()
@@ -169,18 +163,15 @@ class GL_Widget(QOpenGLWidget):
                     
                     glLoadMatrixf(load_mat)
                     
-                    # glTranslatef(self.x_shift, 0.0, 0.0)
-                    # glScalef(0.9, 0.9, 0.7)
-                    
                     self.render_points()
-        
-                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure:
+
+                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick :
                         self.render_quads(False)
                     
-                    if self.obj.ctrl_wdg.ui.bConnect or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure :
+                    if self.obj.ctrl_wdg.ui.bConnect or self.obj.ctrl_wdg.ui.bPick :
                         self.render_dot_connects(False)
                     
-                    if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bMeasure:
+                    if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bnCylinder:
                         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
                         if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder:
                             self.render_transient_circle(bases, center, self.fill_color)
@@ -194,37 +185,59 @@ class GL_Widget(QOpenGLWidget):
                         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
                         
                     if self.obj.ctrl_wdg.ui.bBezier:
-                        self.render_bezier(False)
-                        
-                        if len(trans_bezier_points) > 0:
-                            glColor3f(0.0, 0.0, 0.0)
-                            glBegin(GL_LINE_STRIP)
-                            for point in trans_bezier_points:
-                                glVertex3f(point[0], point[1], point[2])
-                            glEnd()
+                        self.render_bezier(v, t)
+                        if len(self.obj.curve_obj.final_cylinder_bases) > 0:
+                            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
+                            self.render_general_cylinder(self.fill_color)
+                            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
+                            self.render_general_cylinder(self.boundary_color)
+                            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
+
 
         glDisable(GL_CULL_FACE)
 
 
         self.painter.begin(self)
-        pen = QPen(QColor(255, 255, 255))
-        pen.setWidth(2)
+        pen = QPen(QColor(0, 255, 0))
+        pen.setWidth(3)
         self.painter.setPen(pen)
+        self.painter.setFont(QFont("times",10))
+    
+                
+        if self.util_._zoom >=1:
+            # Pan the scene
+            self.painter.translate(self.util_.offset_x, self.util_.offset_y)
+            # Zoom the scene
+            self.painter.translate(self.width()/2, self.height()/2)
+            self.painter.scale(self.util_._zoom, self.util_._zoom)
+            self.painter.translate(-self.width()/2, -self.height()/2)
         
         # Draw all lines
-        if len(self.util_.measured_pos) > 1 and self.obj.ctrl_wdg.ui.bMeasure:
-            for i in range(1,len(self.util_.measured_pos),2):
-                p1 = self.util_.measured_pos[i-1]
-                p2 = self.util_.measured_pos[i]
-                self.painter.drawLine(QLineF(p1[0], p1[1], p2[0], p2[1]))
+        measured_pos = []
+        measured_dist = []
+        
+        if self.obj.ctrl_wdg.kf_method == "Regular":
+            if len(v.measured_pos_regular) > 0:
+                measured_pos = v.measured_pos_regular[t]
+                measured_dist = v.measured_distances_regular[t]
+        elif self.obj.ctrl_wdg.kf_method == "Network":
+            if len(v.measured_pos_network) > 0:
+                measured_pos = v.measured_pos_network[t]
+                measured_dist = v.measured_distances_network[t]
+            
+        if len(measured_pos) > 1 and self.obj.ctrl_wdg.ui.bMeasure:
+            for i in range(1,len(measured_pos),2):
+                p1 = measured_pos[i-1]
+                p2 = measured_pos[i]
+                self.painter.drawLine(QLineF(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1])))
                 idx_t = int(i/2)
-                if len(self.util_.measured_distances) > 0:
-                    self.painter.drawText(p2[0]+1, p2[1]-3, str(round(self.util_.measured_distances[idx_t], 3)))
+                if len(measured_dist) > 0:
+                    self.painter.drawText(p2[0]-20, p2[1]+25, str(round(measured_dist[idx_t], 3)))
 
         # Draw transient Measuring Line
-        if self.obj.ctrl_wdg.ui.bMeasure and self.util_.clicked_once and len(self.obj.ply_pts) > 0:            
+        if self.obj.ctrl_wdg.ui.bMeasure and self.util_.clicked_once:            
             self.painter.drawLine(QLineF(self.util_.last_pos[0], self.util_.last_pos[1], self.util_.current_pos[0], self.util_.current_pos[1]))
-        
+
         self.painter.end()
 
 
@@ -247,23 +260,27 @@ class GL_Widget(QOpenGLWidget):
 
 
     def wheelEvent(self, event):
-        if self.util_.img_file is not None and self.obj.ctrl_wdg.quad_obj.selected_quad_idx==-1:
-            if event.angleDelta().y() > 0:
-                self.util_._zoom += 0.1
+        if self.util_.img_file is not None:
+            if self.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1 and self.obj.ctrl_wdg.ui.bPick:
+                if event.angleDelta().y() > 0:
+                    self.obj.ctrl_wdg.quad_obj.scale_up()
+                else:
+                    self.obj.ctrl_wdg.quad_obj.scale_down()
+
+
             else:
-                self.util_._zoom -= 0.1
-            # print(self.width()/2)
-            if self.util_._zoom < 1:
-                self.util_._zoom = 1
-                self.util_.offset_x = 0
-                self.util_.offset_y = 0
-                self.util_.set_default_view_param()
+                if event.angleDelta().y() > 0:
+                    self.util_._zoom += 0.1
+                else:
+                    self.util_._zoom -= 0.1
+                # print(self.width()/2)
+                if self.util_._zoom < 1:
+                    self.util_._zoom = 1
+                    self.util_.offset_x = 0
+                    self.util_.offset_y = 0
+                    self.util_.set_default_view_param()
                 
-        if self.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1 and self.obj.ctrl_wdg.ui.bPick:
-            if event.angleDelta().y() > 0:
-                self.obj.ctrl_wdg.quad_obj.scale_up()
-            else:
-                self.obj.ctrl_wdg.quad_obj.scale_down()
+
 
 
     # overriding the mousePressEvent method
@@ -276,9 +293,9 @@ class GL_Widget(QOpenGLWidget):
         x = int((a.x()-self.width()/2 - self.util_.offset_x)/self.util_._zoom + self.width()/2) 
         y = int((a.y()-self.height()/2 - self.util_.offset_y)/self.util_._zoom + self.height()/2)
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        if self.obj.ctrl_wdg.ui.bMeasure and len(self.obj.ply_pts) > 0:    
-            self.util_.current_pos = np.array([a.x(), a.y()])
-            
+        if (self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bBezier) and len(self.obj.ply_pts) > 0:    
+            self.util_.current_pos = np.array([x, y])
+    
         if len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0:
             self.move_x = a.x()
             self.move_y = a.y()
@@ -500,40 +517,104 @@ class GL_Widget(QOpenGLWidget):
                 glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
                 glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
                 glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                glEnd()
-
-    def render_bezier(self, offscreen_bool = False):
-        if not offscreen_bool:
-            glColor3f(0.0, 0.0, 0.0)
-            for i,bezier_points in enumerate(self.obj.bezier_obj.bezier_points):            
-                glBegin(GL_LINE_STRIP)
-                for point in bezier_points:
-                    glVertex3f(point[0], point[1], point[2])
-                glEnd()
+                glEnd()      
+                
+                
+    def render_curve_planes(self):
+        for i, pt_tup in enumerate(self.obj.curve_obj.planes):
+            glColor3f(0.38, 0.85, 0.211)
+            glBegin(GL_TRIANGLES)      
+            glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+    
+            glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+            glEnd()
             
-        if offscreen_bool:
-            glPointSize(15)
-        else:
-            glPointSize(6)
-        glBegin(GL_POINTS)
+            
+    def render_bezier(self, v, t):
         
-        for i, data_val in enumerate(self.obj.bezier_obj.all_data_val):    
-            co1 = self.obj.bezier_obj.colors[2*i+1]
-            co2 = self.obj.bezier_obj.colors[2*i+2]
-
-            # print("---------------------")
-            for j, pt in enumerate(data_val):
-                if j==1 and offscreen_bool:
-                    glColor3f(co1[0]/255, co1[1]/255, co1[2]/255)
-                elif j==2 and offscreen_bool:
-                    glColor3f(co2[0]/255, co2[1]/255, co2[2]/255)
-                else:
-                    glColor3f(0.0, 0.0, 1.0)
-                glVertex3f(pt[0], pt[1], pt[2])
-        if self.obj.bezier_obj.selected_curve_idx != -1 and not offscreen_bool:
+        glColor3f(0.0, 0.0, 0.0)
+        pts = []
+        if self.obj.ctrl_wdg.kf_method == "Regular":
+            pts = v.curve_3d_point_regular[t]
+        elif self.obj.ctrl_wdg.kf_method == "Network":
+            pts = v.curve_3d_point_network[t]
+        
+        if len(pts) > 4:
+            glBegin(GL_LINE_STRIP)
+            for i in range(5, len(pts), 1):
+                point = pts[i]
+                glVertex3f(point[0], point[1], point[2])
+            glEnd()
+    
+            glColor(0.0, 0.0, 0.0)
+            # glPointSize(10)
+            glPointSize(5*self.util_._zoom)
+            glBegin(GL_POINTS)
+            for i in range(1,5,1):
+                p = pts[i]
+                glVertex3f(p[0], p[1], p[2])
+            glEnd()
+            
+        if len(self.obj.curve_obj.final_bezier) > 0:
+            ctrl_pts = self.obj.curve_obj.ctrl_pts_final[-1]
             glColor3f(1.0, 0.0, 0.0)
-            pt = self.obj.bezier_obj.all_data_val[self.obj.bezier_obj.selected_curve_idx][self.obj.bezier_obj.selected_point_idx]
-            glVertex3f(pt[0], pt[1], pt[2])
-        glEnd()         
-                
-                
+            glPointSize(5*self.util_._zoom)
+            glBegin(GL_POINTS)
+            for i in range(ctrl_pts.shape[0]):
+                p = ctrl_pts[i]
+                glVertex3f(p[0], p[1], p[2])
+            glEnd()
+
+            
+            glColor3f(1.0, 0.0, 0.0)        
+            glBegin(GL_LINE_STRIP)
+            points = self.obj.curve_obj.final_bezier[-1]
+            for i in range(points.shape[0]):
+                glVertex3f(points[i,0], points[i,1], points[i,2])
+            glEnd()
+            
+        
+    def render_general_cylinder(self, color):
+        
+        # for i, vertices in enumerate(self.obj.curve_obj.final_cylinder_bases):
+        #     top_vertices = self.obj.curve_obj.final_cylinder_tops[i]
+            
+        #     glColor3f(color[0], color[1], color[2])
+        #     glBegin(GL_TRIANGLE_STRIP)
+        #     for k in range(0,len(vertices), 1):
+        #         glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+        #         glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
+        #     glEnd()
+        
+        
+        # Draw cylinder bases
+        for i, vertices in enumerate(self.obj.curve_obj.final_cylinder_bases):
+            base_center = self.obj.curve_obj.final_bezier[-1][i]
+            glColor4f(color[0], color[1], color[2], 0.1)
+            glBegin(GL_TRIANGLES)
+            for k in range(1,len(vertices)):                                
+                glVertex3f(base_center[0], base_center[1], base_center[2])
+                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+
+            glEnd()
+
+        # # Draw cylinder tops
+        # for i, vertices in enumerate(self.obj.curve_obj.final_cylinder_tops):
+        #     top_center = self.obj.curve_obj.final_bezier[-1][i+1]
+        #     # color = self.select_color(i, offscreen_bool, fill_flag)
+        #     # print(top_center)
+        #     glColor4f(color[0], color[1], color[2], 0.1)
+        #     glBegin(GL_TRIANGLES)
+        #     for k in range(1,len(vertices)):                                
+        #         glVertex3f(top_center[0], top_center[1], top_center[2])
+        #         glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+        #         glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+
+        #     glEnd()
+        
+            

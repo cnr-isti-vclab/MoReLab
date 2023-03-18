@@ -15,6 +15,11 @@ class Video:
         self.key_frame_indices_regular = []
         self.key_frames_network = []
         self.key_frame_indices_network = []
+        self.measured_pos_regular = []
+        self.measured_pos_network = []
+        self.measured_distances_regular = []
+        self.measured_distances_network = []
+        
         
         self.n_objects_kf_regular = []
         self.features_regular = []
@@ -22,7 +27,9 @@ class Video:
         self.quad_groups_regular = []
         self.connect_groups_regular = []
         self.cylinder_groups_regular = []
-        self.bezier_groups_regular = []
+        self.curve_groups_regular = []
+        self.curve_pts_regular = []
+        self.curve_3d_point_regular = []
         
         self.n_objects_kf_network = []
         self.features_network = []
@@ -30,7 +37,9 @@ class Video:
         self.quad_groups_network = []
         self.connect_groups_network = []
         self.cylinder_groups_network = []
-        self.bezier_groups_network = []
+        self.curve_groups_network = []
+        self.curve_pts_network = []
+        self.curve_3d_point_network = []
         
         self.summary = ""
 
@@ -47,13 +56,17 @@ class Video:
     def extract_frames_regularly(self, sampling_rate):
         self.key_frames_regular = []
         self.key_frame_indices_regular = []
+        self.measured_pos_regular = []
+        self.measured_distances_regular = []
         self.n_objects_kf_regular = []
         self.features_regular = []
         self.hide_regular = []
         self.quad_groups_regular = []
         self.connect_groups_regular = []
         self.cylinder_groups_regular = []
-        self.bezier_groups_regular = []
+        self.curve_groups_regular = []
+        self.curve_pts_regular = []
+        self.curve_3d_point_regular = []
         
         self.cap = cv2.VideoCapture(self.video_path)
         count = 0
@@ -73,12 +86,16 @@ class Video:
     def init_features_regular(self, n):        
         for i in range(n):
             self.n_objects_kf_regular.append(0)
+            self.measured_pos_regular.append([])
+            self.measured_distances_regular.append([])
             self.features_regular.append([])
             self.hide_regular.append([])
             self.quad_groups_regular.append([])
             self.connect_groups_regular.append([])
             self.cylinder_groups_regular.append([])
-            self.bezier_groups_regular.append([])
+            self.curve_groups_regular.append([])
+            self.curve_pts_regular.append([])
+            self.curve_3d_point_regular.append([])
     
     
     
@@ -167,13 +184,16 @@ class Video:
         # print("n : "+str(n))
         self.key_frames_network = []
         self.key_frame_indices_network = []
+        self.measured_pos_network = []
+        self.measured_distances_network = []
         self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
         self.quad_groups_network = []
         self.connect_groups_network = []
         self.cylinder_groups_network = []
-        self.bezier_groups_network = []
+        self.curve_pts_network = []
+        self.curve_3d_point_network = []
 
 
 
@@ -238,11 +258,15 @@ class Video:
     def init_features_network(self, n):        
         for i in range(n):
             self.n_objects_kf_network.append(0)
+            self.measured_pos_network.append([])
+            self.measured_distances_network.append([])
             self.features_network.append([])
             self.hide_network.append([])
             self.quad_groups_network.append([])
             self.connect_groups_network.append([])
             self.cylinder_groups_network.append([])
-            self.bezier_groups_network.append([])
+            self.curve_groups_network.append([])
+            self.curve_pts_network.append([])
+            self.curve_3d_point_network.append([])
 
 

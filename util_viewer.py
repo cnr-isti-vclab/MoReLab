@@ -21,15 +21,19 @@ class Util_viewer(QWidget):
         self.mv_pix, self.dist_thresh = 1, 10
         self._zoom, self.offset_x, self.offset_y = 1, 0, 0
         self.x, self.y = 1, 1
+        self.x_zoomed, self.y_zoomed = 1, 1
         self.pick, self.move_feature_bool, self.move_pick = False, False, False
         self.clicked_once = False
         self.last_3d_pos = np.array([0.0,0.0, 0.0])
+
         self.last_pos = np.array([0.0,0.0])
         self.current_pos = np.array([0.0,0.0])
         self.calibration_factor, self.dist = 1.0, 0.0
         self.bCalibrate = True
-        self.measured_pos = []
         self.measured_distances = []
+        self.bFirst_curve = False
+        self.curve_lp = np.array([0.0,0.0])
+        self.curve_cp = np.array([0.0,0.0])
         
         self.aspect_image = 0
         self.aspect_widget = self.parent_viewer.width()/self.parent_viewer.height()
@@ -47,13 +51,13 @@ class Util_viewer(QWidget):
             self.img_file = None
         else:
             self.aspect_image = image.shape[1]/image.shape[0]
-            # print("Width : "+str(self.parent_viewer.width()))
-            # print("Height : "+str(self.parent_viewer.height()))
+            # print("widget Width : "+str(self.parent_viewer.width()))
+            # print("widget Height : "+str(self.parent_viewer.height()))
             self.aspect_widget = self.parent_viewer.width()/self.parent_viewer.height()
             self.set_default_view_param()
             w = int(self.w2-self.w1)
             h = int(self.h2-self.h1)
-            # print(image.shape)
+            # print("adjusted width and height of widget")
             # print(w,h)
     
             image = cv2.resize(image, (w, h), interpolation = cv2.INTER_AREA)
@@ -163,8 +167,23 @@ class Util_viewer(QWidget):
         f = self.parent_viewer.obj.feature_panel.selected_feature_idx
         t = ctrl_wdg.selected_thumbnail_index
         
+        
+        if ctrl_wdg.ui.bBezier and event.key() == Qt.Key_Escape:
+            self.parent_viewer.obj.curve_obj.find_final_curve()
+        
+        
         if ctrl_wdg.ui.cross_hair and event.key() == Qt.Key_Escape:
             self.parent_viewer.obj.feature_panel.selected_feature_idx = -1
+            
+        if ctrl_wdg.ui.bMeasure and event.key() == Qt.Key_L:
+            if ctrl_wdg.kf_method == "Regular":
+                v.measured_pos_regular[t].pop()
+                v.measured_pos_regular[t].pop()
+                v.measured_distances_regular[t].pop()
+            elif ctrl_wdg.kf_method == "Network":
+                v.measured_pos_network[t].pop()
+                v.measured_pos_network[t].pop()
+                v.measured_distances_network[t].pop()
             
         if ctrl_wdg.ui.cross_hair and f != -1:
             if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
@@ -295,62 +314,64 @@ class Util_viewer(QWidget):
         if event.button() == Qt.RightButton:
             self.press_loc = (a.x(), a.y())
         
-        elif event.button() == Qt.LeftButton and ctrl_wdg.ui.cross_hair:
-            if ctrl_wdg.kf_method == "Regular":
-                if len(v.features_regular) > 0:
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if not v.hide_regular[t][i]:
-                            d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
-                            if d < self.dist_thresh:
-                                self.parent_viewer.obj.feature_panel.selected_feature_idx = i
-                                self.parent_viewer.obj.feature_panel.select_feature()
-                                self.move_feature_bool = True
-
-
-            elif ctrl_wdg.kf_method == "Network":
-                if len(v.features_network) > 0:
-                    for i, fc in enumerate(v.features_network[t]):
-                        if not v.hide_network[t][i]:
-                            d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
-                            if d < self.dist_thresh:
-                                self.parent_viewer.obj.feature_panel.selected_feature_idx = i
-                                self.parent_viewer.obj.feature_panel.select_feature()
-                                self.move_feature_bool = True
-                                
-        if event.button() == Qt.LeftButton:
-            if ctrl_wdg.ui.bQuad:
-                selected_feature = ctrl_wdg.quad_obj.select_feature(x, y)
-                if not selected_feature:
-                    self.x = a.x()
-                    self.y = a.y()
-                    self.pick = True
-                    
-            if ctrl_wdg.ui.bConnect:
-                selected_feature = ctrl_wdg.connect_obj.select_feature(x, y)
-                if not selected_feature:
-                    self.x = a.x()
-                    self.y = a.y()
-                    self.pick = True
-                    
-            if ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder:
-                selected_feature = self.parent_viewer.obj.cylinder_obj.select_feature(x, y)
-                if not selected_feature:
-                    self.x = a.x()
-                    self.y = a.y()
-                    self.pick = True
-                    
-            if ctrl_wdg.ui.bBezier:
-                selected_feature = self.parent_viewer.obj.bezier_obj.select_feature(x, y)
-                if not selected_feature:
-                    self.x = a.x()
-                    self.y = a.y()
-                    self.pick = True
+        elif event.button() == Qt.LeftButton:
+            if ctrl_wdg.ui.cross_hair:
+                if ctrl_wdg.kf_method == "Regular":
+                    if len(v.features_regular) > 0:
+                        for i, fc in enumerate(v.features_regular[t]):
+                            if not v.hide_regular[t][i]:
+                                d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
+                                if d < self.dist_thresh:
+                                    self.parent_viewer.obj.feature_panel.selected_feature_idx = i
+                                    self.parent_viewer.obj.feature_panel.select_feature()
+                                    self.move_feature_bool = True
     
-                
-            if ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick:
-                self.x = a.x()
-                self.y = a.y()
-                self.pick = True
+    
+                elif ctrl_wdg.kf_method == "Network":
+                    if len(v.features_network) > 0:
+                        for i, fc in enumerate(v.features_network[t]):
+                            if not v.hide_network[t][i]:
+                                d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
+                                if d < self.dist_thresh:
+                                    self.parent_viewer.obj.feature_panel.selected_feature_idx = i
+                                    self.parent_viewer.obj.feature_panel.select_feature()
+                                    self.move_feature_bool = True
+            
+            selected_feature = False
+            if (ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bConnect or ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bBezier) and len(self.parent_viewer.obj.ply_pts) > 0:
+                if ctrl_wdg.ui.bQuad:
+                    selected_feature = ctrl_wdg.quad_obj.select_feature(x, y)
+                if ctrl_wdg.ui.bConnect:
+                    selected_feature = ctrl_wdg.connect_obj.select_feature(x, y)
+                if ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder:
+                    selected_feature = self.parent_viewer.obj.cylinder_obj.select_feature(x, y)
+                    
+                if ctrl_wdg.ui.bBezier:
+                    if len(self.parent_viewer.obj.curve_obj.final_bezier) < 1:
+                        # print("Inside")
+                        if ctrl_wdg.kf_method == "Regular":
+                            if len(v.curve_groups_regular[t]) < 4 and len(v.features_regular[t]) > 0:
+                                self.parent_viewer.obj.curve_obj.make_curve(x, y, self.w1, self.w2, self.h1, self.h2)
+                                selected_feature = True
+                            else:                     
+                                bs = self.parent_viewer.obj.curve_obj.select_feature(x, y)
+                                selected_feature = not bs
+                                
+                        elif ctrl_wdg.kf_method == "Network":
+                            if len(v.curve_groups_network[t]) < 4 and len(v.features_network[t]) > 0:
+                                self.parent_viewer.obj.curve_obj.make_curve(x, y)
+                                selected_feature = True
+                            else:                     
+                                bs = self.parent_viewer.obj.curve_obj.select_feature(x, y, self.w1, self.w2, self.h1, self.h2)
+                                selected_feature = not bs
+                                
+                        
+                    
+                if not selected_feature:
+                    self.x = a.x()
+                    self.y = a.y()
+                    self.x_zoomed, self.y_zoomed = x, y
+                    self.pick = True
              
     
                 
@@ -361,6 +382,7 @@ class Util_viewer(QWidget):
             pen.setWidth(2)
             painter.setPen(pen)
             painter.setFont(painter.font())
+            painter.setBrush(QBrush(Qt.blue, Qt.SolidPattern))
             
             if self._zoom >=1:
                 # Pan the scene
@@ -410,7 +432,7 @@ class Util_viewer(QWidget):
             
             
             # Painting for Quad Tool
-            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bMeasure) :
+            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bPick) :
                 if ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
                         if v.quad_groups_regular[t][i] != -1:
@@ -428,7 +450,7 @@ class Util_viewer(QWidget):
                             
                             
             # Painting for Dots Connecting Tool
-            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (ctrl_wdg.ui.bConnect or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bMeasure):
+            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (ctrl_wdg.ui.bConnect or ctrl_wdg.ui.bPick):
                 if ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
                         if v.connect_groups_regular[t][i] != -1:
@@ -444,10 +466,9 @@ class Util_viewer(QWidget):
                             painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                             painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
-   
 
             # Painting for Sphere Tool
-            if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) and (ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bMeasure) :
+            if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) and (ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bPick) :
                 if ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
                         if v.cylinder_groups_regular[t][i] != -1:
@@ -463,67 +484,96 @@ class Util_viewer(QWidget):
                             painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                             painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
-            # Bezier tool
-            if (len(v.bezier_groups_regular) > 0 or len(v.bezier_groups_network) > 0) and ctrl_wdg.ui.bBezier:
+
+
+            # Painting for selected curve point
+            if (len(v.curve_pts_regular) > 0 or len(v.curve_pts_network) > 0) and ctrl_wdg.ui.bBezier :
                 if ctrl_wdg.kf_method == "Regular":
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if v.bezier_groups_regular[t][i] != -1:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-
-
-                    
+                    if len(v.curve_pts_regular[t]) > 0:
+                        ind = v.curve_pts_regular[t][0]
+                        fc = v.features_regular[t][ind]
+                        painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                        painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                        painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                        
                 elif ctrl_wdg.kf_method == "Network":
-                    for i, fc in enumerate(v.features_network[t]):
-                        if v.bezier_groups_network[t][i] != -1:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))            
+                    if len(v.curve_pts_network[t]) > 0:
+                        ind = v.curve_pts_network[t][-1]
+                        fc = v.features_network[t][ind]
+                        painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                        painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                        painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+
+
+                            
+            # #### Painting for Curve
+            if ctrl_wdg.ui.bBezier and (len(v.curve_groups_regular) > 0 or len(v.curve_groups_network) > 0):
+                # print(v.curve_groups_regular[t])
+                if ctrl_wdg.kf_method == "Regular":
+                    data_val = v.curve_groups_regular[t]
+
+                elif ctrl_wdg.kf_method == "Network":
+                    data_val = v.curve_groups_network[t]
+
+                if 0 < len(data_val) < 4:
+                    painter.drawLine(QLineF(data_val[-1][0], data_val[-1][1] ,  self.current_pos[0], self.current_pos[1]))
             
-            
+                for i, p in enumerate(data_val):
+                    painter.drawEllipse(p[0]-3, p[1]-3, 6, 6)
+                
+                for j in range(len(data_val) - 1):
+                    painter.drawLine(QLineF(data_val[j][0], data_val[j][1] ,  data_val[j+1][0], data_val[j+1][1]))
+ 
             painter.end()
             
                 
     def util_select_3d(self, dd, px, co, ctrl_wdg):
         # print("select and pick")
-        if dd < 1:
-            if ctrl_wdg.ui.bBezier:
-                ID = ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
-                # print("ID : "+str(ID))
-                
-                if ID in self.parent_viewer.obj.bezier_obj.bezier_count:
-                    idx = self.parent_viewer.obj.bezier_obj.bezier_count.index(ID)
-                    self.parent_viewer.obj.bezier_obj.selected_curve_idx = int(idx/2)
-                    self.parent_viewer.obj.bezier_obj.selected_point_idx = idx % 2 + 1
-
-                else:    
-                    dist = []
-                    min_d = 0.0
-                    for i, data_val in enumerate(self.parent_viewer.obj.bezier_obj.all_data_val):
-                        for j, pt in enumerate(data_val):
-                            d = distance.euclidean(pt, px)
-                            # print("Distance : "+str(d))
-                            dist.append(d)
-                    if len(dist) > 0:
-                        min_d = min(dist)
-                        
-                    if min_d > 0.02 or len(dist) == 0:
-                        self.parent_viewer.obj.bezier_obj.data_val.append(np.array(px))
-                        if len(self.parent_viewer.obj.bezier_obj.data_val) == 4:
-                            self.parent_viewer.obj.bezier_obj.refresh_bezier_data()
-                    # else:
-                    #     print("This must be a bezier curve point")
-
-
+        v = ctrl_wdg.mv_panel.movie_caps[ctrl_wdg.mv_panel.selected_movie_idx]
+        t = ctrl_wdg.selected_thumbnail_index
+        if ctrl_wdg.ui.bBezier:
+            if len(self.parent_viewer.obj.curve_obj.final_bezier) > 0 and len(self.parent_viewer.obj.curve_obj.radius_point) < 2 :
+                self.parent_viewer.obj.curve_obj.radius_point.append(np.array(px))
+                if len(self.parent_viewer.obj.curve_obj.radius_point) == 2:
+                    self.parent_viewer.obj.curve_obj.make_general_cylinder()
+                    
             
+            else:
+                if dd < 1:
+                    if ctrl_wdg.kf_method == "Regular":
+                        if len(v.curve_3d_point_regular[t]) < 1:
+                            v.curve_3d_point_regular[t].append(np.array(px))
+                            for j, tup in enumerate(self.parent_viewer.obj.camera_projection_mat):
+                                if tup[0] == t:
+                                    # print("Tuple : ")
+                                    # print(tup)
+                                    G = self.parent_viewer.obj.camera_projection_mat[j][1][0:3, :]
+                                    P = np.matmul(self.parent_viewer.obj.K, G)
+                                    self.parent_viewer.obj.curve_obj.estimate_plane(P)
+                                    
+                    elif ctrl_wdg.kf_method == "Network":
+                        if len(v.curve_3d_point_network[t]) < 1:
+                            v.curve_3d_point_network[t].append(np.array(px))
+                            
+                            for j, tup in enumerate(self.parent_viewer.obj.camera_projection_mat):
+                                if tup[0] == t: 
+                                    G = self.parent_viewer.obj.camera_projection_mat[j][1][0:3, :]
+                                    P = np.matmul(self.parent_viewer.obj.K, G)
+                                    
+                                    self.parent_viewer.obj.curve_obj.estimate_plane(P) 
+                else:
+                    if ctrl_wdg.kf_method == "Regular":
+                        v.curve_pts_regular[t].pop()
+                    elif ctrl_wdg.kf_method == "Network":
+                        v.curve_pts_network[t].pop()
+                
+        if dd < 1:
             if ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder:
                 self.parent_viewer.obj.cylinder_obj.data_val.append(np.array(px))
                 if len(self.parent_viewer.obj.cylinder_obj.data_val) == 4:
                     self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data()
                     
             if ctrl_wdg.ui.bPick:
-                
                 ID = ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
                 # print("ID : "+str(ID))
                 if ID in ctrl_wdg.quad_obj.quad_counts:
@@ -543,43 +593,58 @@ class Util_viewer(QWidget):
                     ctrl_wdg.quad_obj.selected_quad_idx = -1
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
                     
-
+                    
         if ctrl_wdg.ui.bMeasure and dd < 1:
+
+            # print(self.x_zoomed, self.y_zoomed)
             if self.bCalibrate:
                 if self.clicked_once:
                     self.bCalibrate = False
                     self.create_calibration_panel()
                     if self.cal_dialog.exec():
                         measured_dist = float(self.e1.text())
-                        print("Measured distance : "+str(measured_dist))
+                        # print("Measured distance : "+str(measured_dist))
                         dist = np.sqrt(np.sum(np.square(np.array(px)-self.calc_last_3d_pos)))
-                        print("Calculated distance : "+str(dist))
+                        
                         self.calibration_factor = measured_dist/dist
+                        # print("calibration factor : "+str(self.calibration_factor))
                         self.set_distance(measured_dist)
-                        self.measured_distances.append(measured_dist)
+                        if ctrl_wdg.kf_method == "Regular":
+                            v.measured_distances_regular[t].append(measured_dist)
+                        elif ctrl_wdg.kf_method == "Network":
+                            v.measured_distances_network[t].append(measured_dist)
 
                     self.clicked_once = not self.clicked_once
                 else:
-                    self.last_pos = np.array([self.x, self.y])
-                    self.measured_pos.append((self.x, self.y))
+                    self.last_pos = np.array([self.x_zoomed, self.y_zoomed])
                     self.calc_last_3d_pos = np.array(px)
+                    if ctrl_wdg.kf_method == "Regular":
+                        v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
+                    elif ctrl_wdg.kf_method == "Network":
+                        v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))                        
                 
             else:                
                 if self.clicked_once and self.calibration_factor != 1:
                     self.dist = self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
-                    print("Calculated distance : "+str(self.dist))
-                    self.measured_distances.append(self.dist)
+                    # print("Calculated distance : "+str(self.dist))
                     self.set_distance(self.dist)
-                    self.measured_pos.append((self.x, self.y))
+                    if ctrl_wdg.kf_method == "Regular":
+                        v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
+                        v.measured_distances_regular[t].append(self.dist)
+                    elif ctrl_wdg.kf_method == "Network":
+                        v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))
+                        v.measured_distances_network[t].append(self.dist)
                     # print("Distance is measured as : "+str(self.dist))
                 else:
-                    self.last_pos = np.array([self.x, self.y])
-                    self.measured_pos.append((self.x, self.y))
+                    self.last_pos = np.array([self.x_zoomed, self.y_zoomed])
+                    if ctrl_wdg.kf_method == "Regular":
+                        v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
+                    elif ctrl_wdg.kf_method == "Network":
+                        v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))
                     self.last_3d_pos = np.array(px)
                     
-            # print(self.measured_pos)
-            # print(self.measured_distances)
- 
+
+             
             self.clicked_once = not self.clicked_once
 
         self.pick = False

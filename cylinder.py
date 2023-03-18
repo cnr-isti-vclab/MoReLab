@@ -22,7 +22,7 @@ class Cylinder_Tool(QObject):
         self.centers = []
         self.top_centers = []
         self.base_circles = []
-        self.sectorCount = 64
+        self.sectorCount = 32
         self.cylinder_count = []
         self.colors = [(0,0,0)]
 
@@ -35,7 +35,7 @@ class Cylinder_Tool(QObject):
         feature_selected = False
 
         if (len(v.features_regular) > 0 or len(v.features_network) > 0) and len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0:
-            data = self.ctrl_wdg.gl_viewer.obj.ply_pts[-1]    # 3D data from bundle adjustment
+            data = self.ctrl_wdg.gl_viewer.obj.all_ply_pts[-1]    # 3D data from bundle adjustment
             if self.ctrl_wdg.kf_method == "Regular":
                 for i, fc in enumerate(v.features_regular[t]):
                     if not v.hide_regular[t][i]:
@@ -137,15 +137,14 @@ class Cylinder_Tool(QObject):
         N = N/max(0.00005, np.linalg.norm(N))
         
         height = np.dot(H_vec, N)
+        
+        
         # print(height)
         if height < 0:
             # print("Center : "+str(center))
             return self.make_cylinder(center, p2, p1, p3)
             
-            
-
-            
-        
+        print("Height : "+str(height))
         b_vec = np.cross(t_vec, N)          # t_vec, b_vec and N form our x,y,z coordinate system
         
         sectorStep = 2*np.pi/self.sectorCount
@@ -222,8 +221,8 @@ class Cylinder_Tool(QObject):
         N = np.cross(t_vec, b_vec_temp)
         N = N/max(0.000005, np.linalg.norm(N))
         height = np.dot(H_vec, N)
-        if height < 0:
-            return self.make_new_cylinder(p1, p3, p2, p4)
+        if height > 0:
+            return self.make_new_cylinder(p3, p2, p1, p4)
 
         b_vec = np.cross(t_vec, N)          # t_vec, b_vec and N form our x,y,z coordinate system
         

@@ -41,7 +41,7 @@ class Quad_Tool(QObject):
         feature_selected = False
 
         if (len(v.features_regular) > 0 or len(v.features_network) > 0) and len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0:
-            data = self.ctrl_wdg.gl_viewer.obj.ply_pts[-1]    # 3D data from bundle adjustment
+            data = self.ctrl_wdg.gl_viewer.obj.all_ply_pts[-1]    # 3D data from bundle adjustment
             if self.ctrl_wdg.kf_method == "Regular":
                 for i, fc in enumerate(v.features_regular[t]):
                     if not v.hide_regular[t][i]:

@@ -3,11 +3,11 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
 class KF_dialogue(QDialog):
-    def __init__(self):
+    def __init__(self, init_method):
         super().__init__()
 
         self.setWindowTitle("Key-frame extraction panel")
-        self.kf_met = "Regular"
+        self.kf_met = init_method
 
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
 
@@ -26,13 +26,17 @@ class KF_dialogue(QDialog):
         self.h.addWidget(self.e1)
         
         self.cb = QComboBox()
-        self.kf_methods = ["Regular", "Network"]
+        if init_method == "Regular":
+            self.kf_methods = ["Regular", "Network"]
+        else:
+            self.kf_methods = ["Network", "Regular"]
         self.cb.addItems(self.kf_methods)
         self.cb.currentIndexChanged.connect(self.selectionchange)
         
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.cb)
-        self.layout.addLayout(self.h)
+        if init_method == "Regular":
+            self.layout.addLayout(self.h)
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
         

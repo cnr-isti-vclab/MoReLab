@@ -22,6 +22,10 @@ class Widget(QWidget):
         self.thumbnail_text_stylesheet = """color:black;
                                  font-weight:bold;
                                  background-color:none;"""
+        self.featured_frame_stylesheet = """color:red;
+                                 font-weight:bold;
+                                 background-color:none;"""
+
         self.thumbnail_height = 96
         self.thumbnail_width = 120
         self.selected_thumbnail_index = -1
@@ -36,7 +40,7 @@ class Widget(QWidget):
         self.quad_obj = Quad_Tool(self)
         self.connect_obj = PointsConnecting(self)
         self.copied_data = {}
-
+        
         
         
         
@@ -48,11 +52,21 @@ class Widget(QWidget):
         else:
             kfs = []
         return kfs
+    
+    def set_kf_method(self):
+        if len(self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_regular) > 0:
+            self.kf_method = "Regular"
+        elif len(self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_network) > 0:
+            self.kf_method = "Network"
+        else:
+            self.kf_method = ""
 
 
     def extract(self):
         b = True
-        dlg = KF_dialogue()
+        if self.kf_method == "":
+            self.kf_method = "Regular"
+        dlg = KF_dialogue(self.kf_method)
         if dlg.exec():
             self.kf_method = dlg.kf_met
             kfs = self.find_kfs()
@@ -72,7 +86,8 @@ class Widget(QWidget):
                     v1.cleanSequence()
                     # print(len(v1.key_frames_network))
                     self.ui.radiobutton2.setChecked(True)
-
+                    
+                self.selected_thumbnail_index = -1
                 self.populate_scrollbar()
 
             else:
@@ -84,33 +99,39 @@ class Widget(QWidget):
         self.grid_layout = QHBoxLayout()
         row_in_grid_layout = 0
         kfs = self.find_kfs()
-        # print("Number of thumbnails: "+str(len(kfs)))
-        for i, img in enumerate(kfs):
-            img_label = QLabel("")
-            img_label.setAlignment(Qt.AlignCenter)
-            text_label = QLabel(str(i+1))
-            text_label.setAlignment(Qt.AlignCenter)
-            text_label.setFont(QFont("Sanserif", 10))
-            text_label.setStyleSheet(self.thumbnail_text_stylesheet)
-            pixmap_scaled = convert_cv_qt(img, self.thumbnail_width, self.thumbnail_height)
-            img_label.setPixmap(pixmap_scaled)
 
-            img_label.mousePressEvent = lambda e, index=row_in_grid_layout, file_img=img: \
-                self.on_thumbnail_click(e, index)
-            
-            thumbnail = QBoxLayout(QBoxLayout.TopToBottom)
-            thumbnail.addWidget(img_label)
-            thumbnail.addWidget(text_label)
-            self.grid_layout.addLayout(thumbnail)
-            row_in_grid_layout += 1
-            
+        if len(kfs) > 0:
+            for i, img in enumerate(kfs):
+                img_label = QLabel("")
+                img_label.setAlignment(Qt.AlignCenter)
+                text_label = QLabel(str(i+1))
+                text_label.setAlignment(Qt.AlignCenter)
+                text_label.setFont(QFont("Sanserif", 10))
+                if i in self.gl_viewer.obj.img_indices:
+                    text_label.setStyleSheet(self.featured_frame_stylesheet)
+                else:
+                    text_label.setStyleSheet(self.thumbnail_text_stylesheet)
+                pixmap_scaled = convert_cv_qt(img, self.thumbnail_width, self.thumbnail_height)
+                img_label.setPixmap(pixmap_scaled)
+    
+                img_label.mousePressEvent = lambda e, index=row_in_grid_layout, file_img=img: \
+                    self.on_thumbnail_click(e, index)
+                
+                thumbnail = QBoxLayout(QBoxLayout.TopToBottom)
+                thumbnail.addWidget(img_label)
+                thumbnail.addWidget(text_label)
+                self.grid_layout.addLayout(thumbnail)
+                row_in_grid_layout += 1
+
+        
         widget.setLayout(self.grid_layout)
-        self.ui.scroll_area.setWidget(widget)
-        self.selected_thumbnail_index = -1
-        self.gl_viewer.util_.setPhoto()
+        self.ui.scroll_area.setWidget(widget)    
         self.gl_viewer.obj.feature_panel.display_data()
 
-            
+        if self.selected_thumbnail_index != -1:
+            self.displayThumbnail(self.selected_thumbnail_index)
+        else:
+            self.gl_viewer.util_.setPhoto()
             
     def on_thumbnail_click(self, event, index):
         self.displayThumbnail(index)
@@ -118,25 +139,37 @@ class Widget(QWidget):
         
     def displayThumbnail(self, index):
         self.selected_thumbnail_index = index
+
         ## Deselect all thumbnails in the image selector
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)
             text_label = self.grid_layout.itemAt(text_label_index).itemAt(1).widget()
-            text_label.setStyleSheet(self.thumbnail_text_stylesheet)
+            if text_label_index in self.gl_viewer.obj.img_indices:
+                # print(text_label_index)
+                text_label.setStyleSheet(self.featured_frame_stylesheet)
+            else:
+                text_label.setStyleSheet(self.thumbnail_text_stylesheet)
 
         ## Select the single clicked thumbnail
         text_label_of_thumbnail = self.grid_layout.itemAt(index).itemAt(1).widget()
-        text_label_of_thumbnail.setStyleSheet("background-color:rgb(135, 206, 235);"
-                                              "font-weight:bold;")
-        
-        if self.kf_method == "Regular":    
+        if index in self.gl_viewer.obj.img_indices:
+            text_label_of_thumbnail.setStyleSheet("background-color:rgb(135, 206, 235);"
+                                                  "color:red;"
+                                                  "font-weight:bold;")
+        else:
+            text_label_of_thumbnail.setStyleSheet("background-color:rgb(135, 206, 235);"
+                                                  "color:black;"
+                                                  "font-weight:bold;")                
+
+        if self.kf_method == "Regular" and len(self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_regular) > 0:    
             img_file = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_regular[self.selected_thumbnail_index]
-        elif self.kf_method == "Network":
+        elif self.kf_method == "Network" and len(self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_network) > 0:
             img_file = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx].key_frames_network[self.selected_thumbnail_index]
+        else:
+            img_file = None
 
         self.gl_viewer.util_.setPhoto(img_file)
         self.gl_viewer.obj.feature_panel.selected_feature_idx = -1
-        self.gl_viewer.obj.feature_panel.display_data()
         
         
     def copy_features(self):

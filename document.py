@@ -1,4 +1,5 @@
 import os, cv2, platform, json, glob
+import numpy as np
 from util.util import split_path, adjust_op
 from PyQt5.QtWidgets import *
 from features import FeatureCrosshair
@@ -48,7 +49,47 @@ class Document(QWidget):
                                   "y_locs_network" : y_locs_n
                                   }
             data_movies.append(movie_feature_data)
+        
+        # #### --------------------- Save 3D data --------------------------
             
+        # ply_data_all = self.ctrl_wdg.gl_viewer.obj.all_ply_pts[-1]
+        # ply_data = self.ctrl_wdg.gl_viewer.obj.ply_pts[-1]
+        # camera_pose = self.ctrl_wdg.gl_viewer.obj.camera_poses[-1]
+        # projections = self.ctrl_wdg.gl_viewer.obj.camera_projection_mat
+        
+        # str_ply_all = []
+        # for i in range(ply_data_all.shape[0]):
+        #     str_ply_all.append(str(round(ply_data_all[i,0], 5)))
+        #     str_ply_all.append(str(round(ply_data_all[i,1], 5)))
+        #     str_ply_all.append(str(round(ply_data_all[i,2], 5)))
+            
+        # str_ply = []
+        # for i in range(ply_data.shape[0]):
+        #     str_ply.append(str(round(ply_data[i,0], 5)))
+        #     str_ply.append(str(round(ply_data[i,1], 5)))
+        #     str_ply.append(str(round(ply_data[i,2], 5)))
+        
+        # str_cam = []
+        # for i in range(camera_pose.shape[0]):
+        #     str_cam.append(str(round(camera_pose[i,0], 5)))
+        #     str_cam.append(str(round(camera_pose[i,1], 5)))
+        #     str_cam.append(str(round(camera_pose[i,2], 5)))        
+        
+        # img_indices = []
+        # cam_exts = []
+        # for i in range(camera_pose.shape[0]):
+        #     img_indices.append(str(projections[i][0]))
+        #     mat = projections[i][1]
+        #     print(mat.shape)
+        #     cols = []
+        #     for j in range(mat.shape[0]):
+        #         cols.append(str(round(mat[j,0], 5)))
+        #         cols.append(str(round(mat[j,1], 5)))
+        #         cols.append(str(round(mat[j,2], 5)))
+        #         cols.append(str(round(mat[j,3], 5)))
+        #     cam_exts.append(cols)
+            
+        
             
         data = {
             "movies" : self.ctrl_wdg.mv_panel.movie_paths,
@@ -57,6 +98,11 @@ class Document(QWidget):
             "selected_kf_method" : self.ctrl_wdg.kf_method,
             "selected_thumbnail": self.ctrl_wdg.selected_thumbnail_index,
             "feature_dict" : data_movies,
+            # "all_ply" : str_ply_all,
+            # "ply" : str_ply,
+            # "cam_pose" : str_cam,
+            # "projection_imgs" : img_indices,
+            # "projection_mats" : cam_exts,
             }
         
         return data
@@ -108,9 +154,12 @@ class Document(QWidget):
         a = os.path.join(project_path.split('.')[0], 'extracted_frames')
         movie_dirs = os.listdir(a)
         count = 0
+        # self.ctrl_wdg.selected_thumbnail_index = -1
         
         for i,p in enumerate(mv_paths):
+            self.ctrl_wdg.selected_thumbnail_index = -1
             movie_name = split_path(p)
+            # print(self.ctrl_wdg.grid_layout)
             self.ctrl_wdg.mv_panel.add_movie(p)
 
             self.ctrl_wdg.mv_panel.selected_movie_idx = i
@@ -175,15 +224,47 @@ class Document(QWidget):
 
         self.ctrl_wdg.mv_panel.selected_movie_idx = int(data["selected_movie"])
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
-        print()
         self.ctrl_wdg.kf_method = data["selected_kf_method"]
+        self.ctrl_wdg.selected_thumbnail_index = int(data["selected_thumbnail"])
         self.ctrl_wdg.mv_panel.select_movie()
         self.ctrl_wdg.ui.implement_move_tool()
         self.ctrl_wdg.main_file.bLoad = True
-        self.ctrl_wdg.selected_thumbnail_index = int(data["selected_thumbnail"])
-        if self.ctrl_wdg.selected_thumbnail_index != -1:
-            self.ctrl_wdg.displayThumbnail(self.ctrl_wdg.selected_thumbnail_index)
+        
+        
+        # # # # ===========================  Load 3D data  ===============================
+        # all_ply = data["all_ply"]
+        # ply = data["ply"]
+        # cam_pos = data["cam_pose"]
+        # proj_img = data["projection_imgs"]
+        # proj_mat = data["projection_mats"]
 
+        # all_ply_mat = []
+        # ply_mat = []
+        # cam_ = []
+        # for i in range(0,len(all_ply),3):
+        #     all_ply_mat.append([np.float(all_ply[i]), np.float(all_ply[i+1]), np.float(all_ply[i+2])])
+            
+        # for i in range(0,len(ply),3):
+        #     ply_mat.append([np.float(ply[i]), np.float(ply[i+1]), np.float(ply[i+2])])
+            
+        # for i in range(0, len(cam_pos), 3):
+        #     cam_.append([np.float(cam_pos[i]), np.float(cam_pos[i+1]), np.float(cam_pos[i+2])])
+
+        # all_ply_mat = np.asarray(all_ply_mat).astype(float)
+        # ply_mat = np.asarray(ply_mat).astype(float)
+        # cam_ = np.asarray(cam_).astype(float)
+
+        # self.ctrl_wdg.gl_viewer.obj.all_ply_pts.append(all_ply_mat)
+        # self.ctrl_wdg.gl_viewer.obj.ply_pts.append(ply_mat)
+        # self.ctrl_wdg.gl_viewer.obj.camera_poses.append(cam_)
+        
+        # for i, img_ind in enumerate(proj_img):
+        #     mat = proj_mat[i]
+        #     cam_ext = np.array([[np.float(mat[0]), np.float(mat[1]), np.float(mat[2]), np.float(mat[3])],
+        #                         [np.float(mat[4]), np.float(mat[5]), np.float(mat[6]), np.float(mat[7])],
+        #                         [np.float(mat[8]), np.float(mat[9]), np.float(mat[10]), np.float(mat[11])],
+        #                         [np.float(mat[12]), np.float(mat[13]), np.float(mat[14]), np.float(mat[15])]]).astype(float)
+        #     self.ctrl_wdg.gl_viewer.obj.camera_projection_mat.append((int(img_ind), cam_ext))
 
 
 

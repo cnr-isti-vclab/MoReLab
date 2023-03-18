@@ -101,7 +101,9 @@ class UserInterface(QWidget):
         radioButton = self.sender()
         if radioButton.isChecked():
             self.ctrl_wdg.kf_method = radioButton.text()
-        self.ctrl_wdg.populate_scrollbar()
+            self.ctrl_wdg.gl_viewer.obj.initialize_mats()
+            self.ctrl_wdg.selected_thumbnail_index = -1
+            self.ctrl_wdg.populate_scrollbar()
         
         
     def setClick(self):

@@ -4,7 +4,7 @@ from util.util import *
 from util.sfm import *
 from util.bundle_adjustment import bundle_adjustment
 from cylinder import Cylinder_Tool
-from bezier import Bezier_Tool
+from curve import Curve_Tool
 import numpy as np
 
 class Features(QWidget):
@@ -20,15 +20,19 @@ class Features(QWidget):
                                   QPushButton {background-color: rgb(230,230,230); border-radius: 20px; padding: 15px; border: 1px solid black; color:black; font-size: 15px;}
                                   """)
         self.btn_sfm.clicked.connect(self.compute_sfm)
+        self.initialize_mats()
+        self.K = np.eye(3)
+        self.cylinder_obj = Cylinder_Tool(self.ctrl_wdg)
+        self.curve_obj = Curve_Tool(self.ctrl_wdg)
         
+        
+    def initialize_mats(self):
+        self.img_indices = []
         self.ply_pts = []
+        self.all_ply_pts = []
         self.camera_poses = []
         self.camera_projection_mat = []
         self.camera_poses = []
-        self.K = np.eye(3)
-        self.cylinder_obj = Cylinder_Tool(self.ctrl_wdg)
-        self.bezier_obj = Bezier_Tool(self.ctrl_wdg)
-        
         
     def get_correspondent_pts(self, v):
         img_indices = []
@@ -91,36 +95,40 @@ class Features(QWidget):
     def compute_sfm(self):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         all_pts, img_indices, visible_labels = self.get_correspondent_pts(v)
-        
+
         self.K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
 
     
         if len(img_indices) > 0:
             print("Performing Bundle adjustment")
-            opt_cameras, opt_points = bundle_adjustment(all_pts, visible_labels, self.K)
+            opt_cameras, opt_points, all_points = bundle_adjustment(all_pts, visible_labels, self.K)
+            self.initialize_mats()
+
+            self.all_ply_pts.append(all_points)
+
             opt_points_ext = np.concatenate((opt_points, np.ones((opt_points.shape[0], 1))), axis=1)
-            self.camera_projection_mat = []
-            self.camera_poses = []
-            self.ply_pts = []
 
             # print(self.near_far)
             print("Bundle adjustment has been computed.")
+            
+            self.img_indices = img_indices
+            self.ctrl_wdg.populate_scrollbar()
 
             cam_pos_list = []
             for i in range(opt_cameras.shape[0]):
                 R = getRotation(opt_cameras[i,:3], 'e')
                 t = opt_cameras[i,3:].reshape((3,1))
-                Pr = np.matmul(self.K, (np.concatenate((R, t), axis=1)))
+
                 cam_ext = np.concatenate((np.concatenate((R, t), axis=1), np.array([0,0,0,1]).reshape((1,4))), axis=0)
                 # ppm =np.concatenate((np.matmul(self.K, (np.concatenate((R, t), axis=1))), np.array([0,0,0,1]).reshape((1,4))), axis=0)
-                
 
+                
                 self.camera_projection_mat.append((img_indices[i], cam_ext))                
                 cm = calc_camera_pos(R, t)
                 cam_pos_list.append([cm[0,0], cm[0,1], cm[0,2]])
             
-
             array_camera_poses = np.asarray(cam_pos_list)
+            # print(self.camera_projection_mat)
             self.camera_poses.append(array_camera_poses)
             ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
             # print(opt_points)
@@ -150,7 +158,6 @@ class Features(QWidget):
                 v.quad_groups_regular[t].append(-1)
                 v.connect_groups_regular[t].append(-1)
                 v.cylinder_groups_regular[t].append(-1)
-                v.bezier_groups_regular[t].append(-1)
                 
                 
             elif self.ctrl_wdg.kf_method == "Network":
@@ -159,7 +166,6 @@ class Features(QWidget):
                 v.quad_groups_network[t].append(-1)
                 v.connect_groups_network[t].append(-1)
                 v.cylinder_groups_network[t].append(-1)
-                v.bezier_groups_network[t].append(-1)
 
                 
             self.feature_panel.selected_feature_idx = -1
