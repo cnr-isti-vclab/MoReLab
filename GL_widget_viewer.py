@@ -579,29 +579,68 @@ class GL_Widget(QOpenGLWidget):
             
         
     def render_general_cylinder(self, color):
-        
-        # for i, vertices in enumerate(self.obj.curve_obj.final_cylinder_bases):
-        #     top_vertices = self.obj.curve_obj.final_cylinder_tops[i]
-            
-        #     glColor3f(color[0], color[1], color[2])
-        #     glBegin(GL_TRIANGLE_STRIP)
-        #     for k in range(0,len(vertices), 1):
-        #         glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
-        #         glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
-        #     glEnd()
-        
-        
-        # Draw cylinder bases
-        for i, vertices in enumerate(self.obj.curve_obj.final_cylinder_bases):
-            base_center = self.obj.curve_obj.final_bezier[-1][i]
-            glColor4f(color[0], color[1], color[2], 0.1)
-            glBegin(GL_TRIANGLES)
-            for k in range(1,len(vertices)):                                
-                glVertex3f(base_center[0], base_center[1], base_center[2])
-                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+                
+        ##### Draw initial base of the cylinder
+        vertices = self.obj.curve_obj.final_cylinder_bases[0]
+        base_center = self.obj.curve_obj.final_base_centers[0]
+        glColor4f(color[0], color[1], color[2], 0.1)
+        glBegin(GL_TRIANGLES)
+        for k in range(1,len(vertices)):                                
+            glVertex3f(base_center[0], base_center[1], base_center[2])
+            glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+            glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
 
+        glEnd()
+        
+        
+
+
+        #### Draw cylinder strips
+        for i in range(1, len(self.obj.curve_obj.final_cylinder_bases)):
+            base_1 = self.obj.curve_obj.final_cylinder_bases[i-1]
+            base_2 = self.obj.curve_obj.final_cylinder_bases[i]
+            
+            # print(len(base_1))
+            
+            glColor3f(color[0], color[1], color[2])
+            glBegin(GL_TRIANGLE_STRIP)
+            sectorCount = self.obj.cylinder_obj.sectorCount
+            for k, vertex in enumerate(base_1):
+                if k < int(0.75*sectorCount) :
+                    glVertex3f(vertex[0], vertex[1], vertex[2])
+                    glVertex3f(base_2[k + int(0.25*sectorCount)][0], base_2[k + int(0.25*sectorCount)][1], base_2[k + int(0.25*sectorCount) ][2])
+                else:
+                    glVertex3f(vertex[0], vertex[1], vertex[2])
+                    glVertex3f(base_2[k - int(0.75*sectorCount) ][0], base_2[k - int(0.75*sectorCount)][1], base_2[k - int(0.75*sectorCount) ][2])
             glEnd()
+
+
+
+        #### Draw last cylinder between base and top
+        vertices = self.obj.curve_obj.final_cylinder_bases[-1]
+        top_vertices = self.obj.curve_obj.final_cylinder_tops[-1]
+
+        glColor4f(color[0], color[1], color[2], 0.1)
+        glBegin(GL_TRIANGLE_STRIP)
+        for k in range(0,len(vertices), 1):
+            glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+            glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
+        glEnd()
+        
+        
+        
+        #### Draw final top of the cylinder
+        vertices = self.obj.curve_obj.final_cylinder_tops[-1]
+        top_center = self.obj.curve_obj.final_top_centers[-1]
+        glColor4f(color[0], color[1], color[2], 0.1)
+        glBegin(GL_TRIANGLES)
+        for k in range(1,len(vertices)):                                
+            glVertex3f(top_center[0], top_center[1], top_center[2])
+            glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+            glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+
+        glEnd()
+
 
         # # Draw cylinder tops
         # for i, vertices in enumerate(self.obj.curve_obj.final_cylinder_tops):

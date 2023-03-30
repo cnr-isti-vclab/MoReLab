@@ -22,7 +22,7 @@ class Cylinder_Tool(QObject):
         self.centers = []
         self.top_centers = []
         self.base_circles = []
-        self.sectorCount = 32
+        self.sectorCount = 64
         self.cylinder_count = []
         self.colors = [(0,0,0)]
 
@@ -144,7 +144,7 @@ class Cylinder_Tool(QObject):
             # print("Center : "+str(center))
             return self.make_cylinder(center, p2, p1, p3)
             
-        print("Height : "+str(height))
+        # print("Height : "+str(height))
         b_vec = np.cross(t_vec, N)          # t_vec, b_vec and N form our x,y,z coordinate system
         
         sectorStep = 2*np.pi/self.sectorCount

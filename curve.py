@@ -18,7 +18,7 @@ class Curve_Tool(QObject):
         self.curve_3d_point = []
         self.radius_point = []
         self.planes = []
-        self.num_pts = 40
+        self.num_pts = 30
         self.bezier_control_points = []
         self.curve_2d_points = []
         self.final_bezier = []
@@ -27,6 +27,10 @@ class Curve_Tool(QObject):
         self.final_top_centers = []
         self.final_cylinder_bases = []
         self.final_cylinder_tops = []
+        self.P1_curve = []
+        self.P2_curve = []
+        self.P3_curve = []
+        self.P4_curve = []
         
         
         
@@ -204,18 +208,25 @@ class Curve_Tool(QObject):
         
         Ps = self.final_bezier[-1]
         # print(Ps)
-        for i in range(0,len(Ps)-10,9):
+        for i in range(0,len(Ps)-1,1):
             P1 = Ps[i]
             if i==0:
-                P2 = self.radius_point[0]
-                P3 = self.radius_point[1]
-            else:
-                P2 = cyl_tops[0]
-                P3 = cyl_tops[1]
+                P3 = self.radius_point[0]
+                P2 = -1*np.cross(Ps[i] - Ps[i+1], P3 - Ps[i]) + Ps[i]
+
+            else:                
                 
-            P4 = Ps[i+10]
+                P3 = cyl_tops[0]
+                P2 = -1*np.cross(Ps[i] - Ps[i+1], P3 - Ps[i]) + Ps[i]
+
+            self.P2_curve.append(P2)
+            self.P3_curve.append(P3)
+                
+            P4 = Ps[i+1]
 
             cyl_bases, cyl_tops, center_base, center_top = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.make_cylinder(P1, P2, P3, P4)
+                
+
             # print(cyl_bases)
             # print(center_base)
             # print("\n\n---------------------------\n\n")
@@ -225,7 +236,7 @@ class Curve_Tool(QObject):
             self.final_top_centers.append(center_top)
             self.final_cylinder_bases.append(cyl_bases)
             self.final_cylinder_tops.append(cyl_tops)
-    
+        
             
             
     

@@ -532,9 +532,9 @@ class Util_viewer(QWidget):
         v = ctrl_wdg.mv_panel.movie_caps[ctrl_wdg.mv_panel.selected_movie_idx]
         t = ctrl_wdg.selected_thumbnail_index
         if ctrl_wdg.ui.bBezier:
-            if len(self.parent_viewer.obj.curve_obj.final_bezier) > 0 and len(self.parent_viewer.obj.curve_obj.radius_point) < 2 :
+            if len(self.parent_viewer.obj.curve_obj.final_bezier) > 0 and len(self.parent_viewer.obj.curve_obj.radius_point) < 1 :
                 self.parent_viewer.obj.curve_obj.radius_point.append(np.array(px))
-                if len(self.parent_viewer.obj.curve_obj.radius_point) == 2:
+                if len(self.parent_viewer.obj.curve_obj.radius_point) == 1:
                     self.parent_viewer.obj.curve_obj.make_general_cylinder()
                     
             

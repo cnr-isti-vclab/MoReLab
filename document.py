@@ -15,7 +15,7 @@ class Document(QWidget):
         
     def get_data(self):
         data_movies = []
-        for  i,v in enumerate(self.ctrl_wdg.mv_panel.movie_caps):
+        for i,v in enumerate(self.ctrl_wdg.mv_panel.movie_caps):
             x_locs = []
             y_locs = []
             x_locs_n = []
@@ -24,8 +24,8 @@ class Document(QWidget):
                 a = []
                 b = []
                 for fc in fc_list:
-                    a.append(str(fc.x_loc))
-                    b.append(str(fc.y_loc))
+                    a.append(str(fc.x_loc/(self.ctrl_wdg.gl_viewer.util_.w2 - self.ctrl_wdg.gl_viewer.util_.w1)))
+                    b.append(str(fc.y_loc/(self.ctrl_wdg.gl_viewer.util_.h2 - self.ctrl_wdg.gl_viewer.util_.h1)))
                     
                 x_locs.append(a)
                 y_locs.append(b)
@@ -35,8 +35,8 @@ class Document(QWidget):
                 a = []
                 b = []
                 for fc in fc_list:
-                    a.append(str(fc.x_loc))
-                    b.append(str(fc.y_loc))
+                    a.append(str(fc.x_loc/(self.ctrl_wdg.gl_viewer.util_.w2 - self.ctrl_wdg.gl_viewer.util_.w1)))
+                    b.append(str(fc.y_loc/(self.ctrl_wdg.gl_viewer.util_.h2 - self.ctrl_wdg.gl_viewer.util_.h1)))
                     
                 x_locs_n.append(a)
                 y_locs_n.append(b)
@@ -46,7 +46,7 @@ class Document(QWidget):
                                   "x_locs" : x_locs,
                                   "y_locs" : y_locs,
                                   "x_locs_network" : x_locs_n,
-                                  "y_locs_network" : y_locs_n
+                                  "y_locs_network" : y_locs_n,
                                   }
             data_movies.append(movie_feature_data)
         
@@ -98,6 +98,8 @@ class Document(QWidget):
             "selected_kf_method" : self.ctrl_wdg.kf_method,
             "selected_thumbnail": self.ctrl_wdg.selected_thumbnail_index,
             "feature_dict" : data_movies,
+            "h1" : self.ctrl_wdg.gl_viewer.util_.h1,
+            "w1" : self.ctrl_wdg.gl_viewer.util_.w1,
             # "all_ply" : str_ply_all,
             # "ply" : str_ply,
             # "cam_pose" : str_cam,
@@ -148,6 +150,8 @@ class Document(QWidget):
         # print(mv_paths)
         op = data["platform"]
         mv_paths = adjust_op(mv_paths, op)
+        h1_past = data["h1"]
+        w1_past = data["w1"]
             
         feature_data_list = data["feature_dict"]
         
@@ -185,35 +189,51 @@ class Document(QWidget):
                 hide_regular = video_data["hide_regular"]
                 x_locs = video_data["x_locs"]
                 y_locs = video_data["y_locs"]
-    
+                # print(self.ctrl_wdg.gl_viewer.util_.w1, self.ctrl_wdg.gl_viewer.util_.h1)
+                
+                
+                w = self.ctrl_wdg.gl_viewer.util_.w2 - self.ctrl_wdg.gl_viewer.util_.w1
+                h = self.ctrl_wdg.gl_viewer.util_.h2 - self.ctrl_wdg.gl_viewer.util_.h1
+                diff_h = 0.75 * (self.ctrl_wdg.gl_viewer.util_.h1 - h1_past)
+                diff_w = 0.75 * (self.ctrl_wdg.gl_viewer.util_.w1 - w1_past)
+
+                # print(diff_h)
                 self.ctrl_wdg.kf_method = "Regular"
                 for j, hr_list in enumerate(hide_regular):
                     if len(hr_list) > 0:
                         self.ctrl_wdg.selected_thumbnail_index = j
                         for k, hide in enumerate(hr_list):
                             if not hide:
-                                # print(x_locs[j][k], y_locs[j][k])
-                                self.ctrl_wdg.gl_viewer.obj.add_feature(int(x_locs[j][k]), int(y_locs[j][k]))
+                                self.ctrl_wdg.gl_viewer.obj.add_feature(int(diff_w + w*float(x_locs[j][k])), int(diff_h + h*float(y_locs[j][k])))
+                                # self.ctrl_wdg.gl_viewer.obj.add_feature(int(x_locs[j][k]), int(y_locs[j][k]))
                             else:
-                                self.ctrl_wdg.gl_viewer.obj.add_feature(int(x_locs[j][k]), int(y_locs[j][k]))
+                                self.ctrl_wdg.gl_viewer.obj.add_feature(int(diff_w + w*float(x_locs[j][k])), int(diff_h + h*float(y_locs[j][k])))
+                                # self.ctrl_wdg.gl_viewer.obj.add_feature(int(x_locs[j][k]), int(y_locs[j][k]))
                                 self.ctrl_wdg.gl_viewer.obj.feature_panel.selected_feature_idx = k
                                 self.ctrl_wdg.gl_viewer.obj.delete_feature()                        
 
-            
+            # if len(v.key_frames_network) > 0:
+            #     self.ctrl_wdg.gl_viewer.util_.setPhoto(v.key_frames_network[0])            
             hide_network = video_data["hide_network"]
             x_locs_network = video_data["x_locs_network"]
             y_locs_network = video_data["y_locs_network"]
- 
+            
+            w = self.ctrl_wdg.gl_viewer.util_.w2 - self.ctrl_wdg.gl_viewer.util_.w1
+            h = self.ctrl_wdg.gl_viewer.util_.h2 - self.ctrl_wdg.gl_viewer.util_.h1
+            diff_h = 0.75 * (self.ctrl_wdg.gl_viewer.util_.h1 - h1_past)
+            diff_w = 0.75 * (self.ctrl_wdg.gl_viewer.util_.w1 - w1_past)
+            
             self.ctrl_wdg.kf_method = "Network"
             for j, hr_list in enumerate(hide_network):
                 if len(hr_list) > 0:
                     self.ctrl_wdg.selected_thumbnail_index = j
                     for k, hide in enumerate(hr_list):
                         if not hide:
-                            # print(x_locs[j][k], y_locs[j][k])
-                            self.ctrl_wdg.gl_viewer.obj.add_feature(int(x_locs_network[j][k]), int(y_locs_network[j][k]))
+                            self.ctrl_wdg.gl_viewer.obj.add_feature(int(diff_w + w*float(x_locs[j][k])), int(diff_h + h*float(y_locs[j][k])))
+                            # self.ctrl_wdg.gl_viewer.obj.add_feature(int(x_locs[j][k]), int(y_locs[j][k]))
                         else:
-                            self.ctrl_wdg.gl_viewer.obj.add_feature(int(x_locs_network[j][k]), int(y_locs_network[j][k]))
+                            self.ctrl_wdg.gl_viewer.obj.add_feature(int(diff_w + w*float(x_locs[j][k])), int(diff_h + h*float(y_locs[j][k])))
+                            # self.ctrl_wdg.gl_viewer.obj.add_feature(int(x_locs[j][k]), int(y_locs[j][k]))
                             self.ctrl_wdg.gl_viewer.obj.feature_panel.selected_feature_idx = k
                             self.ctrl_wdg.gl_viewer.obj.delete_feature()
                         

@@ -210,7 +210,52 @@ class Window(QMainWindow):
     def export_ply_data(self):
         if len(self.widget.gl_viewer.obj.ply_pts) > 0:
             bundle_adjustment_ply_data = self.widget.gl_viewer.obj.ply_pts[-1]
+            col_bundle = np.zeros(bundle_adjustment_ply_data.shape).astype(np.uint8)
+            col_bundle[:, 1] = 255
+            
             cam_data = self.widget.gl_viewer.obj.camera_poses[-1]
+            col_cam = np.zeros(cam_data.shape).astype(np.uint8)
+            col_cam[:, 1] = 255 
+
+            write_vertices_ply('vertex_data.ply', bundle_adjustment_ply_data, col_bundle) 
+
+            
+            
+            ###### PLY Date for General curved cylinder
+            
+            # curve_pts = self.widget.gl_viewer.obj.curve_obj.final_bezier[-1]
+            # col_curve_pts = np.zeros(curve_pts.shape).astype(np.uint8)
+            # col_curve_pts[:, 0] = 255 
+            
+            general_bases = []
+            general_cols = []
+            sectorCount = self.widget.gl_viewer.obj.cylinder_obj.sectorCount
+            col_circle = np.random.randint(low=0, high=255, size=(sectorCount + 1, 3)).astype(np.uint8)
+            # print(col_circle.shape)
+            # print(col_circle)
+            
+            if len(self.widget.gl_viewer.obj.curve_obj.final_cylinder_bases) > 0:
+                for i, bases in enumerate(self.widget.gl_viewer.obj.curve_obj.final_cylinder_bases):
+                    b = np.vstack(bases)
+                    if i == len(self.widget.gl_viewer.obj.curve_obj.final_cylinder_bases) - 1:
+                        tops = np.vstack(self.widget.gl_viewer.obj.curve_obj.final_cylinder_tops[i])
+                    
+                    general_bases.append(b)
+                    general_cols.append(col_circle)
+                    
+            if len(general_bases) > 0:
+                bases_center = np.vstack(self.widget.gl_viewer.obj.curve_obj.final_base_centers)
+                col_centers = np.zeros(bases_center.shape).astype(np.uint8)
+                col_centers[:, 0] = 255 
+                bases_data = np.vstack(general_bases)
+                top_center = self.widget.gl_viewer.obj.curve_obj.final_top_centers[-1].reshape((1,3))
+                col_top_center = np.ones(top_center.shape).astype(np.uint8)*255
+                curve_data = np.concatenate((bases_center, bases_data, tops, top_center))
+                curve_cols = np.concatenate((col_centers, np.vstack(general_cols), col_circle, col_top_center))
+            
+            
+            
+            ##### PLY Date for Quad
     
             quad_pts = self.widget.quad_obj.new_points
             quad_data_list = []
@@ -226,7 +271,7 @@ class Window(QMainWindow):
                 if not self.widget.connect_obj.deleted[i]:
                     connects_data_list.append(quad_)
 
-
+            ##### PLY Date for Cylinders
             num_cyl = 0
             face_verts = []
             new_base_centers = []
@@ -250,22 +295,6 @@ class Window(QMainWindow):
                 top_cylinder_data = np.vstack(new_top_vertices)
                 cylinder_data = np.concatenate((center_cylinder_data, base_cylinder_data, top_center_data, top_cylinder_data))
                 
-            general_bases = []
-            general_tops = []
-            if len(self.widget.gl_viewer.obj.curve_obj.final_cylinder_bases) > 0:
-                for i, bases in enumerate(self.widget.gl_viewer.obj.curve_obj.final_cylinder_bases):
-                    b = np.vstack(bases)
-                    # print(b.shape)
-                    t = np.vstack(self.widget.gl_viewer.obj.curve_obj.final_cylinder_tops[i])
-                    general_bases.append(b)
-                    general_tops.append(t)
-                    
-            if len(general_bases) > 0:
-                bases_center = np.vstack(self.widget.gl_viewer.obj.curve_obj.final_base_centers)
-                bases_data = np.vstack(general_bases)
-                tops_center = np.vstack(self.widget.gl_viewer.obj.curve_obj.final_top_centers)
-                tops_data = np.vstack(general_tops)
-                curve_data = np.concatenate((bases_center, bases_data, tops_center, tops_data))
                 
             
                 
@@ -286,8 +315,7 @@ class Window(QMainWindow):
             else:
                 ply_data_all = np.concatenate((bundle_adjustment_ply_data, cam_data))
             
-            # Write vertex data
-            write_vertices_ply('vertex_data.ply', np.concatenate((ply_data_all, self.widget.gl_viewer.obj.curve_obj.final_bezier[-1])))
+            
             
             # Face data for quads
             face_data = np.zeros(shape=(2*len(quad_data_list), 3), dtype=int)
@@ -332,6 +360,7 @@ class Window(QMainWindow):
                     face_data_cyl[sectorCount*4*i+3*sectorCount+j, 1] = start + i + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount)*i + j 
                     face_data_cyl[sectorCount*4*i+3*sectorCount+j, 2] = start + i + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount)*i + j + 1
 
+
             # Face data for Point connectors
             face_data_connects = np.zeros(shape=(2*len(connects_data_list), 3), dtype=int)
             for i in range(len(connects_data_list)):
@@ -348,43 +377,78 @@ class Window(QMainWindow):
 
 
 
-            # Face data for cylinders
-            num_cyl = len(general_bases)
-            start = bundle_adjustment_ply_data.shape[0] + cam_data.shape[0] + 4*len(quad_data_list) + len(new_base_centers) * (2*sectorCount + 2)
+
+            ###### Face data for curved cylinder 
+
+
+
+            start = bundle_adjustment_ply_data.shape[0] + cam_data.shape[0] + 4*len(quad_data_list) + len(new_base_centers) * (2*(sectorCount+1) + 2)
             # print("Start : "+str(start))
             
-            face_data_general = np.zeros(shape=(4*sectorCount*num_cyl, 3), dtype=int)
-            for i in range(num_cyl): # Loop through cylinders
-                # Base
-                for j in range(sectorCount):
-                    face_data_general[sectorCount*4*i+j, 0] = start + i
-                    face_data_general[sectorCount*4*i+j, 1] = start + i + num_cyl + j + sectorCount*i
-                    face_data_general[sectorCount*4*i+j, 2] = start + i + num_cyl + j + sectorCount*i + 1
-                    
-                # Top    
-                for j in range(sectorCount):
-                    face_data_general[sectorCount*4*i+sectorCount+j, 0] = start + i + num_cyl + (sectorCount + 1)*num_cyl
-                    face_data_general[sectorCount*4*i+sectorCount+j, 1] = start + i + num_cyl + (sectorCount + 1)*num_cyl + num_cyl + j + sectorCount*i + 1 
-                    face_data_general[sectorCount*4*i+sectorCount+j, 2] = start + i + num_cyl + (sectorCount + 1)*num_cyl + num_cyl + j + sectorCount*i 
-                
-                # Strips
-                for j in range(sectorCount):
-                    face_data_general[sectorCount*4*i+2*sectorCount+j, 0] = start + num_cyl + (sectorCount + 1)*i + j
-                    face_data_general[sectorCount*4*i+2*sectorCount+j, 1] = start + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount+1)*i + j 
-                    
-                    face_data_general[sectorCount*4*i+2*sectorCount+j, 2] = start + num_cyl + (sectorCount + 1)*i + j + 1
-                    
-                for j in range(sectorCount):
-                    face_data_general[sectorCount*4*i+3*sectorCount+j, 0] = start + (sectorCount+1)*i + num_cyl + j + 1
-                    face_data_general[sectorCount*4*i+3*sectorCount+j, 1] = start + i + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount)*i + j 
-                    face_data_general[sectorCount*4*i+3*sectorCount+j, 2] = start + i + 2*num_cyl + (sectorCount + 1)*num_cyl + (sectorCount)*i + j + 1
-
-
+            num_cyl = len(general_bases)
+            face_data_general = np.zeros(shape=(3*sectorCount*num_cyl, 3), dtype=int)
+            if num_cyl > 0:
+                for i in range(num_cyl - 1):
+                    ###### Bases
+                    for j in range(sectorCount):
+                        face_data_general[sectorCount*3*i + j, 0] = start + i
+                        face_data_general[sectorCount*3*i + j, 1] = start + num_cyl + i + j + sectorCount*i
+                        face_data_general[sectorCount*3*i + j, 2] = start + num_cyl + i + j + 1 + sectorCount*i
                         
+        
+                    ####### Strips
+                    for j in range(sectorCount):
+                        if j < 0.75*sectorCount - 1:
+                            face_data_general[sectorCount*3*i + sectorCount+j, 0] = start + num_cyl + j + (sectorCount+1)*i
+                            face_data_general[sectorCount*3*i + sectorCount+j, 1] = start + num_cyl + sectorCount + j + 0.25*sectorCount + 2 + (sectorCount+1)*i
+                            face_data_general[sectorCount*3*i + sectorCount+j, 2] = start + num_cyl + j + 1 + (sectorCount+1)*i
+                        else:
+                            face_data_general[sectorCount*3*i + sectorCount+j, 0] = start + num_cyl + j + (sectorCount+1)*i 
+                            face_data_general[sectorCount*3*i + sectorCount+j, 1] = start + num_cyl + sectorCount + 1 + j - (0.75*sectorCount -1) + (sectorCount+1)*i
+                            face_data_general[sectorCount*3*i + sectorCount+j, 2] = start + num_cyl + j + 1 + (sectorCount+1)*i
+                        
+                    for j in range(sectorCount):
+                        if j < 0.75*sectorCount - 1:
+                            face_data_general[sectorCount*3*i + 2*sectorCount+j, 0] = start + num_cyl + j + (sectorCount+1)*i + 1
+                            face_data_general[sectorCount*3*i + 2*sectorCount+j, 2] = start + num_cyl + sectorCount + j + 0.25*sectorCount + 3 + (sectorCount+1)*i
+                            face_data_general[sectorCount*3*i + 2*sectorCount+j, 1] = start + num_cyl + sectorCount + j + 0.25*sectorCount + 2 + (sectorCount+1)*i
+                        else:
+                            face_data_general[sectorCount*3*i + 2*sectorCount+j, 0] = start + num_cyl + j + 1 + (sectorCount+1)*i
+                            face_data_general[sectorCount*3*i + 2*sectorCount+j, 2] = start + num_cyl + sectorCount + 1 + j - ( 0.75*sectorCount - 2) + (sectorCount+1)*i
+                            face_data_general[sectorCount*3*i + 2*sectorCount+j, 1] = start + num_cyl + sectorCount + 1 + j -  0.75*sectorCount + 1 + (sectorCount+1)*i
+                
+                
+                ###### Last two strips and Top
+                i = num_cyl - 1
+                start_idx = 3*sectorCount*(num_cyl-1)
+                ###### Strips
+                for j in range(sectorCount):
+                    face_data_general[start_idx + j, 0] = start + num_cyl + j + (sectorCount+1)*i
+                    face_data_general[start_idx + j, 1] = start + num_cyl + sectorCount + j + 1 + (sectorCount+1)*i
+                    face_data_general[start_idx + j, 2] = start + num_cyl + j + 1 + (sectorCount+1)*i
+            
+                for j in range(sectorCount):
+                    face_data_general[start_idx + sectorCount + j, 0] = start + num_cyl + j + (sectorCount+1)*i + 1
+                    face_data_general[start_idx + sectorCount + j, 1] = start + num_cyl + sectorCount + j + 1 + (sectorCount+1)*i
+                    face_data_general[start_idx + sectorCount + j, 2] = start + num_cyl + sectorCount + j + 1 + (sectorCount+1)*i + 1
+                
+                
+                
+                ##### Final Top
+                for j in range(sectorCount):
+                    face_data_general[start_idx + 2*sectorCount + j, 0] = ply_data_all.shape[0] - 1
+                    face_data_general[start_idx + 2*sectorCount + j, 1] = start + num_cyl*(sectorCount + 1 + 1) + j + 1
+                    face_data_general[start_idx + 2*sectorCount + j, 2] = start + num_cyl*(sectorCount + 1 + 1) + j
+            
+            
+            
+                # for i in range(face_data_general.shape[0]):
+                #     print(face_data_general[i,:])
+            
+            # print(ply_data_all.shape)
+            # print(face_data.shape)
+            # print(face_data_general.shape)            
             all_faces = np.concatenate((face_data, face_data_cyl, face_data_connects, face_data_general))
-            # print(ply_data_all)
-            # print("\n\n------------------\n\n")
-            # print(all_faces)
             
             if all_faces.shape[0] > 0:
                 write_faces_ply('face_data.ply', ply_data_all, all_faces )

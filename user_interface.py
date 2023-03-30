@@ -196,7 +196,7 @@ class UserInterface(QWidget):
         self.bz_tool.setIcon(QIcon("./icons/bezier.png"))
         self.bz_tool.setIconSize(QSize(icon_size, icon_size))
         self.bz_tool.setStyleSheet(self.tool_btn_style)
-        self.bz_tool.setToolTip("Bezier Tool")
+        self.bz_tool.setToolTip("Curved Cylinder Tool")
         self.bz_tool.clicked.connect(self.implement_bezier_tool)
         
         self.measure_tool = QPushButton()

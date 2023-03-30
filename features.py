@@ -93,6 +93,8 @@ class Features(QWidget):
 
         
     def compute_sfm(self):
+        # print(self.ctrl_wdg.gl_viewer.width())
+        # print(self.ctrl_wdg.gl_viewer.height())
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         all_pts, img_indices, visible_labels = self.get_correspondent_pts(v)
 
