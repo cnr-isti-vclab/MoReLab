@@ -39,6 +39,39 @@ class Feature_Dialogue(QDialog):
         layout.addWidget(self.buttonBox)
         self.setLayout(layout)
         
+    
+class Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("Processing. Please wait !")
+        Dialog.resize(321, 220)
+
+        self.label = QLabel(Dialog)
+        self.label.setText("Processing ...............")
+        # self.label.setGeometry(QRect(10, 10, 113, 21))
+        self.label.setObjectName("Label")
+
+
+
+        self.retranslateUi(Dialog)
+        QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        _translate = QCoreApplication.translate
+        Dialog.setWindowTitle(_translate("Processing. Please wait !", "Processing. Please wait !"))
+
+
+
+
+class Dialog(QDialog, Ui_Dialog):
+    def __init__(self, parent=None):
+        super(Dialog, self).__init__(parent)
+        self.setupUi(self)
+        
+        self.layout = QVBoxLayout(self)
+        self.layout.addWidget(self.label)
+        self.setLayout(self.layout)
+        
+                              
         
     
 def convert_cv_qt(cv_img, width, height):
@@ -203,7 +236,7 @@ def switch_movie_dialogue():
     msgBox.setWindowTitle("Switch movie")
     msgBox.setStandardButtons(QMessageBox.Ok)                 
     returnValue = msgBox.exec()
-
+    
 
 
 def split_path(complete_path):

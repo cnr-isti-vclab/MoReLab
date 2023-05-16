@@ -52,11 +52,11 @@ class MoviePanel(QTreeWidget):
                 self.select_movie()
 
 
-    def select_movie(self): # assuming that selected movie_idx has already been set
+    def select_movie(self, disp_idx = -1): # assuming that selected movie_idx has already been set
         if self.selected_movie_idx != -1:
             self.deselect_movies()
             self.items[self.selected_movie_idx].setSelected(True)
             self.ctrl_wdg.set_kf_method()
             self.ctrl_wdg.ui.setClick()
-            self.ctrl_wdg.populate_scrollbar()
+            self.ctrl_wdg.populate_scrollbar(disp_idx)
                 

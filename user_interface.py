@@ -119,28 +119,28 @@ class UserInterface(QWidget):
         self.np_tool.setIcon(QIcon("./icons/new_project.png"))
         self.np_tool.setIconSize(QSize(icon_size, icon_size))
         self.np_tool.setStyleSheet(self.tool_btn_style)
-        self.np_tool.setToolTip("New Project")
+        self.np_tool.setToolTip("New")
         self.np_tool.clicked.connect(self.ctrl_wdg.main_file.implement_new_project)
 
         self.op_tool = QPushButton()
         self.op_tool.setIcon(QIcon("./icons/open_project.png"))
         self.op_tool.setIconSize(QSize(icon_size, icon_size))
         self.op_tool.setStyleSheet(self.tool_btn_style)
-        self.op_tool.setToolTip("Open Project")
+        self.op_tool.setToolTip("Open")
         self.op_tool.clicked.connect(self.ctrl_wdg.main_file.open_project)
         
         self.om_tool = QPushButton()
         self.om_tool.setIcon(QIcon("./icons/open_movie.png"))
         self.om_tool.setIconSize(QSize(icon_size, icon_size))
         self.om_tool.setStyleSheet(self.tool_btn_style)
-        self.om_tool.setToolTip("Open Movie")
+        self.om_tool.setToolTip("Import Movie")
         self.om_tool.clicked.connect(self.ctrl_wdg.main_file.implement_open_movie)
         
         self.sp_tool = QPushButton()
         self.sp_tool.setIcon(QIcon("./icons/save_project.png"))
         self.sp_tool.setIconSize(QSize(icon_size, icon_size))
         self.sp_tool.setStyleSheet(self.tool_btn_style)
-        self.sp_tool.setToolTip("Save Project")
+        self.sp_tool.setToolTip("Save")
         self.sp_tool.clicked.connect(self.ctrl_wdg.main_file.save_project)
         
         self.sp_as_tool = QPushButton()
@@ -154,7 +154,7 @@ class UserInterface(QWidget):
         self.ep_tool.setIcon(QIcon("./icons/exit_project.png"))
         self.ep_tool.setIconSize(QSize(icon_size, icon_size))
         self.ep_tool.setStyleSheet(self.tool_btn_style)
-        self.ep_tool.setToolTip("Exit Project")
+        self.ep_tool.setToolTip("Exit")
         self.ep_tool.clicked.connect(self.ctrl_wdg.main_file.implement_exit_project)
         
         self.mv_tool = QPushButton()
@@ -171,25 +171,33 @@ class UserInterface(QWidget):
         self.ft_tool.setToolTip("Feature Tool")
         self.ft_tool.clicked.connect(self.implement_feature_tool)
         
+        self.rect_tool = QPushButton()
+        self.rect_tool.setIcon(QIcon("./icons/square.png"))
+        self.rect_tool.setIconSize(QSize(icon_size, icon_size))
+        self.rect_tool.setStyleSheet(self.tool_btn_style)
+        self.rect_tool.setToolTip("Rectangle Tool")
+        self.rect_tool.clicked.connect(self.implement_rect_tool)
+
         self.quad_tool = QPushButton()
-        self.quad_tool.setIcon(QIcon("./icons/square.png"))
+        self.quad_tool.setIcon(QIcon("./icons/path_point.png"))
         self.quad_tool.setIconSize(QSize(icon_size, icon_size))
         self.quad_tool.setStyleSheet(self.tool_btn_style)
-        self.quad_tool.setToolTip("Quad Tool")
+        self.quad_tool.setToolTip("Quadrilateral Tool")
         self.quad_tool.clicked.connect(self.implement_quad_tool)
+
 
         self.cyl_tool = QPushButton()
         self.cyl_tool.setIcon(QIcon("./icons/cylinder.png"))
         self.cyl_tool.setIconSize(QSize(icon_size, icon_size))
         self.cyl_tool.setStyleSheet(self.tool_btn_style)
-        self.cyl_tool.setToolTip("Cylinder Tool")
+        self.cyl_tool.setToolTip("Center Cylinder Tool")
         self.cyl_tool.clicked.connect(self.implement_cylinder_tool)
         
         self.new_cyl_tool = QPushButton()
         self.new_cyl_tool.setIcon(QIcon("./icons/new_cylinder.png"))
         self.new_cyl_tool.setIconSize(QSize(icon_size, icon_size))
         self.new_cyl_tool.setStyleSheet(self.tool_btn_style)
-        self.new_cyl_tool.setToolTip("New Cylinder Tool")
+        self.new_cyl_tool.setToolTip("Base Cylinder Tool")
         self.new_cyl_tool.clicked.connect(self.implement_new_cylinder_tool)
         
         self.bz_tool = QPushButton()
@@ -199,13 +207,6 @@ class UserInterface(QWidget):
         self.bz_tool.setToolTip("Curved Cylinder Tool")
         self.bz_tool.clicked.connect(self.implement_bezier_tool)
         
-        self.measure_tool = QPushButton()
-        self.measure_tool.setIcon(QIcon("./icons/tape_measure.png"))
-        self.measure_tool.setIconSize(QSize(icon_size, icon_size))
-        self.measure_tool.setStyleSheet(self.tool_btn_style)
-        self.measure_tool.setToolTip("Measure Tool")
-        self.measure_tool.clicked.connect(self.implement_measure_tool)
-        
         self.pick_tool = QPushButton()
         self.pick_tool.setIcon(QIcon("./icons/picking.png"))
         self.pick_tool.setIconSize(QSize(icon_size, icon_size))
@@ -213,12 +214,14 @@ class UserInterface(QWidget):
         self.pick_tool.setToolTip("Picking Tool")
         self.pick_tool.clicked.connect(self.implement_picking_tool)
         
-        self.dot_connecting_tool = QPushButton()
-        self.dot_connecting_tool.setIcon(QIcon("./icons/path_point.png"))
-        self.dot_connecting_tool.setIconSize(QSize(icon_size, icon_size))
-        self.dot_connecting_tool.setStyleSheet(self.tool_btn_style)
-        self.dot_connecting_tool.setToolTip("Dots Connecting Tool")
-        self.dot_connecting_tool.clicked.connect(self.implement_connect_tool)
+        self.measure_tool = QPushButton()
+        self.measure_tool.setIcon(QIcon("./icons/tape_measure.png"))
+        self.measure_tool.setIconSize(QSize(icon_size, icon_size))
+        self.measure_tool.setStyleSheet(self.tool_btn_style)
+        self.measure_tool.setToolTip("Measuring Tool")
+        self.measure_tool.clicked.connect(self.implement_measure_tool)
+        
+
         
 
 
@@ -236,7 +239,7 @@ class UserInterface(QWidget):
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
             
             
-    def implement_quad_tool(self):
+    def implement_rect_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(False, False, True, False, False, False, False, False, False)
@@ -273,7 +276,7 @@ class UserInterface(QWidget):
             self.set_flags(False, False, False, False, False, False, False, True, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
             
-    def implement_connect_tool(self):
+    def implement_quad_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style)
             self.set_flags(False, False, False, False, False, False, False, False, True)
@@ -284,25 +287,25 @@ class UserInterface(QWidget):
     def set_styles(self, mv, ft, quad, cyl, new_cyl, bz, measure, pick, connect_dots):
         self.mv_tool.setStyleSheet(mv)
         self.ft_tool.setStyleSheet(ft)
-        self.quad_tool.setStyleSheet(quad)
+        self.rect_tool.setStyleSheet(quad)
         self.cyl_tool.setStyleSheet(cyl)
         self.new_cyl_tool.setStyleSheet(new_cyl)
         self.bz_tool.setStyleSheet(bz)
         self.measure_tool.setStyleSheet(measure)
         self.pick_tool.setStyleSheet(pick)
-        self.dot_connecting_tool.setStyleSheet(connect_dots)
+        self.quad_tool.setStyleSheet(connect_dots)
 
 
-    def set_flags(self, move_bool, cross_hair, bQuad, bCylinder, bnCylinder, bBezier, bMeasure, bPick, bConnect):
+    def set_flags(self, move_bool, cross_hair, bRect, bCylinder, bnCylinder, bBezier, bMeasure, bPick, bQuad):
         self.move_bool = move_bool
         self.cross_hair = cross_hair
-        self.bQuad = bQuad
+        self.bRect = bRect
         self.bCylinder = bCylinder
         self.bnCylinder = bnCylinder
         self.bBezier = bBezier
         self.bMeasure = bMeasure
         self.bPick = bPick
-        self.bConnect = bConnect
+        self.bQuad = bQuad
         
 
 

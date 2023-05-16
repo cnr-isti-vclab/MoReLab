@@ -32,7 +32,6 @@ class Features(QWidget):
         self.all_ply_pts = []
         self.camera_poses = []
         self.camera_projection_mat = []
-        self.camera_poses = []
         
     def get_correspondent_pts(self, v):
         img_indices = []
@@ -93,8 +92,6 @@ class Features(QWidget):
 
         
     def compute_sfm(self):
-        # print(self.ctrl_wdg.gl_viewer.width())
-        # print(self.ctrl_wdg.gl_viewer.height())
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         all_pts, img_indices, visible_labels = self.get_correspondent_pts(v)
 
@@ -103,6 +100,9 @@ class Features(QWidget):
     
         if len(img_indices) > 0:
             print("Performing Bundle adjustment")
+            w = Dialog()
+            w.show()
+
             opt_cameras, opt_points, all_points = bundle_adjustment(all_pts, visible_labels, self.K)
             self.initialize_mats()
 
@@ -110,11 +110,12 @@ class Features(QWidget):
 
             opt_points_ext = np.concatenate((opt_points, np.ones((opt_points.shape[0], 1))), axis=1)
 
-            # print(self.near_far)
+            w.done(0)
+
             print("Bundle adjustment has been computed.")
             
             self.img_indices = img_indices
-            self.ctrl_wdg.populate_scrollbar()
+            self.ctrl_wdg.populate_scrollbar(self.ctrl_wdg.selected_thumbnail_index)
 
             cam_pos_list = []
             for i in range(opt_cameras.shape[0]):
@@ -125,15 +126,19 @@ class Features(QWidget):
                 # ppm =np.concatenate((np.matmul(self.K, (np.concatenate((R, t), axis=1))), np.array([0,0,0,1]).reshape((1,4))), axis=0)
 
                 
-                self.camera_projection_mat.append((img_indices[i], cam_ext))                
+                self.camera_projection_mat.append((img_indices[i], cam_ext))
+                
+                # print(cam_ext)
+                
                 cm = calc_camera_pos(R, t)
                 cam_pos_list.append([cm[0,0], cm[0,1], cm[0,2]])
             
             array_camera_poses = np.asarray(cam_pos_list)
+            # print(array_camera_poses)
             # print(self.camera_projection_mat)
             self.camera_poses.append(array_camera_poses)
             ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
-            # print(opt_points)
+            # print(ply_pts)
             self.ply_pts.append(opt_points)
         
         
@@ -157,16 +162,16 @@ class Features(QWidget):
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t].append(fc)
                 v.hide_regular[t].append(False)
+                v.rect_groups_regular[t].append(-1)
                 v.quad_groups_regular[t].append(-1)
-                v.connect_groups_regular[t].append(-1)
                 v.cylinder_groups_regular[t].append(-1)
                 
                 
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(fc)
                 v.hide_network[t].append(False)
+                v.rect_groups_network[t].append(-1)
                 v.quad_groups_network[t].append(-1)
-                v.connect_groups_network[t].append(-1)
                 v.cylinder_groups_network[t].append(-1)
 
                 

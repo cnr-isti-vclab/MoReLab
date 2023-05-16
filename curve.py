@@ -3,6 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from scipy.spatial import distance
 from scipy.optimize import minimize, least_squares
+from scipy.spatial.transform import Rotation as R
 from scipy import linalg
 
 import numpy as np
@@ -22,17 +23,12 @@ class Curve_Tool(QObject):
         self.bezier_control_points = []
         self.curve_2d_points = []
         self.final_bezier = []
+        self.final_bezier_radii = []
         self.ctrl_pts_final = []
         self.final_base_centers = []
         self.final_top_centers = []
         self.final_cylinder_bases = []
         self.final_cylinder_tops = []
-        self.P1_curve = []
-        self.P2_curve = []
-        self.P3_curve = []
-        self.P4_curve = []
-        
-        
         
         
         
@@ -190,54 +186,105 @@ class Curve_Tool(QObject):
 
             res = least_squares(self.minimize_curve_error, x1, verbose=0, ftol=1e-15, method='trf')
             ctrl_pts = res.x.reshape((int(len(res.x)/3), 3))
-            # print(ctrl_pts - x0_array)
-            # print(ctrl_pts)
             ctrl_pts = ctrl_pts[:4, :]
-            # print("\n\n\n")
-            # print(ctrl_pts)
             
             self.ctrl_pts_final.append(ctrl_pts)
             Ps = []
             for j in range(self.num_pts):
                 k = j / float(self.num_pts - 1)
                 Ps.append(self.bezier(k, ctrl_pts))
+                
+                self.final_bezier_radii.append(self.calc_radius(k, ctrl_pts[0,:], ctrl_pts[1,:], ctrl_pts[2,:], ctrl_pts[3,:]))
+                
+                
             self.final_bezier.append(np.asarray(Ps))
             
 
+
     def make_general_cylinder(self):
+        # print("Make general cylinder")
         
         Ps = self.final_bezier[-1]
+        BC, TC, CB, CT = [], [], [], []
         # print(Ps)
         for i in range(0,len(Ps)-1,1):
             P1 = Ps[i]
-            if i==0:
-                P3 = self.radius_point[0]
-                P2 = -1*np.cross(Ps[i] - Ps[i+1], P3 - Ps[i]) + Ps[i]
+            if len(CT)==0:          ##### First step
+                P3 = self.project_P3(P1, Ps[i+1], self.radius_point[0])
+                P2 = np.cross(Ps[i+1] - Ps[i] , P3 - Ps[i]) + Ps[i]
 
             else:                
                 
-                P3 = cyl_tops[0]
-                P2 = -1*np.cross(Ps[i] - Ps[i+1], P3 - Ps[i]) + Ps[i]
+                P3 = self.project_P3(P1, Ps[i+1], cyl_tops[0])             
+                P2 = np.cross(Ps[i+1] - Ps[i], P3 - Ps[i]) + Ps[i]
 
-            self.P2_curve.append(P2)
-            self.P3_curve.append(P3)
-                
+            r = np.linalg.norm(P3 - P1) # Circle cylinder
+            
             P4 = Ps[i+1]
 
-            cyl_bases, cyl_tops, center_base, center_top = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.make_cylinder(P1, P2, P3, P4)
-                
+            # print(self.final_bezier_radii[i], r)
+            if self.final_bezier_radii[i] > 1.05*r:
+                cyl_bases, cyl_tops, center_base, center_top = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.make_cylinder(P1, P2, P3, P4)
+                BC.append(center_base)
+                TC.append(center_top)
+                CB.append(cyl_bases)
+                CT.append(cyl_tops)
 
-            # print(cyl_bases)
-            # print(center_base)
-            # print("\n\n---------------------------\n\n")
-            # print(cyl_tops)
-            # print(center_top)
-            self.final_base_centers.append(center_base)
-            self.final_top_centers.append(center_top)
-            self.final_cylinder_bases.append(cyl_bases)
-            self.final_cylinder_tops.append(cyl_tops)
         
-            
+        self.final_base_centers.append(BC)
+        self.final_top_centers.append(TC)
+        self.final_cylinder_bases.append(CB)
+        self.final_cylinder_tops.append(CT)
+        
+    def rotate(self, angle_degrees, rotation_axis, center):
+        if len(self.final_base_centers) > 0:
+            angle_radians = np.radians(angle_degrees)
+            rotation_vector = angle_radians * rotation_axis
+            rotation = R.from_rotvec(rotation_vector)
+            for i, pt in enumerate(self.final_base_centers[-1]):
+                self.final_base_centers[-1][i] = rotation.apply(pt-center) + center
+                
+            for i, pt in enumerate(self.final_top_centers[-1]):
+                self.final_top_centers[-1][i] = rotation.apply(pt-center) + center
+    
+            for i, base in enumerate(self.final_cylinder_bases[-1]):
+                for j, pt in enumerate(base):
+                    self.final_cylinder_bases[-1][i][j] = rotation.apply(pt-center) + center
+        
+            for i, top in enumerate(self.final_cylinder_tops[-1]):
+                for j, pt in enumerate(top):
+                    self.final_cylinder_tops[-1][i][j] = rotation.apply(pt-center) + center
+                    
+                    
+                    
+    def translate(self, vec):
+        if len(self.final_base_centers) > 0:
+            for i, pt in enumerate(self.final_base_centers[-1]):
+                self.final_base_centers[-1][i] = pt + vec        
+    
+            for i, pt in enumerate(self.final_top_centers[-1]):
+                self.final_top_centers[-1][i] = pt + vec
+    
+            for i, base in enumerate(self.final_cylinder_bases[-1]):
+                for j, pt in enumerate(base):
+                    self.final_cylinder_bases[-1][i][j] = pt + vec
+        
+            for i, top in enumerate(self.final_cylinder_tops[-1]):
+                for j, pt in enumerate(top):
+                    self.final_cylinder_tops[-1][i][j] = pt + vec
+    
+        
+        
+    def project_P3(self, P1, P4, P3):
+        vec = P4-P1
+        a, b, c = vec[0], vec[1], vec[2]
+        d = a*P1[0] + b*P1[1] + c*P1[2]
+        
+        k = (d - a*P3[0] - b*P3[1] - c*P3[2])/(a*a + b*b + c*c)
+        x = P3[0] + k*a
+        y = P3[1] + k*b
+        z = P3[2] + k*c
+        return np.array([x, y, z])
             
     
     def minimize_curve_error(self, params):
@@ -292,7 +339,7 @@ class Curve_Tool(QObject):
         return self.binomial(i, n) * (t ** i) * ((1 - t) ** (n - i))
     
     
-    def bezier(self, t, points):
+    def bezier(self, t, points): # points are control points
         """Calculate coordinate of a point in the bezier curve"""
         n = len(points) - 1
         x = y = z = 0
@@ -317,3 +364,19 @@ class Curve_Tool(QObject):
                 v.curve_3d_point_network[t].append(P)
             
                 
+            
+    def calc_radius(self, t, P0, P1, P2, P3):
+        x_d = 3 * ((1 - t) ** 2) * (P1[0] - P0[0]) + 6 * (1 - t) * t * (P2[0] - P1[0]) + 3 * (t ** 2) * (P3[0] - P2[0])
+        y_d = 3 * ((1 - t) ** 2) * (P1[1] - P0[1]) + 6 * (1 - t) * t * (P2[1] - P1[1]) + 3 * (t ** 2) * (P3[1] - P2[1])
+        
+        x_dd = 6 * (1 - t) * (P2[0] - 2 * P1[0] + P0[0]) + 6 * t * (P3[0] - 2 * P2[0] + P1[0])
+        y_dd = 6 * (1 - t) * (P2[1] - 2 * P1[1] + P0[1]) + 6 * t * (P3[1] - 2 * P2[1] + P1[1])
+        
+        curvature = (x_d*y_dd - y_d*x_dd)/math.pow(x_d**2 + y_d**2, 3/2)
+        radius = abs(1/curvature)
+        # print("Radius : "+str(radius))
+        return radius
+            
+            
+            
+            

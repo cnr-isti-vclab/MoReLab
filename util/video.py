@@ -1,3 +1,23 @@
+#
+#Copyright (C) 2020-2021 ISTI-CNR
+#Licensed under the BSD 3-Clause Clear License (see license.txt)
+#
+
+"""
+Copyright (c) 2020-2021 ISTI-CNR
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the limitations in the disclaimer below) provided that the following conditions are met:
+
+        * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+        * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+        * Neither the name of ISTI-CNR nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
+
+
+
 import cv2, os
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
@@ -24,8 +44,8 @@ class Video:
         self.n_objects_kf_regular = []
         self.features_regular = []
         self.hide_regular = []
+        self.rect_groups_regular = []
         self.quad_groups_regular = []
-        self.connect_groups_regular = []
         self.cylinder_groups_regular = []
         self.curve_groups_regular = []
         self.curve_pts_regular = []
@@ -34,8 +54,8 @@ class Video:
         self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
+        self.rect_groups_network = []
         self.quad_groups_network = []
-        self.connect_groups_network = []
         self.cylinder_groups_network = []
         self.curve_groups_network = []
         self.curve_pts_network = []
@@ -61,8 +81,8 @@ class Video:
         self.n_objects_kf_regular = []
         self.features_regular = []
         self.hide_regular = []
+        self.rect_groups_regular = []
         self.quad_groups_regular = []
-        self.connect_groups_regular = []
         self.cylinder_groups_regular = []
         self.curve_groups_regular = []
         self.curve_pts_regular = []
@@ -90,8 +110,8 @@ class Video:
             self.measured_distances_regular.append([])
             self.features_regular.append([])
             self.hide_regular.append([])
+            self.rect_groups_regular.append([])
             self.quad_groups_regular.append([])
-            self.connect_groups_regular.append([])
             self.cylinder_groups_regular.append([])
             self.curve_groups_regular.append([])
             self.curve_pts_regular.append([])
@@ -189,8 +209,8 @@ class Video:
         self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
+        self.rect_groups_network = []
         self.quad_groups_network = []
-        self.connect_groups_network = []
         self.cylinder_groups_network = []
         self.curve_pts_network = []
         self.curve_3d_point_network = []
@@ -262,8 +282,8 @@ class Video:
             self.measured_distances_network.append([])
             self.features_network.append([])
             self.hide_network.append([])
+            self.rect_groups_network.append([])
             self.quad_groups_network.append([])
-            self.connect_groups_network.append([])
             self.cylinder_groups_network.append([])
             self.curve_groups_network.append([])
             self.curve_pts_network.append([])

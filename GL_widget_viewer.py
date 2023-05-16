@@ -81,18 +81,18 @@ class GL_Widget(QOpenGLWidget):
                 if tup[0] == t:
                     self.render_points()
                     
-                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bConnect:
-                        self.render_quads(True)
+                    # if self.obj.ctrl_wdg.ui.bRect or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bQuad:
+                    self.render_rect(True)
 
-                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bConnect:
-                        self.render_dot_connects(True)
+                    # if self.obj.ctrl_wdg.ui.bRect or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bQuad:
+                    self.render_quads(True)
                         
-                    if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bConnect:
-                        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
-                        self.render_cylinders(True, True)
-                        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
-                        self.render_cylinders(True, False)
-                        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
+                    # if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bRect or self.obj.ctrl_wdg.ui.bQuad:
+                    glPolygonMode( GL_FRONT, GL_FILL)
+                    self.render_cylinders(True, True)
+                    glPolygonMode( GL_FRONT, GL_LINE)
+                    self.render_cylinders(True, False)
+                    glPolygonMode( GL_FRONT, GL_FILL)
                         
 
         if self.util_.pick:
@@ -146,10 +146,13 @@ class GL_Widget(QOpenGLWidget):
         glCullFace(GL_BACK) 
         glFrontFace(GL_CCW)
         
+        
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t: 
                     glViewport(int(self.util_.offset_x), -1*int(self.util_.offset_y), int(self.width()), int(self.height()))
+                    # print(tup[1].shape)
+                    # print(tup[1])
 
                     self.util_.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
                     glMatrixMode(GL_PROJECTION)
@@ -165,33 +168,33 @@ class GL_Widget(QOpenGLWidget):
                     
                     self.render_points()
 
-                    if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick :
-                        self.render_quads(False)
+                    # if self.obj.ctrl_wdg.ui.bRect or self.obj.ctrl_wdg.ui.bPick :
+                    self.render_rect(False)
                     
-                    if self.obj.ctrl_wdg.ui.bConnect or self.obj.ctrl_wdg.ui.bPick :
-                        self.render_dot_connects(False)
+                    # if self.obj.ctrl_wdg.ui.bQuad or self.obj.ctrl_wdg.ui.bPick :
+                    self.render_quads(False)
                     
-                    if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bnCylinder:
-                        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
-                        if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder:
-                            self.render_transient_circle(bases, center, self.fill_color)
-                            self.render_transient_cylinders(cyl_bases, cyl_tops, center_base, center_top, self.fill_color)
-                        self.render_cylinders(False, True)
-                        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
-                        if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder:
-                            self.render_transient_circle(bases, center, self.boundary_color)
-                            self.render_transient_cylinders(cyl_bases, cyl_tops, center_base, center_top, self.boundary_color)
-                        self.render_cylinders(False, False)
-                        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
+                    # if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bnCylinder:
+                    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
+                    if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder:
+                        self.render_transient_circle(bases, center, self.fill_color)
+                        self.render_transient_cylinders(cyl_bases, cyl_tops, center_base, center_top, self.fill_color)
+                    self.render_cylinders(False, True)
+                    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
+                    if self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder:
+                        self.render_transient_circle(bases, center, self.boundary_color)
+                        self.render_transient_cylinders(cyl_bases, cyl_tops, center_base, center_top, self.boundary_color)
+                    self.render_cylinders(False, False)
+                    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
                         
-                    if self.obj.ctrl_wdg.ui.bBezier:
-                        self.render_bezier(v, t)
-                        if len(self.obj.curve_obj.final_cylinder_bases) > 0:
-                            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
-                            self.render_general_cylinder(self.fill_color)
-                            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
-                            self.render_general_cylinder(self.boundary_color)
-                            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
+                    # if self.obj.ctrl_wdg.ui.bBezier:
+                    self.render_bezier(v, t)
+                    if len(self.obj.curve_obj.final_cylinder_bases) > 0:
+                        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+                        self.render_general_cylinder(self.fill_color)
+                        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
+                        self.render_general_cylinder(self.boundary_color)
+                        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
 
 
         glDisable(GL_CULL_FACE)
@@ -261,11 +264,11 @@ class GL_Widget(QOpenGLWidget):
 
     def wheelEvent(self, event):
         if self.util_.img_file is not None:
-            if self.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1 and self.obj.ctrl_wdg.ui.bPick:
+            if self.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1 and self.obj.ctrl_wdg.ui.bPick:
                 if event.angleDelta().y() > 0:
-                    self.obj.ctrl_wdg.quad_obj.scale_up()
+                    self.obj.ctrl_wdg.rect_obj.scale_up()
                 else:
-                    self.obj.ctrl_wdg.quad_obj.scale_down()
+                    self.obj.ctrl_wdg.rect_obj.scale_down()
 
 
             else:
@@ -296,7 +299,7 @@ class GL_Widget(QOpenGLWidget):
         if (self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bBezier) and len(self.obj.ply_pts) > 0:    
             self.util_.current_pos = np.array([x, y])
     
-        if len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0:
+        if len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0:
             self.move_x = a.x()
             self.move_y = a.y()
             self.util_.move_pick = True
@@ -380,6 +383,7 @@ class GL_Widget(QOpenGLWidget):
             base_center = self.obj.cylinder_obj.centers[i]
             if -1 not in base_center:
                 top_center = self.obj.cylinder_obj.top_centers[i]
+
                 color = self.select_color(i, offscreen_bool, fill_flag)
                 # print(top_center)
                 glColor4f(color[0], color[1], color[2], 0.1)
@@ -458,8 +462,52 @@ class GL_Widget(QOpenGLWidget):
         glEnd()
         
 
+    def render_rect(self, offscreen_bool = False):
+        for i, pt_tup in enumerate(self.obj.ctrl_wdg.rect_obj.new_points):
+            if not self.obj.ctrl_wdg.rect_obj.deleted[i]:
+                if offscreen_bool:
+                    co = self.obj.ctrl_wdg.rect_obj.colors[i+1]
+                    glColor3f(co[0]/255, co[1]/255, co[2]/255)
+                else:
+                    if i==self.obj.ctrl_wdg.rect_obj.selected_rect_idx:
+                        glColor3f(0.38, 0.85, 0.211)
+                    else:
+                        glColor3f(0, 0.6352, 1)                
+                glBegin(GL_TRIANGLES)      
+                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+        
+                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                glEnd()
+                
+                
+                glColor3f(self.boundary_color[0], self.boundary_color[1], self.boundary_color[2])
+                glPointSize(5*self.util_._zoom)
+                glBegin(GL_POINTS)
+                
+                for pt in pt_tup:
+                    glVertex3f(pt[0], pt[1], pt[2])
+                glEnd()
+                
+                
+                glLineWidth(2.0)
+                glColor3f(self.boundary_color[0], self.boundary_color[1], self.boundary_color[2])
+                glBegin(GL_LINE_LOOP)
+                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
+                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
+                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
+                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
+                glEnd()
+                
+                
+                
+                
+                
     def render_quads(self, offscreen_bool = False):
-        for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.new_points):
+        for i, pt_tup in enumerate(self.obj.ctrl_wdg.quad_obj.all_pts):
             if not self.obj.ctrl_wdg.quad_obj.deleted[i]:
                 if offscreen_bool:
                     co = self.obj.ctrl_wdg.quad_obj.colors[i+1]
@@ -478,40 +526,20 @@ class GL_Widget(QOpenGLWidget):
                 glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
                 glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
                 glEnd()
+
+                glColor3f(self.boundary_color[0], self.boundary_color[1], self.boundary_color[2])
+
+                glPointSize(5*self.util_._zoom)
+                glBegin(GL_POINTS)
+                
+                for pt in pt_tup:
+                    glVertex3f(pt[0], pt[1], pt[2])
+                glEnd()
+
+
                 
                 glLineWidth(2.0)
-                glColor3f(0.0, 0.0, 0.0)
-                glBegin(GL_LINE_LOOP)
-                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                glEnd()
-                
-                
-    def render_dot_connects(self, offscreen_bool = False):
-        for i, pt_tup in enumerate(self.obj.ctrl_wdg.connect_obj.all_pts):
-            if not self.obj.ctrl_wdg.connect_obj.deleted[i]:
-                if offscreen_bool:
-                    co = self.obj.ctrl_wdg.connect_obj.colors[i+1]
-                    glColor3f(co[0]/255, co[1]/255, co[2]/255)
-                else:
-                    if i==self.obj.ctrl_wdg.connect_obj.selected_connect_idx:
-                        glColor3f(0.38, 0.85, 0.211)
-                    else:
-                        glColor3f(0, 0.6352, 1)                
-                glBegin(GL_TRIANGLES)      
-                glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-        
-                glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-                glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-                glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                glEnd()
-                
-                glLineWidth(2.0)
-                glColor3f(0.0, 0.0, 0.0)
+                glColor3f(self.boundary_color[0], self.boundary_color[1], self.boundary_color[2])
                 glBegin(GL_LINE_LOOP)
                 glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
                 glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
@@ -581,79 +609,64 @@ class GL_Widget(QOpenGLWidget):
     def render_general_cylinder(self, color):
                 
         ##### Draw initial base of the cylinder
-        vertices = self.obj.curve_obj.final_cylinder_bases[0]
-        base_center = self.obj.curve_obj.final_base_centers[0]
-        glColor4f(color[0], color[1], color[2], 0.1)
-        glBegin(GL_TRIANGLES)
-        for k in range(1,len(vertices)):                                
-            glVertex3f(base_center[0], base_center[1], base_center[2])
-            glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-            glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
-
-        glEnd()
-        
-        
-
-
-        #### Draw cylinder strips
-        for i in range(1, len(self.obj.curve_obj.final_cylinder_bases)):
-            base_1 = self.obj.curve_obj.final_cylinder_bases[i-1]
-            base_2 = self.obj.curve_obj.final_cylinder_bases[i]
-            
-            # print(len(base_1))
-            
-            glColor3f(color[0], color[1], color[2])
-            glBegin(GL_TRIANGLE_STRIP)
-            sectorCount = self.obj.cylinder_obj.sectorCount
-            for k, vertex in enumerate(base_1):
-                if k < int(0.75*sectorCount) :
-                    glVertex3f(vertex[0], vertex[1], vertex[2])
-                    glVertex3f(base_2[k + int(0.25*sectorCount)][0], base_2[k + int(0.25*sectorCount)][1], base_2[k + int(0.25*sectorCount) ][2])
-                else:
-                    glVertex3f(vertex[0], vertex[1], vertex[2])
-                    glVertex3f(base_2[k - int(0.75*sectorCount) ][0], base_2[k - int(0.75*sectorCount)][1], base_2[k - int(0.75*sectorCount) ][2])
+        for i, cylinder_bases in enumerate(self.obj.curve_obj.final_cylinder_bases):
+            vertices = cylinder_bases[0]
+            base_center = self.obj.curve_obj.final_base_centers[i][0]
+            glColor4f(color[0], color[1], color[2], 0.1)
+            glBegin(GL_TRIANGLES)
+            for k in range(1,len(vertices)):                                
+                glVertex3f(base_center[0], base_center[1], base_center[2])
+                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+    
             glEnd()
-
-
-
-        #### Draw last cylinder between base and top
-        vertices = self.obj.curve_obj.final_cylinder_bases[-1]
-        top_vertices = self.obj.curve_obj.final_cylinder_tops[-1]
-
-        glColor4f(color[0], color[1], color[2], 0.1)
-        glBegin(GL_TRIANGLE_STRIP)
-        for k in range(0,len(vertices), 1):
-            glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
-            glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
-        glEnd()
         
         
-        
-        #### Draw final top of the cylinder
-        vertices = self.obj.curve_obj.final_cylinder_tops[-1]
-        top_center = self.obj.curve_obj.final_top_centers[-1]
-        glColor4f(color[0], color[1], color[2], 0.1)
-        glBegin(GL_TRIANGLES)
-        for k in range(1,len(vertices)):                                
-            glVertex3f(top_center[0], top_center[1], top_center[2])
-            glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-            glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+            for j in range(1, len(cylinder_bases)):
+                base_1 = cylinder_bases[j-1]
+                base_2 = cylinder_bases[j]
+                
+                # print(len(base_1))
+                
+                glColor3f(color[0], color[1], color[2])
+                glBegin(GL_TRIANGLE_STRIP)
+                sectorCount = self.obj.cylinder_obj.sectorCount
+                for k, vertex in enumerate(base_1):
+                    if k < int(0.75*sectorCount) :
+                        glVertex3f(vertex[0], vertex[1], vertex[2])
+                        glVertex3f(base_2[k + int(0.25*sectorCount)][0], base_2[k + int(0.25*sectorCount)][1], base_2[k + int(0.25*sectorCount) ][2])
+                    else:
+                        glVertex3f(vertex[0], vertex[1], vertex[2])
+                        glVertex3f(base_2[k - int(0.75*sectorCount) ][0], base_2[k - int(0.75*sectorCount)][1], base_2[k - int(0.75*sectorCount) ][2])
+                glEnd()
 
-        glEnd()
 
-
-        # # Draw cylinder tops
-        # for i, vertices in enumerate(self.obj.curve_obj.final_cylinder_tops):
-        #     top_center = self.obj.curve_obj.final_bezier[-1][i+1]
-        #     # color = self.select_color(i, offscreen_bool, fill_flag)
-        #     # print(top_center)
-        #     glColor4f(color[0], color[1], color[2], 0.1)
-        #     glBegin(GL_TRIANGLES)
-        #     for k in range(1,len(vertices)):                                
-        #         glVertex3f(top_center[0], top_center[1], top_center[2])
-        #         glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
-        #         glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-
-        #     glEnd()
-        
+    
+            #### Draw last cylinder between base and top
+            vertices = cylinder_bases[-1]
+            top_vertices = self.obj.curve_obj.final_cylinder_tops[i][-1]
+    
+            glColor4f(color[0], color[1], color[2], 0.1)
+            glBegin(GL_TRIANGLE_STRIP)
+            for k in range(0,len(vertices), 1):
+                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+                glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
+            glEnd()
             
+            
+            
+            #### Draw final top of the cylinder
+            vertices = self.obj.curve_obj.final_cylinder_tops[i][-1]
+            # print("Number of nodes: ")
+            top_center = self.obj.curve_obj.final_top_centers[i][-1]
+            glColor4f(color[0], color[1], color[2], 0.1)
+            glBegin(GL_TRIANGLES)
+            for k in range(1,len(vertices)):                                
+                glVertex3f(top_center[0], top_center[1], top_center[2])
+                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+
+    
+            glEnd()
+            
+                

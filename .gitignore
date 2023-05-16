@@ -11,40 +11,11 @@ util/__pycache__/
 *.ply
 *.json
 *.jpeg
+*.jpg
+*.npy
+*.csv
 *.zip
 *.bz2
 *.obj
-
-experiment.py
-exp1.py
-exp4.py
-Side 1.mp4
-.python-version
-Li1R19_Feedwater Bracket  3D Mapping Project _.5.MP4
-
-
-feedwatersparger/
-test1/
-test2/
-test3/
-test4/
-test5/
-test6/
-jet_pump/
-jp_all_features/
-jp_corners
-jp_corners2/
-jp_corners3/
-jp_corners4/
-jp1/
-jp2/
-
-
-before_BA/
-epri_test1/
-epri_test2/
-epri_test3/
-
-extra_past_results/
 
 

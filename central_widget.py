@@ -5,8 +5,8 @@ from user_interface import UserInterface
 from movie_panel import MoviePanel
 from GL_widget_viewer import GL_Widget
 from document import Document
+from rectangle import Rectangle_Tool
 from quad import Quad_Tool
-from points_connecting import PointsConnecting
 from util.kf_dialogue import KF_dialogue
 from util.util import *
 
@@ -37,8 +37,8 @@ class Widget(QWidget):
 
         self.ui = UserInterface(self)
         self.mv_panel = MoviePanel(self)
+        self.rect_obj = Rectangle_Tool(self)
         self.quad_obj = Quad_Tool(self)
-        self.connect_obj = PointsConnecting(self)
         self.copied_data = {}
         
         
@@ -94,7 +94,7 @@ class Widget(QWidget):
                 self.kf_method = dlg.kf_met
             
             
-    def populate_scrollbar(self):
+    def populate_scrollbar(self, disp_idx = -1):
         widget = QWidget()                 
         self.grid_layout = QHBoxLayout()
         row_in_grid_layout = 0
@@ -128,8 +128,8 @@ class Widget(QWidget):
         self.ui.scroll_area.setWidget(widget)    
         self.gl_viewer.obj.feature_panel.display_data()
 
-        if self.selected_thumbnail_index != -1:
-            self.displayThumbnail(self.selected_thumbnail_index)
+        if disp_idx != -1:
+            self.displayThumbnail(disp_idx)
         else:
             self.gl_viewer.util_.setPhoto()
             

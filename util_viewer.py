@@ -3,7 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PIL import Image
 from PIL.ImageQt import ImageQt 
-import cv2
+import cv2, copy
 import numpy as np
 from scipy.spatial import distance
 # from OpenGL.GL import *
@@ -21,6 +21,7 @@ class Util_viewer(QWidget):
         self.mv_pix, self.dist_thresh = 1, 10
         self._zoom, self.offset_x, self.offset_y = 1, 0, 0
         self.x, self.y = 1, 1
+        self.w1, self.w2, self.h1, self.h2 = 0, 0, 0, 0
         self.x_zoomed, self.y_zoomed = 1, 1
         self.pick, self.move_feature_bool, self.move_pick = False, False, False
         self.clicked_once = False
@@ -168,9 +169,61 @@ class Util_viewer(QWidget):
         t = ctrl_wdg.selected_thumbnail_index
         
         
-        if ctrl_wdg.ui.bBezier and event.key() == Qt.Key_Escape:
+        if ctrl_wdg.ui.bBezier and event.key() == Qt.Key_F:
             self.parent_viewer.obj.curve_obj.find_final_curve()
-        
+            
+        if ctrl_wdg.ui.bBezier and len(self.parent_viewer.obj.curve_obj.final_base_centers) > 0 and event.key() == Qt.Key_C and event.modifiers() & Qt.ControlModifier:
+            self.parent_viewer.obj.curve_obj.final_base_centers.append(self.parent_viewer.obj.curve_obj.final_base_centers[-1].copy())
+            self.parent_viewer.obj.curve_obj.final_top_centers.append(self.parent_viewer.obj.curve_obj.final_top_centers[-1].copy())
+            self.parent_viewer.obj.curve_obj.final_cylinder_bases.append(copy.deepcopy(self.parent_viewer.obj.curve_obj.final_cylinder_bases[-1]))
+            self.parent_viewer.obj.curve_obj.final_cylinder_tops.append(copy.deepcopy(self.parent_viewer.obj.curve_obj.final_cylinder_tops[-1]))
+            
+            # print("Count : "+str(len(self.parent_viewer.obj.curve_obj.final_base_centers)))
+            
+        if ctrl_wdg.ui.bBezier and len(self.parent_viewer.obj.curve_obj.final_base_centers) > 0:
+            base_centers = self.parent_viewer.obj.curve_obj.final_base_centers[-1]
+            # print(np.asarray(base_centers).shape)
+            center = np.mean(np.asarray(base_centers), axis=0)
+            # print(center)
+            P1 = base_centers[0]
+            P4 = base_centers[1]
+            P3 = self.parent_viewer.obj.curve_obj.final_cylinder_bases[-1][0][0]
+            P2 = np.cross(P4 - P1 , P3 - P1) + P1
+            x_axis = (P3 - P1)/np.linalg.norm(P3 - P1)
+            y_axis = (P4 - P1)/np.linalg.norm(P4 - P1)
+            z_axis = (P2 - P1)/np.linalg.norm(P2 - P1)
+            
+            if event.key() == Qt.Key_X:
+                if event.modifiers() & Qt.ControlModifier:
+                    self.parent_viewer.obj.curve_obj.rotate(-0.1, x_axis, center)
+                else:
+                    self.parent_viewer.obj.curve_obj.rotate(0.1, x_axis, center)
+                    
+            if event.key() == Qt.Key_Y:
+                if event.modifiers() & Qt.ControlModifier:
+                    self.parent_viewer.obj.curve_obj.rotate(-0.1, y_axis, center)
+                else:
+                    self.parent_viewer.obj.curve_obj.rotate(0.1, y_axis, center)
+            
+            if event.key() == Qt.Key_Z:
+                if event.modifiers() & Qt.ControlModifier:
+                    self.parent_viewer.obj.curve_obj.rotate(-0.1, z_axis, center)
+                else:
+                    self.parent_viewer.obj.curve_obj.rotate(0.1, z_axis, center)
+                    
+            if event.key() == Qt.Key_Right:
+                self.parent_viewer.obj.curve_obj.translate(np.array([0.005, 0, 0]))
+                    
+            if event.key() == Qt.Key_Left:
+                self.parent_viewer.obj.curve_obj.translate(np.array([-0.005, 0, 0]))
+
+            if event.key() == Qt.Key_Up:
+                self.parent_viewer.obj.curve_obj.translate(np.array([0, 0.005, 0]))
+
+            if event.key() == Qt.Key_Down:
+                self.parent_viewer.obj.curve_obj.translate(np.array([0, -0.005, 0]))
+
+            
         
         if ctrl_wdg.ui.cross_hair and event.key() == Qt.Key_Escape:
             self.parent_viewer.obj.feature_panel.selected_feature_idx = -1
@@ -290,17 +343,17 @@ class Util_viewer(QWidget):
             if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
                 if self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1: 
                     self.parent_viewer.obj.cylinder_obj.delete_cylinder(self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
+                elif ctrl_wdg.rect_obj.selected_rect_idx != -1:
+                    ctrl_wdg.rect_obj.delete_rect(ctrl_wdg.rect_obj.selected_rect_idx)
                 elif ctrl_wdg.quad_obj.selected_quad_idx != -1:
                     ctrl_wdg.quad_obj.delete_quad(ctrl_wdg.quad_obj.selected_quad_idx)
-                elif ctrl_wdg.connect_obj.selected_connect_idx != -1:
-                    ctrl_wdg.connect_obj.delete_connect_group(ctrl_wdg.connect_obj.selected_connect_idx)
                 else:
                     print("No 3D object has been selected")
                     
             if event.key() == Qt.Key_Escape:                        
-                ctrl_wdg.quad_obj.selected_quad_idx = -1
+                ctrl_wdg.rect_obj.selected_rect_idx = -1
                 self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
-                ctrl_wdg.connect_obj.selected_connect_idx = -1
+                ctrl_wdg.rect_obj.selected_quad_idx = -1
                 
                 
     def util_mouse_press(self, event, ctrl_wdg):
@@ -338,11 +391,11 @@ class Util_viewer(QWidget):
                                     self.move_feature_bool = True
             
             selected_feature = False
-            if (ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bConnect or ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bBezier) and len(self.parent_viewer.obj.ply_pts) > 0:
+            if (ctrl_wdg.ui.bRect or ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bBezier) and len(self.parent_viewer.obj.ply_pts) > 0:
+                if ctrl_wdg.ui.bRect:
+                    selected_feature = ctrl_wdg.rect_obj.select_feature(x, y)
                 if ctrl_wdg.ui.bQuad:
                     selected_feature = ctrl_wdg.quad_obj.select_feature(x, y)
-                if ctrl_wdg.ui.bConnect:
-                    selected_feature = ctrl_wdg.connect_obj.select_feature(x, y)
                 if ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder:
                     selected_feature = self.parent_viewer.obj.cylinder_obj.select_feature(x, y)
                     
@@ -411,7 +464,7 @@ class Util_viewer(QWidget):
                             painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                             painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                                    
-            pen = QPen(QColor(0, 0, 255))
+            pen = QPen(QColor(0, 255, 0))
             pen.setWidth(2)
             painter.setPen(pen)
             
@@ -431,8 +484,27 @@ class Util_viewer(QWidget):
                     painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
             
             
-            # Painting for Quad Tool
-            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bPick) :
+            # Painting for rect Tool
+            if (len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0) :
+                if ctrl_wdg.kf_method == "Regular":
+                    for i, fc in enumerate(v.features_regular[t]):
+                        if v.rect_groups_regular[t][i] != -1:
+                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+
+                    
+                elif ctrl_wdg.kf_method == "Network":
+                    for i, fc in enumerate(v.features_network[t]):
+                        if v.rect_groups_network[t][i] != -1:
+                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                            
+                            
+            # Painting for Dots Connecting Tool
+            if (len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0): 
+            # and (ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bPick):
                 if ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
                         if v.quad_groups_regular[t][i] != -1:
@@ -448,27 +520,9 @@ class Util_viewer(QWidget):
                             painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                             painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
-                            
-            # Painting for Dots Connecting Tool
-            if (len(v.quad_groups_regular) > 0 or len(v.quad_groups_network) > 0) and (ctrl_wdg.ui.bConnect or ctrl_wdg.ui.bPick):
-                if ctrl_wdg.kf_method == "Regular":
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if v.connect_groups_regular[t][i] != -1:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-
-                    
-                elif ctrl_wdg.kf_method == "Network":
-                    for i, fc in enumerate(v.features_network[t]):
-                        if v.connect_groups_network[t][i] != -1:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-                            
 
             # Painting for Sphere Tool
-            if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) and (ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bPick) :
+            if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) :
                 if ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
                         if v.cylinder_groups_regular[t][i] != -1:
@@ -487,7 +541,7 @@ class Util_viewer(QWidget):
 
 
             # Painting for selected curve point
-            if (len(v.curve_pts_regular) > 0 or len(v.curve_pts_network) > 0) and ctrl_wdg.ui.bBezier :
+            if (len(v.curve_pts_regular) > 0 or len(v.curve_pts_network) > 0) :
                 if ctrl_wdg.kf_method == "Regular":
                     if len(v.curve_pts_regular[t]) > 0:
                         ind = v.curve_pts_regular[t][0]
@@ -507,7 +561,7 @@ class Util_viewer(QWidget):
 
                             
             # #### Painting for Curve
-            if ctrl_wdg.ui.bBezier and (len(v.curve_groups_regular) > 0 or len(v.curve_groups_network) > 0):
+            if len(v.curve_groups_regular) > 0 or len(v.curve_groups_network) > 0:
                 # print(v.curve_groups_regular[t])
                 if ctrl_wdg.kf_method == "Regular":
                     data_val = v.curve_groups_regular[t]
@@ -531,7 +585,7 @@ class Util_viewer(QWidget):
         # print("select and pick")
         v = ctrl_wdg.mv_panel.movie_caps[ctrl_wdg.mv_panel.selected_movie_idx]
         t = ctrl_wdg.selected_thumbnail_index
-        if ctrl_wdg.ui.bBezier:
+        if ctrl_wdg.ui.bBezier and len(self.parent_viewer.obj.curve_obj.radius_point) == 0:
             if len(self.parent_viewer.obj.curve_obj.final_bezier) > 0 and len(self.parent_viewer.obj.curve_obj.radius_point) < 1 :
                 self.parent_viewer.obj.curve_obj.radius_point.append(np.array(px))
                 if len(self.parent_viewer.obj.curve_obj.radius_point) == 1:
@@ -545,8 +599,6 @@ class Util_viewer(QWidget):
                             v.curve_3d_point_regular[t].append(np.array(px))
                             for j, tup in enumerate(self.parent_viewer.obj.camera_projection_mat):
                                 if tup[0] == t:
-                                    # print("Tuple : ")
-                                    # print(tup)
                                     G = self.parent_viewer.obj.camera_projection_mat[j][1][0:3, :]
                                     P = np.matmul(self.parent_viewer.obj.K, G)
                                     self.parent_viewer.obj.curve_obj.estimate_plane(P)
@@ -568,29 +620,41 @@ class Util_viewer(QWidget):
                         v.curve_pts_network[t].pop()
                 
         if dd < 1:
-            if ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder:
+            if ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bCylinder:
                 self.parent_viewer.obj.cylinder_obj.data_val.append(np.array(px))
                 if len(self.parent_viewer.obj.cylinder_obj.data_val) == 4:
-                    self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data()
+                    data_val = self.parent_viewer.obj.cylinder_obj.data_val
+                    if ctrl_wdg.ui.bnCylinder:
+                        bases, tops, center, top_c = self.parent_viewer.obj.cylinder_obj.make_new_cylinder(data_val[0], data_val[1], data_val[2], data_val[3])
+                        if len(bases) > 0:
+                            self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data(bases, tops, center, top_c)
+                        else:
+                            straight_line_dialogue()
+                            del self.parent_viewer.obj.cylinder_obj.data_val[-1]
+
+                    else:
+                        bases, tops, center, top_c = self.parent_viewer.obj.cylinder_obj.make_cylinder(data_val[0], data_val[1], data_val[2], data_val[3])
+                        self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data(bases, tops, center, top_c)
+
                     
             if ctrl_wdg.ui.bPick:
-                ID = ctrl_wdg.quad_obj.getIfromRGB(co[0], co[1], co[2])
+                ID = ctrl_wdg.rect_obj.getIfromRGB(co[0], co[1], co[2])
                 # print("ID : "+str(ID))
-                if ID in ctrl_wdg.quad_obj.quad_counts:
-                    ctrl_wdg.quad_obj.selected_quad_idx = ctrl_wdg.quad_obj.quad_counts.index(ID)
+                if ID in ctrl_wdg.rect_obj.rect_counts:
+                    ctrl_wdg.rect_obj.selected_rect_idx = ctrl_wdg.rect_obj.rect_counts.index(ID)
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
-                    ctrl_wdg.connect_obj.selected_connect_idx = -1
+                    ctrl_wdg.rect_obj.selected_quad_idx = -1
                     
                 elif ID in self.parent_viewer.obj.cylinder_obj.cylinder_count:
                     cyl_idx = self.parent_viewer.obj.cylinder_obj.cylinder_count.index(ID)
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = cyl_idx
-                    ctrl_wdg.quad_obj.selected_quad_idx = -1
-                    ctrl_wdg.connect_obj.selected_connect_idx = -1
+                    ctrl_wdg.rect_obj.selected_rect_idx = -1
+                    ctrl_wdg.rect_obj.selected_quad_idx = -1
                     
-                elif ID in ctrl_wdg.connect_obj.group_counts:
-                    connect_idx = ctrl_wdg.connect_obj.group_counts.index(ID)
-                    ctrl_wdg.connect_obj.selected_connect_idx = connect_idx
-                    ctrl_wdg.quad_obj.selected_quad_idx = -1
+                elif ID in ctrl_wdg.quad_obj.group_counts:
+                    quad_idx = ctrl_wdg.quad_obj.group_counts.index(ID)
+                    ctrl_wdg.quad_obj.selected_quad_idx = quad_idx
+                    ctrl_wdg.quad_obj.selected_rect_idx = -1
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
                     
                     
