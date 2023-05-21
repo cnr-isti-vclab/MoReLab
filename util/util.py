@@ -124,7 +124,7 @@ def exportPLY_dialogue():
     
 def noImage_dialogue():
     msgBox = QMessageBox()
-    msgBox.setText("Please compute select an image and then copy features. ")
+    msgBox.setText("Please click on image thumbnail first and then copy features. ")
     msgBox.setWindowTitle("select Image")
     msgBox.setStandardButtons(QMessageBox.Ok)
     # msgBox.buttonClicked.connect(msgButtonClick)
@@ -232,9 +232,24 @@ def switch_kf_dialogue():
     
 def switch_movie_dialogue():
     msgBox = QMessageBox()
-    msgBox.setText("You have changed the movie. Features can be pasted only within the same movie")
+    msgBox.setText("You have changed the movie. Features can be pasted only within the same movie.")
     msgBox.setWindowTitle("Switch movie")
     msgBox.setStandardButtons(QMessageBox.Ok)                 
+    returnValue = msgBox.exec()
+
+def export_ply_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("The mesh has been exported successfully.")
+    msgBox.setWindowTitle("Export PLY")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    returnValue = msgBox.exec()
+    
+    
+def del_primitive_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("No 3D primitive has been selected. Please click on a 3D primitive to delete.")
+    msgBox.setWindowTitle("Export PLY")
+    msgBox.setStandardButtons(QMessageBox.Ok)
     returnValue = msgBox.exec()
     
 
@@ -305,11 +320,13 @@ def write_vertices_ply(filename,xyz_points,rgb_points=None):
 
     """ creates a .pkl file of the point clouds generated
     """
-
-    assert xyz_points.shape[1] == 3,'Input XYZ points should be Nx3 float array'
+    # Input XYZ points should be Nx3 float array
+    assert xyz_points.shape[1] == 3
     if rgb_points is None:
         rgb_points = np.ones(xyz_points.shape).astype(np.uint8)*255
-    assert xyz_points.shape == rgb_points.shape,'Input RGB colors should be Nx3 float array and have same size as input XYZ points'
+
+    # Input RGB colors should be Nx3 float array and have same size as input XYZ points
+    assert xyz_points.shape == rgb_points.shape
 
     # Write header of .ply file
     fid = open(filename,'wb')

@@ -220,19 +220,19 @@ class Document(QWidget):
                     os.makedirs(ccyl_path)
                 
                 for i, cylinder_bases in enumerate(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases):
-                    print("Data for cylinder # "+str(i+1))
+                    # print("Data for cylinder # "+str(i+1))
                     general_bases = []
                     base_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_base_centers[i])
                     for j, bases in enumerate(cylinder_bases):
                         general_bases.append(np.vstack(bases))
-                        if j == len(cylinder_bases) - 1:
-                            tops = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops[i][-1])
-                            top_center = self.ctrl_wdg.gl_viewer.obj.curve_obj.final_top_centers[i][-1].reshape((1,3))
+
+                    tops = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops[i][-1])
+                    top_center = self.ctrl_wdg.gl_viewer.obj.curve_obj.final_top_centers[i][-1].reshape((1,3))
                             
                     num_bases = base_centers.shape[0]
-                    print("Number of bases : "+str(num_bases))
+                    # print("Number of bases : "+str(num_bases))
                     general_cylinder = np.concatenate((base_centers, np.vstack(general_bases), tops, top_center))
-                    print(general_cylinder.shape)
+                    # print(general_cylinder.shape)
                     np.savetxt(os.path.join(ccyl_path, 'curved_cyl_'+str(i)+'.csv'), general_cylinder, delimiter=',')
 
             

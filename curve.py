@@ -29,7 +29,10 @@ class Curve_Tool(QObject):
         self.final_top_centers = []
         self.final_cylinder_bases = []
         self.final_cylinder_tops = []
-        
+        self.curve_count = []
+        self.colors = [(0,0,0)]
+        self.selected_curve_idx = -1
+        self.deleted = []
         
         
         
@@ -230,11 +233,17 @@ class Curve_Tool(QObject):
                 CB.append(cyl_bases)
                 CT.append(cyl_tops)
 
-        
-        self.final_base_centers.append(BC)
-        self.final_top_centers.append(TC)
-        self.final_cylinder_bases.append(CB)
-        self.final_cylinder_tops.append(CT)
+        if len(BC) > 0:
+            self.final_base_centers.append(BC)
+            self.final_top_centers.append(TC)
+            self.final_cylinder_bases.append(CB)
+            self.final_cylinder_tops.append(CT)
+            
+            self.curve_count.append(self.ctrl_wdg.rect_obj.primitive_count)
+            c = self.ctrl_wdg.rect_obj.getRGBfromI(self.ctrl_wdg.rect_obj.primitive_count)
+            self.colors.append(c)
+            self.ctrl_wdg.rect_obj.primitive_count += 1
+            self.deleted.append(False)
         
     def rotate(self, angle_degrees, rotation_axis, center):
         if len(self.final_base_centers) > 0:

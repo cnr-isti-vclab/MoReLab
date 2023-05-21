@@ -6,6 +6,7 @@ from PIL.ImageQt import ImageQt
 import cv2, copy
 import numpy as np
 from scipy.spatial import distance
+from util.util import *
 # from OpenGL.GL import *
 # from OpenGL.GLU import *
 # from PyQt5.QtOpenGL import *
@@ -169,7 +170,7 @@ class Util_viewer(QWidget):
         t = ctrl_wdg.selected_thumbnail_index
         
         
-        if ctrl_wdg.ui.bBezier and event.key() == Qt.Key_F:
+        if ctrl_wdg.ui.bBezier and event.key() == Qt.Key_F and len(self.parent_viewer.obj.curve_obj.final_bezier) == 0:
             self.parent_viewer.obj.curve_obj.find_final_curve()
             
         if ctrl_wdg.ui.bBezier and len(self.parent_viewer.obj.curve_obj.final_base_centers) > 0 and event.key() == Qt.Key_C and event.modifiers() & Qt.ControlModifier:
@@ -348,7 +349,7 @@ class Util_viewer(QWidget):
                 elif ctrl_wdg.quad_obj.selected_quad_idx != -1:
                     ctrl_wdg.quad_obj.delete_quad(ctrl_wdg.quad_obj.selected_quad_idx)
                 else:
-                    print("No 3D object has been selected")
+                    del_primitive_dialogue()
                     
             if event.key() == Qt.Key_Escape:                        
                 ctrl_wdg.rect_obj.selected_rect_idx = -1
@@ -484,7 +485,7 @@ class Util_viewer(QWidget):
                     painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
             
             
-            # Painting for rect Tool
+            # Painting for Rectangle Tool
             if (len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0) :
                 if ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
@@ -502,9 +503,8 @@ class Util_viewer(QWidget):
                             painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
                             
-            # Painting for Dots Connecting Tool
-            if (len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0): 
-            # and (ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bPick):
+            # Painting for Quad Tool
+            if (len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0):
                 if ctrl_wdg.kf_method == "Regular":
                     for i, fc in enumerate(v.features_regular[t]):
                         if v.quad_groups_regular[t][i] != -1:
@@ -585,7 +585,7 @@ class Util_viewer(QWidget):
         # print("select and pick")
         v = ctrl_wdg.mv_panel.movie_caps[ctrl_wdg.mv_panel.selected_movie_idx]
         t = ctrl_wdg.selected_thumbnail_index
-        if ctrl_wdg.ui.bBezier and len(self.parent_viewer.obj.curve_obj.radius_point) == 0:
+        if ctrl_wdg.ui.bBezier and len(self.parent_viewer.obj.curve_obj.radius_point) == 0 and dd < 1:
             if len(self.parent_viewer.obj.curve_obj.final_bezier) > 0 and len(self.parent_viewer.obj.curve_obj.radius_point) < 1 :
                 self.parent_viewer.obj.curve_obj.radius_point.append(np.array(px))
                 if len(self.parent_viewer.obj.curve_obj.radius_point) == 1:
@@ -640,26 +640,39 @@ class Util_viewer(QWidget):
             if ctrl_wdg.ui.bPick:
                 ID = ctrl_wdg.rect_obj.getIfromRGB(co[0], co[1], co[2])
                 # print("ID : "+str(ID))
+                # print(self.parent_viewer.obj.curve_obj.curve_count)
                 if ID in ctrl_wdg.rect_obj.rect_counts:
                     ctrl_wdg.rect_obj.selected_rect_idx = ctrl_wdg.rect_obj.rect_counts.index(ID)
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
-                    ctrl_wdg.rect_obj.selected_quad_idx = -1
+                    ctrl_wdg.quad_obj.selected_quad_idx = -1
+                    self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
                     
                 elif ID in self.parent_viewer.obj.cylinder_obj.cylinder_count:
                     cyl_idx = self.parent_viewer.obj.cylinder_obj.cylinder_count.index(ID)
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = cyl_idx
                     ctrl_wdg.rect_obj.selected_rect_idx = -1
-                    ctrl_wdg.rect_obj.selected_quad_idx = -1
+                    ctrl_wdg.quad_obj.selected_quad_idx = -1
+                    self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
+                    
                     
                 elif ID in ctrl_wdg.quad_obj.group_counts:
                     quad_idx = ctrl_wdg.quad_obj.group_counts.index(ID)
                     ctrl_wdg.quad_obj.selected_quad_idx = quad_idx
-                    ctrl_wdg.quad_obj.selected_rect_idx = -1
+                    ctrl_wdg.rect_obj.selected_rect_idx = -1
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
+                    self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
+                    
+                elif ID in self.parent_viewer.obj.curve_obj.curve_count:
+                    curve_idx = self.parent_viewer.obj.curve_obj.curve_count.index(ID)
+                    # print("Curve idx : "+str(curve_idx))
+                    self.parent_viewer.obj.curve_obj.selected_curve_idx = curve_idx
+                    print(self.parent_viewer.obj.curve_obj.selected_curve_idx)
+                    # ctrl_wdg.rect_obj.selected_rect_idx = -1
+                    self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
+                    ctrl_wdg.quad_obj.selected_quad_idx = -1
                     
                     
         if ctrl_wdg.ui.bMeasure and dd < 1:
-
             # print(self.x_zoomed, self.y_zoomed)
             if self.bCalibrate:
                 if self.clicked_once:

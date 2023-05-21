@@ -93,6 +93,13 @@ class GL_Widget(QOpenGLWidget):
                     glPolygonMode( GL_FRONT, GL_LINE)
                     self.render_cylinders(True, False)
                     glPolygonMode( GL_FRONT, GL_FILL)
+
+                    if len(self.obj.curve_obj.final_cylinder_bases) > 0:
+                        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+                        self.render_general_cylinder(True, True)
+                        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
+                        self.render_general_cylinder(True, False)
+                        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
                         
 
         if self.util_.pick:
@@ -191,9 +198,9 @@ class GL_Widget(QOpenGLWidget):
                     self.render_bezier(v, t)
                     if len(self.obj.curve_obj.final_cylinder_bases) > 0:
                         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-                        self.render_general_cylinder(self.fill_color)
+                        self.render_general_cylinder(False, True)
                         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
-                        self.render_general_cylinder(self.boundary_color)
+                        self.render_general_cylinder(False, False)
                         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
 
 
@@ -235,7 +242,7 @@ class GL_Widget(QOpenGLWidget):
                 self.painter.drawLine(QLineF(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1])))
                 idx_t = int(i/2)
                 if len(measured_dist) > 0:
-                    self.painter.drawText(p2[0]-20, p2[1]+25, str(round(measured_dist[idx_t], 3)))
+                    self.painter.drawText(p2[0]-20, p2[1]+20, str(round(measured_dist[idx_t], 3)))
 
         # Draw transient Measuring Line
         if self.obj.ctrl_wdg.ui.bMeasure and self.util_.clicked_once:            
@@ -606,67 +613,80 @@ class GL_Widget(QOpenGLWidget):
             glEnd()
             
         
-    def render_general_cylinder(self, color):
-                
+    def render_general_cylinder(self, offscreen_bool = False, fill_flag=False):
         ##### Draw initial base of the cylinder
         for i, cylinder_bases in enumerate(self.obj.curve_obj.final_cylinder_bases):
-            vertices = cylinder_bases[0]
-            base_center = self.obj.curve_obj.final_base_centers[i][0]
-            glColor4f(color[0], color[1], color[2], 0.1)
-            glBegin(GL_TRIANGLES)
-            for k in range(1,len(vertices)):                                
-                glVertex3f(base_center[0], base_center[1], base_center[2])
-                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+            # print(i)
+            if not self.obj.curve_obj.deleted[i]:
+                if offscreen_bool:
+                    co = self.obj.curve_obj.colors[i+1]
+                    color = (co[0]/255, co[1]/255, co[2]/255)
+                else:
+                    if fill_flag:
+                        if i==self.obj.curve_obj.selected_curve_idx:
+                            color = self.selected_color
+                        else:
+                            color = self.fill_color
+                    else:
+                        color = self.boundary_color 
+                        
+                # print(self.obj.curve_obj.selected_curve_idx)
+                glColor3f(color[0], color[1], color[2])
+                
+                vertices = cylinder_bases[0]
+                base_center = self.obj.curve_obj.final_base_centers[i][0]
+                glBegin(GL_TRIANGLES)
+                for k in range(1,len(vertices)):                                
+                    glVertex3f(base_center[0], base_center[1], base_center[2])
+                    glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
+                    glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+        
+                glEnd()
+            
+            
+                for j in range(1, len(cylinder_bases)):
+                    base_1 = cylinder_bases[j-1]
+                    base_2 = cylinder_bases[j]
+                    
+                    # print(len(base_1))
+                    glColor3f(color[0], color[1], color[2])
+                    glBegin(GL_TRIANGLE_STRIP)
+                    sectorCount = self.obj.cylinder_obj.sectorCount
+                    for k, vertex in enumerate(base_1):
+                        if k < int(0.75*sectorCount) :
+                            glVertex3f(vertex[0], vertex[1], vertex[2])
+                            glVertex3f(base_2[k + int(0.25*sectorCount)][0], base_2[k + int(0.25*sectorCount)][1], base_2[k + int(0.25*sectorCount) ][2])
+                        else:
+                            glVertex3f(vertex[0], vertex[1], vertex[2])
+                            glVertex3f(base_2[k - int(0.75*sectorCount) ][0], base_2[k - int(0.75*sectorCount)][1], base_2[k - int(0.75*sectorCount) ][2])
+                    glEnd()
     
-            glEnd()
+    
         
-        
-            for j in range(1, len(cylinder_bases)):
-                base_1 = cylinder_bases[j-1]
-                base_2 = cylinder_bases[j]
-                
-                # print(len(base_1))
-                
+                #### Draw last cylinder between base and top
+                vertices = cylinder_bases[-1]
+                top_vertices = self.obj.curve_obj.final_cylinder_tops[i][-1]
                 glColor3f(color[0], color[1], color[2])
                 glBegin(GL_TRIANGLE_STRIP)
-                sectorCount = self.obj.cylinder_obj.sectorCount
-                for k, vertex in enumerate(base_1):
-                    if k < int(0.75*sectorCount) :
-                        glVertex3f(vertex[0], vertex[1], vertex[2])
-                        glVertex3f(base_2[k + int(0.25*sectorCount)][0], base_2[k + int(0.25*sectorCount)][1], base_2[k + int(0.25*sectorCount) ][2])
-                    else:
-                        glVertex3f(vertex[0], vertex[1], vertex[2])
-                        glVertex3f(base_2[k - int(0.75*sectorCount) ][0], base_2[k - int(0.75*sectorCount)][1], base_2[k - int(0.75*sectorCount) ][2])
+                for k in range(0,len(vertices), 1):
+                    glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+                    glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
                 glEnd()
-
-
+                
+                
+                
+                #### Draw final top of the cylinder
+                glColor3f(color[0], color[1], color[2])
+                vertices = self.obj.curve_obj.final_cylinder_tops[i][-1]
+                # print("Number of nodes: ")
+                top_center = self.obj.curve_obj.final_top_centers[i][-1]
+                glBegin(GL_TRIANGLES)
+                for k in range(1,len(vertices)):                                
+                    glVertex3f(top_center[0], top_center[1], top_center[2])
+                    glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
+                    glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
     
-            #### Draw last cylinder between base and top
-            vertices = cylinder_bases[-1]
-            top_vertices = self.obj.curve_obj.final_cylinder_tops[i][-1]
-    
-            glColor4f(color[0], color[1], color[2], 0.1)
-            glBegin(GL_TRIANGLE_STRIP)
-            for k in range(0,len(vertices), 1):
-                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
-                glVertex3f(top_vertices[k][0], top_vertices[k][1], top_vertices[k][2])
-            glEnd()
-            
-            
-            
-            #### Draw final top of the cylinder
-            vertices = self.obj.curve_obj.final_cylinder_tops[i][-1]
-            # print("Number of nodes: ")
-            top_center = self.obj.curve_obj.final_top_centers[i][-1]
-            glColor4f(color[0], color[1], color[2], 0.1)
-            glBegin(GL_TRIANGLES)
-            for k in range(1,len(vertices)):                                
-                glVertex3f(top_center[0], top_center[1], top_center[2])
-                glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
-                glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-
-    
-            glEnd()
-            
+        
+                glEnd()
+                
                 
