@@ -35,7 +35,10 @@ class Curve_Tool(QObject):
         self.deleted = []
         
         
-        
+
+    def reset(self, ctrl_wdg):
+        self.__init__(ctrl_wdg)
+
     def make_curve(self, x, y, w1, w2, h1, h2):
         if x > w1 and y > h1 and x < w2 and y < h2:
             v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
@@ -113,7 +116,7 @@ class Curve_Tool(QObject):
                 data_val = v.curve_groups_regular[t]
         if self.ctrl_wdg.kf_method == "Network":
             if len(v.curve_groups_network) > 0:
-                pts = v.curve_3d_point_Network[t]
+                pts = v.curve_3d_point_network[t]
                 data_val = v.curve_groups_network[t]
         
         z_vec = M[2, 0:3]
@@ -227,7 +230,7 @@ class Curve_Tool(QObject):
 
             # print(self.final_bezier_radii[i], r)
             if self.final_bezier_radii[i] > 1.05*r:
-                cyl_bases, cyl_tops, center_base, center_top = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.make_cylinder(P1, P2, P3, P4)
+                cyl_bases, cyl_tops, center_base, center_top, _, _, _, _, _ = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.make_cylinder(P1, P2, P3, P4)
                 BC.append(center_base)
                 TC.append(center_top)
                 CB.append(cyl_bases)
@@ -250,37 +253,37 @@ class Curve_Tool(QObject):
             angle_radians = np.radians(angle_degrees)
             rotation_vector = angle_radians * rotation_axis
             rotation = R.from_rotvec(rotation_vector)
-            for i, pt in enumerate(self.final_base_centers[-1]):
-                self.final_base_centers[-1][i] = rotation.apply(pt-center) + center
+            for i, pt in enumerate(self.final_base_centers[self.selected_curve_idx]):
+                self.final_base_centers[self.selected_curve_idx][i] = rotation.apply(pt-center) + center
                 
-            for i, pt in enumerate(self.final_top_centers[-1]):
-                self.final_top_centers[-1][i] = rotation.apply(pt-center) + center
+            for i, pt in enumerate(self.final_top_centers[self.selected_curve_idx]):
+                self.final_top_centers[self.selected_curve_idx][i] = rotation.apply(pt-center) + center
     
-            for i, base in enumerate(self.final_cylinder_bases[-1]):
+            for i, base in enumerate(self.final_cylinder_bases[self.selected_curve_idx]):
                 for j, pt in enumerate(base):
-                    self.final_cylinder_bases[-1][i][j] = rotation.apply(pt-center) + center
+                    self.final_cylinder_bases[self.selected_curve_idx][i][j] = rotation.apply(pt-center) + center
         
-            for i, top in enumerate(self.final_cylinder_tops[-1]):
+            for i, top in enumerate(self.final_cylinder_tops[self.selected_curve_idx]):
                 for j, pt in enumerate(top):
-                    self.final_cylinder_tops[-1][i][j] = rotation.apply(pt-center) + center
+                    self.final_cylinder_tops[self.selected_curve_idx][i][j] = rotation.apply(pt-center) + center
                     
                     
                     
     def translate(self, vec):
         if len(self.final_base_centers) > 0:
-            for i, pt in enumerate(self.final_base_centers[-1]):
-                self.final_base_centers[-1][i] = pt + vec        
+            for i, pt in enumerate(self.final_base_centers[self.selected_curve_idx]):
+                self.final_base_centers[self.selected_curve_idx][i] = pt + vec        
     
-            for i, pt in enumerate(self.final_top_centers[-1]):
-                self.final_top_centers[-1][i] = pt + vec
+            for i, pt in enumerate(self.final_top_centers[self.selected_curve_idx]):
+                self.final_top_centers[self.selected_curve_idx][i] = pt + vec
     
-            for i, base in enumerate(self.final_cylinder_bases[-1]):
+            for i, base in enumerate(self.final_cylinder_bases[self.selected_curve_idx]):
                 for j, pt in enumerate(base):
-                    self.final_cylinder_bases[-1][i][j] = pt + vec
+                    self.final_cylinder_bases[self.selected_curve_idx][i][j] = pt + vec
         
-            for i, top in enumerate(self.final_cylinder_tops[-1]):
+            for i, top in enumerate(self.final_cylinder_tops[self.selected_curve_idx]):
                 for j, pt in enumerate(top):
-                    self.final_cylinder_tops[-1][i][j] = pt + vec
+                    self.final_cylinder_tops[self.selected_curve_idx][i][j] = pt + vec
     
         
         

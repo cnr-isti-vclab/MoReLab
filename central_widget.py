@@ -107,7 +107,7 @@ class Widget(QWidget):
                 text_label = QLabel(str(i+1))
                 text_label.setAlignment(Qt.AlignCenter)
                 text_label.setFont(QFont("Sanserif", 10))
-                if i in self.gl_viewer.obj.img_indices:
+                if i in self.gl_viewer.obj.img_indices and self.gl_viewer.is_display():
                     text_label.setStyleSheet(self.featured_frame_stylesheet)
                 else:
                     text_label.setStyleSheet(self.thumbnail_text_stylesheet)
@@ -144,7 +144,7 @@ class Widget(QWidget):
         for text_label_index in range(len(self.grid_layout)):
             # print(text_label_index)
             text_label = self.grid_layout.itemAt(text_label_index).itemAt(1).widget()
-            if text_label_index in self.gl_viewer.obj.img_indices:
+            if text_label_index in self.gl_viewer.obj.img_indices and self.gl_viewer.is_display():
                 # print(text_label_index)
                 text_label.setStyleSheet(self.featured_frame_stylesheet)
             else:
@@ -152,7 +152,7 @@ class Widget(QWidget):
 
         ## Select the single clicked thumbnail
         text_label_of_thumbnail = self.grid_layout.itemAt(index).itemAt(1).widget()
-        if index in self.gl_viewer.obj.img_indices:
+        if index in self.gl_viewer.obj.img_indices and self.gl_viewer.is_display():
             text_label_of_thumbnail.setStyleSheet("background-color:rgb(135, 206, 235);"
                                                   "color:red;"
                                                   "font-weight:bold;")

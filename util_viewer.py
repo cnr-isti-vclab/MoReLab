@@ -173,59 +173,173 @@ class Util_viewer(QWidget):
         if ctrl_wdg.ui.bBezier and event.key() == Qt.Key_F and len(self.parent_viewer.obj.curve_obj.final_bezier) == 0:
             self.parent_viewer.obj.curve_obj.find_final_curve()
             
-        if ctrl_wdg.ui.bBezier and len(self.parent_viewer.obj.curve_obj.final_base_centers) > 0 and event.key() == Qt.Key_C and event.modifiers() & Qt.ControlModifier:
-            self.parent_viewer.obj.curve_obj.final_base_centers.append(self.parent_viewer.obj.curve_obj.final_base_centers[-1].copy())
-            self.parent_viewer.obj.curve_obj.final_top_centers.append(self.parent_viewer.obj.curve_obj.final_top_centers[-1].copy())
-            self.parent_viewer.obj.curve_obj.final_cylinder_bases.append(copy.deepcopy(self.parent_viewer.obj.curve_obj.final_cylinder_bases[-1]))
-            self.parent_viewer.obj.curve_obj.final_cylinder_tops.append(copy.deepcopy(self.parent_viewer.obj.curve_obj.final_cylinder_tops[-1]))
+        if ctrl_wdg.ui.bPick and len(self.parent_viewer.obj.curve_obj.final_base_centers) > 0 and event.key() == Qt.Key_C and event.modifiers() & Qt.ControlModifier:
+            self.parent_viewer.obj.curve_obj.final_base_centers.append(self.parent_viewer.obj.curve_obj.final_base_centers[self.parent_viewer.obj.curve_obj.selected_curve_idx].copy())
+            self.parent_viewer.obj.curve_obj.final_top_centers.append(self.parent_viewer.obj.curve_obj.final_top_centers[self.parent_viewer.obj.curve_obj.selected_curve_idx].copy())
+            self.parent_viewer.obj.curve_obj.final_cylinder_bases.append(copy.deepcopy(self.parent_viewer.obj.curve_obj.final_cylinder_bases[self.parent_viewer.obj.curve_obj.selected_curve_idx]))
+            self.parent_viewer.obj.curve_obj.final_cylinder_tops.append(copy.deepcopy(self.parent_viewer.obj.curve_obj.final_cylinder_tops[self.parent_viewer.obj.curve_obj.selected_curve_idx]))
+            
+            self.parent_viewer.obj.curve_obj.curve_count.append(ctrl_wdg.rect_obj.primitive_count)
+            c = ctrl_wdg.rect_obj.getRGBfromI(ctrl_wdg.rect_obj.primitive_count)
+            self.parent_viewer.obj.curve_obj.colors.append(c)
+            ctrl_wdg.rect_obj.primitive_count += 1
+            self.parent_viewer.obj.curve_obj.deleted.append(False)
             
             # print("Count : "+str(len(self.parent_viewer.obj.curve_obj.final_base_centers)))
             
-        if ctrl_wdg.ui.bBezier and len(self.parent_viewer.obj.curve_obj.final_base_centers) > 0:
-            base_centers = self.parent_viewer.obj.curve_obj.final_base_centers[-1]
-            # print(np.asarray(base_centers).shape)
-            center = np.mean(np.asarray(base_centers), axis=0)
-            # print(center)
-            P1 = base_centers[0]
-            P4 = base_centers[1]
-            P3 = self.parent_viewer.obj.curve_obj.final_cylinder_bases[-1][0][0]
-            P2 = np.cross(P4 - P1 , P3 - P1) + P1
-            x_axis = (P3 - P1)/np.linalg.norm(P3 - P1)
-            y_axis = (P4 - P1)/np.linalg.norm(P4 - P1)
-            z_axis = (P2 - P1)/np.linalg.norm(P2 - P1)
-            
-            if event.key() == Qt.Key_X:
-                if event.modifiers() & Qt.ControlModifier:
-                    self.parent_viewer.obj.curve_obj.rotate(-0.1, x_axis, center)
-                else:
-                    self.parent_viewer.obj.curve_obj.rotate(0.1, x_axis, center)
-                    
-            if event.key() == Qt.Key_Y:
-                if event.modifiers() & Qt.ControlModifier:
-                    self.parent_viewer.obj.curve_obj.rotate(-0.1, y_axis, center)
-                else:
-                    self.parent_viewer.obj.curve_obj.rotate(0.1, y_axis, center)
-            
-            if event.key() == Qt.Key_Z:
-                if event.modifiers() & Qt.ControlModifier:
-                    self.parent_viewer.obj.curve_obj.rotate(-0.1, z_axis, center)
-                else:
-                    self.parent_viewer.obj.curve_obj.rotate(0.1, z_axis, center)
-                    
-            if event.key() == Qt.Key_Right:
-                self.parent_viewer.obj.curve_obj.translate(np.array([0.005, 0, 0]))
-                    
-            if event.key() == Qt.Key_Left:
-                self.parent_viewer.obj.curve_obj.translate(np.array([-0.005, 0, 0]))
+        if ctrl_wdg.ui.bPick:
+            if self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
+                base_centers = self.parent_viewer.obj.curve_obj.final_base_centers[self.parent_viewer.obj.curve_obj.selected_curve_idx]
+                # print(np.asarray(base_centers).shape)
+                center = np.mean(np.asarray(base_centers), axis=0)
+                # print(center)
+                P1 = base_centers[0]
+                P4 = base_centers[1]
+                P3 = self.parent_viewer.obj.curve_obj.final_cylinder_bases[self.parent_viewer.obj.curve_obj.selected_curve_idx][0][0]
+                P2 = np.cross(P4 - P1 , P3 - P1) + P1
+                x_axis = (P3 - P1)/np.linalg.norm(P3 - P1)
+                y_axis = (P4 - P1)/np.linalg.norm(P4 - P1)
+                z_axis = (P2 - P1)/np.linalg.norm(P2 - P1)
 
-            if event.key() == Qt.Key_Up:
-                self.parent_viewer.obj.curve_obj.translate(np.array([0, 0.005, 0]))
+                if event.key() == Qt.Key_X:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.curve_obj.rotate(-0.1, x_axis, center)
+                    else:
+                        self.parent_viewer.obj.curve_obj.rotate(0.1, x_axis, center)
 
-            if event.key() == Qt.Key_Down:
-                self.parent_viewer.obj.curve_obj.translate(np.array([0, -0.005, 0]))
+                if event.key() == Qt.Key_Y:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.curve_obj.rotate(-0.1, y_axis, center)
+                    else:
+                        self.parent_viewer.obj.curve_obj.rotate(0.1, y_axis, center)
 
-            
-        
+                if event.key() == Qt.Key_Z:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.curve_obj.rotate(-0.1, z_axis, center)
+                    else:
+                        self.parent_viewer.obj.curve_obj.rotate(0.1, z_axis, center)
+
+                if event.key() == Qt.Key_Right:
+                    self.parent_viewer.obj.curve_obj.translate(np.array([0.005, 0, 0]))
+
+                if event.key() == Qt.Key_Left:
+                    self.parent_viewer.obj.curve_obj.translate(np.array([-0.005, 0, 0]))
+
+                if event.key() == Qt.Key_Up:
+                    self.parent_viewer.obj.curve_obj.translate(np.array([0, 0.005, 0]))
+
+                if event.key() == Qt.Key_Down:
+                    self.parent_viewer.obj.curve_obj.translate(np.array([0, -0.005, 0]))
+
+            elif self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
+                P1 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][0]
+                P2 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][1]
+                P3 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][2]
+                P4 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][3]
+                if event.key() == Qt.Key_X:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(5, P2 - P1)
+                    else:
+                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(-5, P2 - P1)
+
+                if event.key() == Qt.Key_Y:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(5, P4 - P1)
+                    else:
+                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(-5, P4 - P1)
+
+                if event.key() == Qt.Key_Z:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(5, np.cross(P2 - P1, P4 - P1))
+                    else:
+                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(-5, np.cross(P2 - P1, P4 - P1))
+
+                if event.key() == Qt.Key_Right:
+                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(0.01*(P2 - P1))
+
+                if event.key() == Qt.Key_Left:
+                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(-0.01*(P2 - P1))
+
+                if event.key() == Qt.Key_Down:
+                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(0.01*(P4-P1))
+
+                if event.key() == Qt.Key_Up:
+                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(-0.01*(P4 - P1))
+
+
+            elif self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
+                P1 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][0]
+                P2 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][1]
+                P3 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][2]
+                P4 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][3]
+                if event.key() == Qt.Key_X:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(5, P2 - P1)
+                    else:
+                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(-5, P2 - P1)
+
+                if event.key() == Qt.Key_Y:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(5, P4 - P1)
+                    else:
+                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(-5, P4 - P1)
+
+                if event.key() == Qt.Key_Z:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(5, np.cross(P2 - P1, P4 - P1))
+                    else:
+                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(-5, np.cross(P2 - P1, P4 - P1))
+
+                if event.key() == Qt.Key_Right:
+                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(0.01*(P2 - P1))
+
+                if event.key() == Qt.Key_Left:
+                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(-0.01*(P2 - P1))
+
+                if event.key() == Qt.Key_Down:
+                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(0.01*(P4-P1))
+
+                if event.key() == Qt.Key_Up:
+                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(-0.01*(P4 - P1))
+
+            elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
+                P1 = self.parent_viewer.obj.cylinder_obj.centers[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx]
+                P4 = self.parent_viewer.obj.cylinder_obj.top_centers[
+                    self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx]
+                P3 = self.parent_viewer.obj.cylinder_obj.vertices_cylinder[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx][0]
+                P2 = np.cross(P4 - P1, P3 - P1) + P1
+                if event.key() == Qt.Key_X:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.cylinder_obj.rotate(5, P3 - P1)
+                    else:
+                        self.parent_viewer.obj.cylinder_obj.rotate(-5, P3 - P1)
+
+                if event.key() == Qt.Key_Y:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.cylinder_obj.rotate(5, P4 - P1)
+                    else:
+                        self.parent_viewer.obj.cylinder_obj.rotate(-5, P4 - P1)
+
+                if event.key() == Qt.Key_Z:
+                    if event.modifiers() & Qt.ControlModifier:
+                        self.parent_viewer.obj.cylinder_obj.rotate(5, P2 - P1)
+                    else:
+                        self.parent_viewer.obj.cylinder_obj.rotate(-5, P2 - P1)
+
+                if event.key() == Qt.Key_Right:
+                    self.parent_viewer.obj.cylinder_obj.translate(0.01*(P3 - P1))
+
+                if event.key() == Qt.Key_Left:
+                    self.parent_viewer.obj.cylinder_obj.translate(-0.01*(P3 - P1))
+
+                if event.key() == Qt.Key_Down:
+                    self.parent_viewer.obj.cylinder_obj.translate(0.01*(P4-P1))
+
+                if event.key() == Qt.Key_Up:
+                    self.parent_viewer.obj.cylinder_obj.translate(-0.01*(P4 - P1))
+
+
+
         if ctrl_wdg.ui.cross_hair and event.key() == Qt.Key_Escape:
             self.parent_viewer.obj.feature_panel.selected_feature_idx = -1
             
@@ -328,7 +442,7 @@ class Util_viewer(QWidget):
                             
                 elif event.key() == Qt.Key_Up:
                     for i,fc in enumerate(v.features_network[t]):
-                        if not v.network[t][i]:
+                        if not v.hide_network[t][i]:
                             fc.x_loc = fc.x_loc 
                             fc.y_loc = fc.y_loc - self.mv_pix
                         
@@ -348,12 +462,17 @@ class Util_viewer(QWidget):
                     ctrl_wdg.rect_obj.delete_rect(ctrl_wdg.rect_obj.selected_rect_idx)
                 elif ctrl_wdg.quad_obj.selected_quad_idx != -1:
                     ctrl_wdg.quad_obj.delete_quad(ctrl_wdg.quad_obj.selected_quad_idx)
+                elif self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
+                    self.parent_viewer.obj.curve_obj.deleted[self.parent_viewer.obj.curve_obj.selected_curve_idx] = True
+                    self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
+                    
                 else:
                     del_primitive_dialogue()
                     
             if event.key() == Qt.Key_Escape:                        
                 ctrl_wdg.rect_obj.selected_rect_idx = -1
                 self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
+                self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
                 ctrl_wdg.rect_obj.selected_quad_idx = -1
                 
                 
@@ -401,25 +520,18 @@ class Util_viewer(QWidget):
                     selected_feature = self.parent_viewer.obj.cylinder_obj.select_feature(x, y)
                     
                 if ctrl_wdg.ui.bBezier:
-                    if len(self.parent_viewer.obj.curve_obj.final_bezier) < 1:
+                    if len(self.parent_viewer.obj.curve_obj.final_bezier) == 0:
                         # print("Inside")
                         if ctrl_wdg.kf_method == "Regular":
                             if len(v.curve_groups_regular[t]) < 4 and len(v.features_regular[t]) > 0:
                                 self.parent_viewer.obj.curve_obj.make_curve(x, y, self.w1, self.w2, self.h1, self.h2)
                                 selected_feature = True
-                            else:                     
-                                bs = self.parent_viewer.obj.curve_obj.select_feature(x, y)
-                                selected_feature = not bs
                                 
                         elif ctrl_wdg.kf_method == "Network":
                             if len(v.curve_groups_network[t]) < 4 and len(v.features_network[t]) > 0:
-                                self.parent_viewer.obj.curve_obj.make_curve(x, y)
+                                self.parent_viewer.obj.curve_obj.make_curve(x, y, self.w1, self.w2, self.h1, self.h2)
                                 selected_feature = True
-                            else:                     
-                                bs = self.parent_viewer.obj.curve_obj.select_feature(x, y, self.w1, self.w2, self.h1, self.h2)
-                                selected_feature = not bs
-                                
-                        
+
                     
                 if not selected_feature:
                     self.x = a.x()
@@ -453,7 +565,7 @@ class Util_viewer(QWidget):
                 if len(v.features_regular) > 0:
                     for i, fc in enumerate(v.features_regular[t]):
                         if not v.hide_regular[t][i]:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                            painter.drawLine(QLineF(fc.x_loc - fc.l/2 , fc.y_loc , fc.x_loc + fc.l/2 , fc.y_loc))
                             painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                             painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
     
@@ -488,55 +600,61 @@ class Util_viewer(QWidget):
             # Painting for Rectangle Tool
             if (len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0) :
                 if ctrl_wdg.kf_method == "Regular":
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if v.rect_groups_regular[t][i] != -1:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                    if len(v.rect_groups_regular[t]) > 0:
+                        for i, fc in enumerate(v.features_regular[t]):
+                            if v.rect_groups_regular[t][i] != -1:
+                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
                     
                 elif ctrl_wdg.kf_method == "Network":
-                    for i, fc in enumerate(v.features_network[t]):
-                        if v.rect_groups_network[t][i] != -1:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                    if len(v.rect_groups_network[t]) > 0:
+                        for i, fc in enumerate(v.features_network[t]):
+                            if v.rect_groups_network[t][i] != -1:
+                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
                             
             # Painting for Quad Tool
             if (len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0):
                 if ctrl_wdg.kf_method == "Regular":
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if v.quad_groups_regular[t][i] != -1:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                    if len(v.quad_groups_regular[t]) > 0:
+                        for i, fc in enumerate(v.features_regular[t]):
+                            if v.quad_groups_regular[t][i] != -1:
+                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
                     
                 elif ctrl_wdg.kf_method == "Network":
-                    for i, fc in enumerate(v.features_network[t]):
-                        if v.quad_groups_network[t][i] != -1:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                    if len(v.quad_groups_network[t]) > 0:
+                        for i, fc in enumerate(v.features_network[t]):
+                            if v.quad_groups_network[t][i] != -1:
+                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
 
             # Painting for Sphere Tool
             if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) :
                 if ctrl_wdg.kf_method == "Regular":
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if v.cylinder_groups_regular[t][i] != -1:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                    if len(v.cylinder_groups_regular[t]) > 0:
+                        for i, fc in enumerate(v.features_regular[t]):
+                            if v.cylinder_groups_regular[t][i] != -1:
+                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
                     
                 elif ctrl_wdg.kf_method == "Network":
-                    for i, fc in enumerate(v.features_network[t]):
-                        if v.cylinder_groups_network[t][i] != -1:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                    if len(v.cylinder_groups_network[t]) > 0:
+                        for i, fc in enumerate(v.features_network[t]):
+                            if v.cylinder_groups_network[t][i] != -1:
+                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
 
 
@@ -561,7 +679,7 @@ class Util_viewer(QWidget):
 
                             
             # #### Painting for Curve
-            if len(v.curve_groups_regular) > 0 or len(v.curve_groups_network) > 0:
+            if len(ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases) == 0 and (len(v.curve_groups_regular) > 0 or len(v.curve_groups_network) > 0):
                 # print(v.curve_groups_regular[t])
                 if ctrl_wdg.kf_method == "Regular":
                     data_val = v.curve_groups_regular[t]
@@ -613,11 +731,7 @@ class Util_viewer(QWidget):
                                     P = np.matmul(self.parent_viewer.obj.K, G)
                                     
                                     self.parent_viewer.obj.curve_obj.estimate_plane(P) 
-                else:
-                    if ctrl_wdg.kf_method == "Regular":
-                        v.curve_pts_regular[t].pop()
-                    elif ctrl_wdg.kf_method == "Network":
-                        v.curve_pts_network[t].pop()
+
                 
         if dd < 1:
             if ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bCylinder:
@@ -627,6 +741,7 @@ class Util_viewer(QWidget):
                     if ctrl_wdg.ui.bnCylinder:
                         bases, tops, center, top_c = self.parent_viewer.obj.cylinder_obj.make_new_cylinder(data_val[0], data_val[1], data_val[2], data_val[3])
                         if len(bases) > 0:
+                            self.parent_viewer.obj.cylinder_obj.bool_cylinder_type.append(False)
                             self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data(bases, tops, center, top_c)
                         else:
                             straight_line_dialogue()
@@ -634,6 +749,7 @@ class Util_viewer(QWidget):
 
                     else:
                         bases, tops, center, top_c = self.parent_viewer.obj.cylinder_obj.make_cylinder(data_val[0], data_val[1], data_val[2], data_val[3])
+                        self.parent_viewer.obj.cylinder_obj.bool_cylinder_type.append(True)
                         self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data(bases, tops, center, top_c)
 
                     
@@ -664,10 +780,8 @@ class Util_viewer(QWidget):
                     
                 elif ID in self.parent_viewer.obj.curve_obj.curve_count:
                     curve_idx = self.parent_viewer.obj.curve_obj.curve_count.index(ID)
-                    # print("Curve idx : "+str(curve_idx))
                     self.parent_viewer.obj.curve_obj.selected_curve_idx = curve_idx
-                    print(self.parent_viewer.obj.curve_obj.selected_curve_idx)
-                    # ctrl_wdg.rect_obj.selected_rect_idx = -1
+                    ctrl_wdg.rect_obj.selected_rect_idx = -1
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
                     ctrl_wdg.quad_obj.selected_quad_idx = -1
                     

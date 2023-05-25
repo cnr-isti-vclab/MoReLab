@@ -4,6 +4,7 @@ from PyQt5.QtGui import *
 from scipy.spatial import distance
 from util.util import straight_line_dialogue
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 
 class Cylinder_Tool(QObject):
@@ -24,8 +25,18 @@ class Cylinder_Tool(QObject):
         self.sectorCount = 32
         self.cylinder_count = []
         self.colors = [(0,0,0)]
+        self.b_vecs = []
+        self.t_vecs = []
+        self.Ns = []
+        self.scaling_factor = 1.1
+        self.radii = []
+        self.heights = []
+        self.bool_cylinder_type = []
 
-        
+
+    def reset(self, ctrl_wdg):
+        self.__init__(ctrl_wdg)
+
         
     def select_feature(self, x, y):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
@@ -48,14 +59,27 @@ class Cylinder_Tool(QObject):
                             
                             if len(self.data_val) == 4:
                                 if self.ctrl_wdg.ui.bnCylinder:
-                                    bases, tops, center, top_c = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                    bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     if len(bases) > 0:
+                                        self.heights.append(height)
+                                        self.radii.append(radius)
+                                        self.b_vecs.append(b_vec)
+                                        self.t_vecs.append(t_vec)
+                                        self.Ns.append(N)
+                                        self.bool_cylinder_type.append(False)
                                         self.refresh_cylinder_data(bases, tops, center, top_c)
                                     else:
                                         straight_line_dialogue()
                                         del self.data_val[-1]
                                 else:
-                                    bases, tops, center, top_c = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                    bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                    self.bool_cylinder_type.append(True)
+                                    self.heights.append(height)
+                                    self.radii.append(radius)
+                                    self.b_vecs.append(b_vec)
+                                    self.t_vecs.append(t_vec)
+                                    self.Ns.append(N)
+
                                     self.refresh_cylinder_data(bases, tops, center, top_c)
 
              
@@ -66,23 +90,33 @@ class Cylinder_Tool(QObject):
                         if d < self.dist_thresh_select:
                             self.data_val.append(data[i,:])
                             for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                v.cylinder_groups_regular[img_ind][i] = self.group_num
+                                v.cylinder_groups_network[img_ind][i] = self.group_num
                             self.order.append(i)
                             feature_selected = True
                             
                             if len(self.data_val) == 4:
                                 if self.ctrl_wdg.ui.bnCylinder:
-                                    bases, tops, center, top_c = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                    bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     if len(bases) > 0:
+                                        self.bool_cylinder_type.append(False)
+                                        self.heights.append(height)
+                                        self.radii.append(radius)
+                                        self.b_vecs.append(b_vec)
+                                        self.t_vecs.append(t_vec)
+                                        self.Ns.append(N)
                                         self.refresh_cylinder_data(bases, tops, center, top_c)
                                     else:
                                         straight_line_dialogue()
                                         del self.data_val[-1]
                                 else:
-                                    bases, tops, center, top_c = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                    bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                    self.bool_cylinder_type.append(True)
+                                    self.heights.append(height)
+                                    self.radii.append(radius)
+                                    self.b_vecs.append(b_vec)
+                                    self.t_vecs.append(t_vec)
+                                    self.Ns.append(N)
                                     self.refresh_cylinder_data(bases, tops, center, top_c)
-
-
 
 
         return feature_selected
@@ -139,7 +173,7 @@ class Cylinder_Tool(QObject):
         H_vec = p3 - center
         
         radius = np.linalg.norm(b_vec_temp)
-        
+
         t_vec = t_vec/max(0.00005, np.linalg.norm(t_vec))
         b_vec_temp = b_vec_temp/max(0.00005, radius)
 
@@ -148,15 +182,12 @@ class Cylinder_Tool(QObject):
         
         height = np.dot(H_vec, N)
         
-        
-        # print(height)
         if height < 0:
             # print("Center : "+str(center))
             return self.make_cylinder(center, p2, p1, p3)
-            
-        # print("Height : "+str(height))
+
+
         b_vec = np.cross(t_vec, N)          # t_vec, b_vec and N form our x,y,z coordinate system
-        
         sectorStep = 2*np.pi/self.sectorCount
         
         base_points = []
@@ -168,7 +199,7 @@ class Cylinder_Tool(QObject):
             top_points.append(center + radius*np.cos(sectorAngle)*t_vec + radius*np.sin(sectorAngle)*b_vec + height*N)
         
         
-        return base_points, top_points, center, center + height*N
+        return base_points, top_points, center, center + height*N, height, radius, b_vec, t_vec, N
     
         
     
@@ -185,7 +216,7 @@ class Cylinder_Tool(QObject):
             elif self.ctrl_wdg.kf_method == "Network":
                 for i, c in enumerate(occ):
                     for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                        v.cylinder_groups_regular[img_ind][c] = -1
+                        v.cylinder_groups_network[img_ind][c] = -1
                     
             self.selected_cylinder_idx = -1
                 
@@ -242,11 +273,9 @@ class Cylinder_Tool(QObject):
         new_P1 = (0, 0)
         new_P2 = (np.dot(b_vec, p2-p1), np.dot(t_vec, p2-p1))
         new_P3 = (np.dot(b_vec, p3-p1), np.dot(t_vec, p3-p1))
-        # print(new_P1)
-        # print(new_P2)
-        # print(new_P3)
                 
         center_2d, radius = self.define_circle(new_P1, new_P2, new_P3)
+
         if center_2d is None:
             return [], [], 0, 0
         center = p1 + center_2d[0]*b_vec + center_2d[1]*t_vec
@@ -261,7 +290,7 @@ class Cylinder_Tool(QObject):
             base_points.append(center + radius*np.cos(sectorAngle)*b_vec + radius*np.sin(sectorAngle)*t_vec)
             top_points.append(center + radius*np.cos(sectorAngle)*b_vec + radius*np.sin(sectorAngle)*t_vec + height*N)
         
-        return base_points, top_points, center, center + height*N    
+        return base_points, top_points, center, center + height*N , height, radius, b_vec, t_vec, N
     
 
     def define_circle(self, p1, p2, p3):
@@ -287,3 +316,111 @@ class Cylinder_Tool(QObject):
         # print("Radius = ", radius);
         
         return (cx, cy), radius
+
+
+    def rotate(self, angle_degrees, rotation_axis):
+        if self.selected_cylinder_idx != -1:
+            angle_radians = np.radians(angle_degrees)
+            rotation_vector = angle_radians * rotation_axis
+            rotation = R.from_rotvec(rotation_vector)
+            base_center = self.centers[self.selected_cylinder_idx]
+            if -1 not in base_center:
+
+                self.t_vecs[self.selected_cylinder_idx] = rotation.apply(self.t_vecs[self.selected_cylinder_idx])
+                self.b_vecs[self.selected_cylinder_idx] = rotation.apply(self.b_vecs[self.selected_cylinder_idx])
+                self.Ns[self.selected_cylinder_idx] = rotation.apply(self.Ns[self.selected_cylinder_idx])
+
+                base_vertices = self.vertices_cylinder[self.selected_cylinder_idx]
+                top_center = self.top_centers[self.selected_cylinder_idx]
+                top_vertices = self.top_vertices[self.selected_cylinder_idx]
+
+                cyl_center = 0.5*(base_center + top_center)
+
+                self.centers[self.selected_cylinder_idx] = rotation.apply(base_center - cyl_center) + cyl_center
+                self.top_centers[self.selected_cylinder_idx] = rotation.apply(top_center - cyl_center) + cyl_center
+                for i, pt in enumerate(base_vertices):
+                    self.vertices_cylinder[self.selected_cylinder_idx][i] = rotation.apply(pt - cyl_center) + cyl_center
+
+                for i, pt in enumerate(top_vertices):
+                    self.top_vertices[self.selected_cylinder_idx][i] = rotation.apply(pt - cyl_center) + cyl_center
+
+
+    def translate(self, axis):
+        if self.selected_cylinder_idx != -1:
+            base_center = self.centers[self.selected_cylinder_idx]
+            if -1 not in base_center:
+                base_vertices = self.vertices_cylinder[self.selected_cylinder_idx]
+                top_center = self.top_centers[self.selected_cylinder_idx]
+                top_vertices = self.top_vertices[self.selected_cylinder_idx]
+
+                self.centers[self.selected_cylinder_idx] = base_center + axis
+                self.top_centers[self.selected_cylinder_idx] = top_center + axis
+
+                for i, pt in enumerate(base_vertices):
+                    self.vertices_cylinder[self.selected_cylinder_idx][i] = pt + axis
+
+                for i, pt in enumerate(top_vertices):
+                    self.top_vertices[self.selected_cylinder_idx][i] = pt + axis
+
+
+    def scale_up(self):
+        i = self.selected_cylinder_idx
+        print("Index : "+str(i))
+        if i != -1:
+            radius = self.radii[i] * self.scaling_factor
+            self.radii[i] = radius
+            print("Radius : "+str(radius))
+            cyl_axis = 0.05*(self.top_centers[i] - self.centers[i])
+            self.centers[i] = self.centers[i] - cyl_axis
+            self.top_centers[i] = self.top_centers[i] + cyl_axis
+            height = np.linalg.norm(self.top_centers[i] - self.centers[i])
+            # print("Height : "+str(height))
+            center = self.centers[i]
+            sectorStep = 2 * np.pi / self.sectorCount
+            t_vec, b_vec, N = self.t_vecs[i], self.b_vecs[i], self.Ns[i]
+
+            if self.bool_cylinder_type[i]:
+                for j in range(self.sectorCount + 1):
+                    sectorAngle = j * sectorStep  # theta
+                    self.vertices_cylinder[i][self.sectorCount - j] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
+                        sectorAngle) * t_vec
+                    self.top_vertices[i][self.sectorCount - j] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
+                        sectorAngle) * t_vec + height * N
+
+            else:
+                for j in range(self.sectorCount + 1):
+                    sectorAngle = j * sectorStep  # theta
+                    self.vertices_cylinder[i][j] = center + radius * np.cos(sectorAngle) * b_vec + radius*np.sin(sectorAngle) * t_vec
+                    self.top_vertices[i][j] = center + radius * np.cos(sectorAngle) * b_vec + radius*np.sin(sectorAngle) * t_vec - height * N
+
+
+    def scale_down(self):
+        i = self.selected_cylinder_idx
+        if i != -1:
+            radius = self.radii[i] / self.scaling_factor
+            self.radii[i] = radius
+
+            cyl_axis = 0.05*(self.top_centers[i] - self.centers[i])
+            self.centers[i] = self.centers[i] + cyl_axis
+            self.top_centers[i] = self.top_centers[i] - cyl_axis
+
+            height = np.linalg.norm(self.top_centers[i] - self.centers[i])
+            # print(height)
+            center = self.centers[i]
+            sectorStep = 2 * np.pi / self.sectorCount
+            t_vec, b_vec, N = self.t_vecs[i], self.b_vecs[i], self.Ns[i]
+
+            if self.bool_cylinder_type[i]:
+                for j in range(self.sectorCount + 1):
+                    sectorAngle = j * sectorStep  # theta
+                    self.vertices_cylinder[i][self.sectorCount - j] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
+                        sectorAngle) * t_vec
+                    self.top_vertices[i][self.sectorCount - j] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
+                        sectorAngle) * t_vec + height * N
+
+            else:
+                for j in range(self.sectorCount + 1):
+                    sectorAngle = j * sectorStep  # theta
+                    self.vertices_cylinder[i][j] = center + radius * np.cos(sectorAngle) * b_vec + radius*np.sin(sectorAngle) * t_vec
+                    self.top_vertices[i][j] = center + radius * np.cos(sectorAngle) * b_vec + radius*np.sin(sectorAngle) * t_vec - height * N
+

@@ -77,13 +77,14 @@ class Document(QWidget):
                 bQuad = True
 
 
-
         bCyl = False
         num_cyl = 0
+        cyl_type_temp = []
         for i, center in enumerate(self.ctrl_wdg.gl_viewer.obj.cylinder_obj.centers):
             if -1 not in center:
                 num_cyl += 1
                 bCyl = True
+                cyl_type_temp.append(self.ctrl_wdg.gl_viewer.obj.cylinder_obj.bool_cylinder_type[i])
 
 
         bCurvedCyl = False
@@ -104,9 +105,11 @@ class Document(QWidget):
             "h1" : self.ctrl_wdg.gl_viewer.util_.h1,
             "w1" : self.ctrl_wdg.gl_viewer.util_.w1,
             "bool_3D" : b3D,
+            "bool_display_list" : self.ctrl_wdg.mv_panel.global_display_bool,
             "img_indices" : str_img_indices,
             "bool_rect" : bRect,
             "bool_cyl" : bCyl,
+            "bool_cylinder_type" : cyl_type_temp,
             "n_cyl" : num_cyl,
             "bool_curved_cyl" : bCurvedCyl,
             "n_curved" : n_curved_cyl,
@@ -178,6 +181,11 @@ class Document(QWidget):
 
             num_cyl = 0
             occ_temp = []
+            t_vec_temp = []
+            b_vec_temp = []
+            N_vec_temp = []
+            height_temp = []
+            radius_temp = []
             new_base_centers = []
             new_base_vertices = []
             new_top_centers = []
@@ -186,6 +194,11 @@ class Document(QWidget):
                 if -1 not in center:
                     num_cyl += 1
                     occ_temp.append(self.ctrl_wdg.gl_viewer.obj.cylinder_obj.occurrence_groups[i])
+                    t_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.cylinder_obj.t_vecs[i])
+                    b_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.cylinder_obj.b_vecs[i])
+                    N_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.cylinder_obj.Ns[i])
+                    height_temp.append(self.ctrl_wdg.gl_viewer.obj.cylinder_obj.heights[i])
+                    radius_temp.append(self.ctrl_wdg.gl_viewer.obj.cylinder_obj.radii[i])
                     new_base_centers.append(center)
                     new_base_vertices.append(self.ctrl_wdg.gl_viewer.obj.cylinder_obj.vertices_cylinder[i])
                     new_top_centers.append(self.ctrl_wdg.gl_viewer.obj.cylinder_obj.top_centers[i])
@@ -197,6 +210,14 @@ class Document(QWidget):
                 top_center_data = np.vstack(new_top_centers)
                 top_cylinder_data = np.vstack(new_top_vertices)
 
+                mat_occ = np.vstack(occ_temp)
+                t_vec_data = np.vstack(t_vec_temp)
+                b_vec_data = np.vstack(b_vec_temp)
+                N_data = np.vstack(N_vec_temp)
+                height_data = np.asarray(height_temp).reshape((len(height_temp), 1))
+                radius_data = np.asarray(radius_temp).reshape((len(radius_temp), 1))
+
+
                 cyl_path = os.path.join(out_dir, 'cylinders')
                 if not os.path.exists(cyl_path):
                     os.mkdir(cyl_path)
@@ -206,9 +227,13 @@ class Document(QWidget):
                 np.savetxt(os.path.join(cyl_path, 'top_centers.csv'), top_center_data, delimiter=',')
                 np.savetxt(os.path.join(cyl_path, 'top_vertices.csv'), top_cylinder_data, delimiter=',')
 
-                mat_occ = np.vstack(occ_temp)
-                np.save(os.path.join(cyl_path, 'occ.npy'), mat_occ)
 
+                np.savetxt(os.path.join(cyl_path, 'occ.csv'), mat_occ, delimiter=',')
+                np.savetxt(os.path.join(cyl_path, 't_vec.csv'), t_vec_data, delimiter=',')
+                np.savetxt(os.path.join(cyl_path, 'b_vec.csv'), b_vec_data, delimiter=',')
+                np.savetxt(os.path.join(cyl_path, 'N.csv'), N_data, delimiter=',')
+                np.savetxt(os.path.join(cyl_path, 'heights.csv'), height_data, delimiter=',')
+                np.savetxt(os.path.join(cyl_path, 'radii.csv'), radius_data, delimiter=',')
 
             ##### PLY Data for curved cylinder
 
@@ -220,20 +245,21 @@ class Document(QWidget):
                     os.makedirs(ccyl_path)
                 
                 for i, cylinder_bases in enumerate(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases):
-                    # print("Data for cylinder # "+str(i+1))
-                    general_bases = []
-                    base_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_base_centers[i])
-                    for j, bases in enumerate(cylinder_bases):
-                        general_bases.append(np.vstack(bases))
+                    if not self.ctrl_wdg.gl_viewer.obj.curve_obj.deleted[i]:
+                        # print("Data for cylinder # "+str(i+1))
+                        general_bases = []
+                        base_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_base_centers[i])
+                        for j, bases in enumerate(cylinder_bases):
+                            general_bases.append(np.vstack(bases))
 
-                    tops = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops[i][-1])
-                    top_center = self.ctrl_wdg.gl_viewer.obj.curve_obj.final_top_centers[i][-1].reshape((1,3))
-                            
-                    num_bases = base_centers.shape[0]
-                    # print("Number of bases : "+str(num_bases))
-                    general_cylinder = np.concatenate((base_centers, np.vstack(general_bases), tops, top_center))
-                    # print(general_cylinder.shape)
-                    np.savetxt(os.path.join(ccyl_path, 'curved_cyl_'+str(i)+'.csv'), general_cylinder, delimiter=',')
+                        tops = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops[i][-1])
+                        top_center = self.ctrl_wdg.gl_viewer.obj.curve_obj.final_top_centers[i][-1].reshape((1,3))
+
+                        num_bases = base_centers.shape[0]
+                        # print("Number of bases : "+str(num_bases))
+                        general_cylinder = np.concatenate((base_centers, np.vstack(general_bases), tops, top_center))
+                        # print(general_cylinder.shape)
+                        np.savetxt(os.path.join(ccyl_path, 'curved_cyl_'+str(i)+'.csv'), general_cylinder, delimiter=',')
 
             
             
@@ -305,10 +331,12 @@ class Document(QWidget):
                     img_names_regular = sorted(glob.glob(movie_dirr+'/Regular/*'))
                     v.key_frames_regular = [cv2.imread(x) for x in img_names_regular]
                     v.init_features_regular(len(v.key_frames_regular))
+                    v.init_3D_regular(len(v.key_frames_regular))
                     
                     img_names_network = sorted(glob.glob(movie_dirr+'/Network/*'))
                     v.key_frames_network = [cv2.imread(x) for x in img_names_network]
                     v.init_features_network(len(v.key_frames_network))
+                    v.init_3D_network(len(v.key_frames_network))
            
             video_data = feature_data_list[i]
             self.ctrl_wdg.ui.cross_hair = True
@@ -390,14 +418,14 @@ class Document(QWidget):
             ############### Load 3D data points ###############
 
             self.ctrl_wdg.gl_viewer.obj.img_indices = [int(x) for x in data["img_indices"]]
-            
+            self.ctrl_wdg.mv_panel.global_display_bool = data["bool_display_list"]
             # print(self.ctrl_wdg.gl_viewer.obj.img_indices)
 
             a = os.path.join(project_path.split('.')[0], '3D_data')
             ply_all = np.loadtxt(os.path.join(a, 'ply_all.csv'), delimiter=',').astype(float)
             ply = np.loadtxt(os.path.join(a, 'ply.csv'), delimiter=',').astype(float)
             cam_poses = np.loadtxt(os.path.join(a, 'cam_poses.csv'), delimiter=',').astype(float)
-            
+
             self.ctrl_wdg.gl_viewer.obj.K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
 
 
@@ -463,7 +491,7 @@ class Document(QWidget):
                         self.ctrl_wdg.rect_obj.data_val.append(q_arr[3,:])
                         self.ctrl_wdg.rect_obj.add_rectangle()
 
-            ############### Paint Quadrilaterals ###############
+            ############### Load Quadrilaterals ###############
 
             if data["bool_quad"]:
                 c = os.path.join(a, 'quads')
@@ -471,8 +499,6 @@ class Document(QWidget):
 
                 if len(ext_p) > 0:
                     occ_mat = np.load(os.path.join(c, 'occ.npy'))
-                    print(occ_mat.shape)
-                    print(occ_mat)
 
                     assert occ_mat.shape[0] == len(ext_p)
 
@@ -518,10 +544,31 @@ class Document(QWidget):
                 c = os.path.join(a, 'cylinders')
                 n_cyl = int(data["n_cyl"])
 
-                occ_mat = np.load(os.path.join(c, 'occ.npy'))
-                print(type(occ_mat))
-                print(occ_mat.shape)
-                print(occ_mat)
+                occ_mat = np.loadtxt(os.path.join(c, 'occ.csv'), delimiter=',').astype(int)
+                height_mat = np.loadtxt(os.path.join(c, 'heights.csv'), delimiter=',')
+                radii_mat = np.loadtxt(os.path.join(c, 'radii.csv'), delimiter=',')
+                t_vec_mat = np.loadtxt(os.path.join(c, 't_vec.csv'), delimiter=',')
+                b_vec_mat = np.loadtxt(os.path.join(c, 'b_vec.csv'), delimiter=',')
+                N_mat = np.loadtxt(os.path.join(c, 'N.csv'), delimiter=',')
+
+                print(t_vec_mat.shape)
+
+                if n_cyl == 1:
+                    self.ctrl_wdg.gl_viewer.obj.cylinder_obj.radii.append(radii_mat)
+                    self.ctrl_wdg.gl_viewer.obj.cylinder_obj.heights.append(height_mat)
+                    self.ctrl_wdg.gl_viewer.obj.cylinder_obj.t_vecs.append(t_vec_mat)
+                    self.ctrl_wdg.gl_viewer.obj.cylinder_obj.b_vecs.append(b_vec_mat)
+                    self.ctrl_wdg.gl_viewer.obj.cylinder_obj.Ns.append(N_mat)
+
+                else:
+                    for i in range(t_vec_mat.shape[0]):
+                        self.ctrl_wdg.gl_viewer.obj.cylinder_obj.radii.append(radii_mat[i])
+                        self.ctrl_wdg.gl_viewer.obj.cylinder_obj.heights.append(height_mat[i])
+                        self.ctrl_wdg.gl_viewer.obj.cylinder_obj.t_vecs.append(t_vec_mat[i, :])
+                        self.ctrl_wdg.gl_viewer.obj.cylinder_obj.b_vecs.append(b_vec_mat[i, :])
+                        self.ctrl_wdg.gl_viewer.obj.cylinder_obj.Ns.append(N_mat[i, :])
+
+                self.ctrl_wdg.gl_viewer.obj.cylinder_obj.bool_cylinder_type = data["bool_cylinder_type"]
 
                 base_center_data = np.loadtxt(os.path.join(c, 'base_centers.csv'), delimiter=',')
                 base_vertices_data = np.loadtxt(os.path.join(c, 'base_vertices.csv'), delimiter=',')
@@ -531,9 +578,9 @@ class Document(QWidget):
                 if n_cyl == 1:
                     base_center_data = base_center_data.reshape((1, 3))
                     top_center_data = top_center_data.reshape((1, 3))
+                    occ_mat = occ_mat.reshape((1,4))
 
                 assert n_cyl == base_center_data.shape[0]
-
 
                 for i in range(n_cyl):
 
@@ -568,10 +615,6 @@ class Document(QWidget):
 
 
 
-
-
-
-
             ############### Load Curved Cylinder ###############
             if data["bool_curved_cyl"]:
                 c = os.path.join(a, 'curved_cylinder')
@@ -588,9 +631,7 @@ class Document(QWidget):
                         tops = general_cyl[ n_cyl + n_cyl*(sectorCount+1) :  n_cyl + n_cyl*(sectorCount+1) + sectorCount+1, :]
                         
                         top_center = general_cyl[general_cyl.shape[0] - 1, :]
-                        # print(top_center)
-                        
-                        # print(tops.shape)
+
                         BC = []
                         for j in range(n_cyl):
                             # print(base_centers[j, :])
@@ -613,8 +654,14 @@ class Document(QWidget):
                             TP.append(tops[k, :])
                             
                         self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops.append([TP])
-                        
                         self.ctrl_wdg.gl_viewer.obj.curve_obj.final_top_centers.append([top_center])
+
+                        self.ctrl_wdg.gl_viewer.obj.curve_obj.curve_count.append(self.ctrl_wdg.rect_obj.primitive_count)
+                        c = self.ctrl_wdg.rect_obj.getRGBfromI(self.ctrl_wdg.rect_obj.primitive_count)
+                        self.ctrl_wdg.gl_viewer.obj.curve_obj.colors.append(c)
+                        self.ctrl_wdg.rect_obj.primitive_count += 1
+                        self.ctrl_wdg.gl_viewer.obj.curve_obj.deleted.append(False)
+
 
 
         self.ctrl_wdg.selected_thumbnail_index = int(data["selected_thumbnail"])

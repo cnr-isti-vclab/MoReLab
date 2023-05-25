@@ -5,6 +5,8 @@ from util.sfm import *
 from util.bundle_adjustment import bundle_adjustment
 from cylinder import Cylinder_Tool
 from curve import Curve_Tool
+from rectangle import Rectangle_Tool
+from quad import Quad_Tool
 import numpy as np
 
 class Features(QWidget):
@@ -20,7 +22,12 @@ class Features(QWidget):
                                   QPushButton {background-color: rgb(230,230,230); border-radius: 20px; padding: 15px; border: 1px solid black; color:black; font-size: 15px;}
                                   """)
         self.btn_sfm.clicked.connect(self.compute_sfm)
-        self.initialize_mats()
+        self.img_indices = []
+        self.ply_pts = []
+        self.all_ply_pts = []
+        self.camera_poses = []
+        self.camera_projection_mat = []
+        self.global_indices = []
         self.K = np.eye(3)
         self.cylinder_obj = Cylinder_Tool(self.ctrl_wdg)
         self.curve_obj = Curve_Tool(self.ctrl_wdg)
@@ -32,6 +39,27 @@ class Features(QWidget):
         self.all_ply_pts = []
         self.camera_poses = []
         self.camera_projection_mat = []
+        self.global_indices = []
+        self.cylinder_obj.reset(self.ctrl_wdg)
+        self.curve_obj.reset(self.ctrl_wdg)
+        self.ctrl_wdg.rect_obj.reset(self.ctrl_wdg)
+        self.ctrl_wdg.quad_obj.reset(self.ctrl_wdg)
+
+        t = self.ctrl_wdg.selected_thumbnail_index
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        if self.ctrl_wdg.kf_method == "Regular":
+            v.init_3D_regular(len(v.key_frames_regular))
+            for t in range(len(v.key_frames_regular)):
+                for i, fc in enumerate(v.features_regular[t]):
+                        self.init_3D_feature_regular(v, t)
+
+
+        elif self.ctrl_wdg.kf_method == "Network":
+            v.init_3D_network(len(v.key_frames_network))
+            for t in range(len(v.key_frames_network)):
+                for i, fc in enumerate(v.features_network[t]):
+                        self.init_3D_feature_network(v, t)
+
         
     def get_correspondent_pts(self, v):
         img_indices = []
@@ -63,13 +91,13 @@ class Features(QWidget):
                     
         elif self.ctrl_wdg.kf_method == "Network":
             for i,hr in enumerate(v.hide_network):
-                tmp1, tmp2 = [], []
+                tmp1, tmp2, tmp3 = [], [], []
                 count = 0
                 for j,hide in enumerate(hr):
-                    fc = v.features_regular[i][j]
-                    tmp1.append([fc.x_loc, fc.y_loc])
+                    fc = v.features_network[i][j]
+                    tmp1.append([self.feature_panel.transform_x(fc.x_loc), self.feature_panel.transform_y(fc.y_loc)])
                     if not hide:
-                        tmp3.append([fc.x_loc, fc.y_loc])
+                        tmp3.append([self.feature_panel.transform_x(fc.x_loc), self.feature_panel.transform_y(fc.y_loc)])
                         tmp2.append(j)
                         count = count + 1
                 if count > 7:
@@ -92,13 +120,18 @@ class Features(QWidget):
 
         
     def compute_sfm(self):
+
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         all_pts, img_indices, visible_labels = self.get_correspondent_pts(v)
 
         self.K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
-
     
         if len(img_indices) > 0:
+            if self.ctrl_wdg.kf_method == "Regular":
+                self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][0] = True
+            elif self.ctrl_wdg.kf_method == "Network":
+                self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][1] = True
+
             print("Performing Bundle adjustment")
             w = Dialog()
             w.show()
@@ -162,23 +195,31 @@ class Features(QWidget):
             if self.ctrl_wdg.kf_method == "Regular":
                 v.features_regular[t].append(fc)
                 v.hide_regular[t].append(False)
-                v.rect_groups_regular[t].append(-1)
-                v.quad_groups_regular[t].append(-1)
-                v.cylinder_groups_regular[t].append(-1)
+                self.init_3D_feature_regular(v, t)
                 
                 
             elif self.ctrl_wdg.kf_method == "Network":
                 v.features_network[t].append(fc)
                 v.hide_network[t].append(False)
-                v.rect_groups_network[t].append(-1)
-                v.quad_groups_network[t].append(-1)
-                v.cylinder_groups_network[t].append(-1)
+                self.init_3D_feature_network(v, t)
+
 
                 
             self.feature_panel.selected_feature_idx = -1
             self.feature_panel.display_data()
             
-            
+
+    def init_3D_feature_regular(self, v, t):
+        v.rect_groups_regular[t].append(-1)
+        v.quad_groups_regular[t].append(-1)
+        v.cylinder_groups_regular[t].append(-1)
+
+
+    def init_3D_feature_network(self, v, t):
+        v.rect_groups_network[t].append(-1)
+        v.quad_groups_network[t].append(-1)
+        v.cylinder_groups_network[t].append(-1)
+
     def delete_feature(self):
         t = self.ctrl_wdg.selected_thumbnail_index            
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]

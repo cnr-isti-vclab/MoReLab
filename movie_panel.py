@@ -14,6 +14,7 @@ class MoviePanel(QTreeWidget):
         self.selected_movie_idx = -1
         self.movie_caps = []
         self.ctrl_wdg = parent
+        self.global_display_bool = []
         self.items = []
         self.setMinimumSize(self.ctrl_wdg.monitor_width*0.15, self.ctrl_wdg.monitor_height*0.7)
         self.itemClicked.connect(self.select_movie_child)
@@ -22,6 +23,7 @@ class MoviePanel(QTreeWidget):
         self.movie_paths.append(movie_path)
         v = Video(movie_path)
         self.movie_caps.append(v)
+        self.global_display_bool.append([False, False])
         v.video_summary()
         movie_name = split_path(movie_path)
         
@@ -48,8 +50,8 @@ class MoviePanel(QTreeWidget):
             temp_idx = self.items.index(selection)
             if temp_idx != self.selected_movie_idx:
                 self.selected_movie_idx = temp_idx
-                self.ctrl_wdg.gl_viewer.obj.initialize_mats()
                 self.select_movie()
+                # self.ctrl_wdg.gl_viewer.obj.compute_sfm()
 
 
     def select_movie(self, disp_idx = -1): # assuming that selected movie_idx has already been set

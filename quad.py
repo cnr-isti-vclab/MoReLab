@@ -3,6 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from scipy.spatial import distance
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 
 class Quad_Tool(QObject):
@@ -19,6 +20,10 @@ class Quad_Tool(QObject):
         self.deleted = []
         self.selected_quad_idx = -1
         self.all_pts = []
+
+
+    def reset(self, ctrl_wdg):
+        self.__init__(ctrl_wdg)
         
         
     def select_feature(self, x, y):
@@ -98,3 +103,22 @@ class Quad_Tool(QObject):
                         v.quad_groups_network[t][c] = -1
                 
             self.selected_quad_idx = -1
+
+    def rotate(self, angle_degrees, rotation_axis):
+        if self.selected_quad_idx != -1:
+            angle_radians = np.radians(angle_degrees)
+            rotation_vector = angle_radians * rotation_axis
+            rotation = R.from_rotvec(rotation_vector)
+            pts_list = self.all_pts[self.selected_quad_idx]
+            center = 0.25*(pts_list[0] + pts_list[1] + pts_list[2] + pts_list[3])
+            print("--------------------------------")
+            for i, pt in enumerate(pts_list):
+                self.all_pts[self.selected_quad_idx][i] = rotation.apply(pt - center) + center
+
+
+    def translate(self, axis):
+        if self.selected_quad_idx != -1:
+            pts_list = self.all_pts[self.selected_quad_idx]
+            for i, pt in enumerate(pts_list):
+                self.all_pts[self.selected_quad_idx][i] = axis + pt
+

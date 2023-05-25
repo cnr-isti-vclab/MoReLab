@@ -45,12 +45,21 @@ class GL_Widget(QOpenGLWidget):
         self.flag_g = False
 
   
+    def is_display(self):
+        disp = False
+        if self.obj.ctrl_wdg.kf_method == "Regular":
+            if self.obj.ctrl_wdg.mv_panel.global_display_bool[self.obj.ctrl_wdg.mv_panel.selected_movie_idx][0]:
+                disp = True
+        elif self.obj.ctrl_wdg.kf_method == "Network":
+            if self.obj.ctrl_wdg.mv_panel.global_display_bool[self.obj.ctrl_wdg.mv_panel.selected_movie_idx][1]:
+                disp = True
 
-            
+        return disp
+
     def paintGL(self):
         t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        # print("Movie index : "+str(self.obj.ctrl_wdg.mv_panel.selected_movie_idx))
+
 ######################################################################################
         # Offscreen rendering
         if not self.flag_g:
@@ -76,7 +85,7 @@ class GL_Widget(QOpenGLWidget):
         glDepthFunc(GL_LEQUAL)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
-        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
+        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:
                     self.render_points()
@@ -125,13 +134,13 @@ class GL_Widget(QOpenGLWidget):
                         bases, center = self.obj.cylinder_obj.make_new_circle(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], np.array(px))
 
                     elif len(self.obj.cylinder_obj.data_val) == 3:
-                        cyl_bases, cyl_tops, center_base, center_top = self.obj.cylinder_obj.make_new_cylinder(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], self.obj.cylinder_obj.data_val[2], np.array(px))
+                        cyl_bases, cyl_tops, center_base, center_top, _, _, _, _, _ = self.obj.cylinder_obj.make_new_cylinder(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], self.obj.cylinder_obj.data_val[2], np.array(px))
 
                 elif self.obj.ctrl_wdg.ui.bCylinder:
                     if len(self.obj.cylinder_obj.data_val) == 2:
                         bases, center = self.obj.cylinder_obj.make_circle(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], np.array(px))
                     elif len(self.obj.cylinder_obj.data_val) == 3:
-                        cyl_bases, cyl_tops, center_base, center_top = self.obj.cylinder_obj.make_cylinder(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], self.obj.cylinder_obj.data_val[2], np.array(px))
+                        cyl_bases, cyl_tops, center_base, center_top, _, _, _, _, _ = self.obj.cylinder_obj.make_cylinder(self.obj.cylinder_obj.data_val[0], self.obj.cylinder_obj.data_val[1], self.obj.cylinder_obj.data_val[2], np.array(px))
                         
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
@@ -154,7 +163,7 @@ class GL_Widget(QOpenGLWidget):
         glFrontFace(GL_CCW)
         
         
-        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0:
+        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t: 
                     glViewport(int(self.util_.offset_x), -1*int(self.util_.offset_y), int(self.width()), int(self.height()))
@@ -195,13 +204,15 @@ class GL_Widget(QOpenGLWidget):
                     glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
                         
                     # if self.obj.ctrl_wdg.ui.bBezier:
-                    self.render_bezier(v, t)
+
                     if len(self.obj.curve_obj.final_cylinder_bases) > 0:
                         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
                         self.render_general_cylinder(False, True)
                         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
                         self.render_general_cylinder(False, False)
                         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
+                    else:
+                        self.render_bezier(v, t)
 
 
         glDisable(GL_CULL_FACE)
@@ -271,11 +282,19 @@ class GL_Widget(QOpenGLWidget):
 
     def wheelEvent(self, event):
         if self.util_.img_file is not None:
-            if self.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1 and self.obj.ctrl_wdg.ui.bPick:
-                if event.angleDelta().y() > 0:
-                    self.obj.ctrl_wdg.rect_obj.scale_up()
-                else:
-                    self.obj.ctrl_wdg.rect_obj.scale_down()
+            if self.obj.ctrl_wdg.ui.bPick:
+                if self.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
+                    if event.angleDelta().y() > 0:
+                        self.obj.ctrl_wdg.rect_obj.scale_up()
+                    else:
+                        self.obj.ctrl_wdg.rect_obj.scale_down()
+
+                elif self.obj.cylinder_obj.selected_cylinder_idx != -1:
+                    if event.angleDelta().y() > 0:
+                        self.obj.cylinder_obj.scale_up()
+                    else:
+                        self.obj.cylinder_obj.scale_down()
+
 
 
             else:
@@ -338,16 +357,13 @@ class GL_Widget(QOpenGLWidget):
 
                     
 
-                
-
-                
     def select_color(self, i, offscreen_bool = False, fill_flag = True):
         if offscreen_bool:
             color = self.obj.cylinder_obj.colors[i+1]
             color = (color[0]/255, color[1]/255, color[2]/255)
         else:
             if fill_flag:
-                if i==self.obj.cylinder_obj.selected_cylinder_idx:
+                if i==self.obj.cylinder_obj.selected_cylinder_idx and self.obj.ctrl_wdg.ui.bPick:
                     color = self.selected_color
                 else:
                     color = self.fill_color
@@ -476,7 +492,7 @@ class GL_Widget(QOpenGLWidget):
                     co = self.obj.ctrl_wdg.rect_obj.colors[i+1]
                     glColor3f(co[0]/255, co[1]/255, co[2]/255)
                 else:
-                    if i==self.obj.ctrl_wdg.rect_obj.selected_rect_idx:
+                    if i==self.obj.ctrl_wdg.rect_obj.selected_rect_idx and self.obj.ctrl_wdg.ui.bPick:
                         glColor3f(0.38, 0.85, 0.211)
                     else:
                         glColor3f(0, 0.6352, 1)                
@@ -520,7 +536,7 @@ class GL_Widget(QOpenGLWidget):
                     co = self.obj.ctrl_wdg.quad_obj.colors[i+1]
                     glColor3f(co[0]/255, co[1]/255, co[2]/255)
                 else:
-                    if i==self.obj.ctrl_wdg.quad_obj.selected_quad_idx:
+                    if i==self.obj.ctrl_wdg.quad_obj.selected_quad_idx and self.obj.ctrl_wdg.ui.bPick:
                         glColor3f(0.38, 0.85, 0.211)
                     else:
                         glColor3f(0, 0.6352, 1)                
@@ -595,6 +611,7 @@ class GL_Widget(QOpenGLWidget):
             glEnd()
             
         if len(self.obj.curve_obj.final_bezier) > 0:
+            
             ctrl_pts = self.obj.curve_obj.ctrl_pts_final[-1]
             glColor3f(1.0, 0.0, 0.0)
             glPointSize(5*self.util_._zoom)
@@ -623,7 +640,7 @@ class GL_Widget(QOpenGLWidget):
                     color = (co[0]/255, co[1]/255, co[2]/255)
                 else:
                     if fill_flag:
-                        if i==self.obj.curve_obj.selected_curve_idx:
+                        if i==self.obj.curve_obj.selected_curve_idx and self.obj.ctrl_wdg.ui.bPick:
                             color = self.selected_color
                         else:
                             color = self.fill_color
@@ -685,8 +702,7 @@ class GL_Widget(QOpenGLWidget):
                     glVertex3f(top_center[0], top_center[1], top_center[2])
                     glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
                     glVertex3f(vertices[k-1][0], vertices[k-1][1], vertices[k-1][2])
-    
-        
+
                 glEnd()
                 
                 

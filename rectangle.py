@@ -3,6 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from scipy.spatial import distance
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 
 class Rectangle_Tool(QObject):
@@ -25,14 +26,16 @@ class Rectangle_Tool(QObject):
         self.binormals = []
         self.normals = []
         self.centers = []
-        self.scaling_factor = 1.2
+        self.scaling_factor = 1.1
         self.min_Ts = []
         self.max_Ts = []
         self.min_Bs = []
         self.max_Bs = []
         self.selected_rect_idx = -1
 
-        
+    def reset(self, ctrl_wdg):
+        self.__init__(ctrl_wdg)
+
         
     def select_feature(self, x, y):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
@@ -51,6 +54,7 @@ class Rectangle_Tool(QObject):
                             self.data_val.append(data[i,:])
                             # print("selected rectangle")
                             for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
+                                print(v.rect_groups_regular)
                                 v.rect_groups_regular[img_ind][i] = self.group_num
                             feature_selected = True
 
@@ -98,19 +102,15 @@ class Rectangle_Tool(QObject):
                         
                         
     def compute_new_points(self, F1, F2, F3, F4): # F1, F2, F3, F4 are the input points in clockwise order as on doc file
-                
         center = 0.25*(F1 + F2 + F3 + F4)
 
-
-        
         n1 = np.cross((F1 - F2), (F3 - F2))
         n2 = np.cross((F3 - F4), (F1 - F4))
         n1 = n1/np.linalg.norm(n1)
         n2 = n1/np.linalg.norm(n2)
 
         normal_sum = 0.5*(n1 + n2)
-        
-        
+
         assert np.linalg.norm(normal_sum) > 0
         n_avg = normal_sum/np.linalg.norm(normal_sum)
         
@@ -218,4 +218,25 @@ class Rectangle_Tool(QObject):
             self.min_Bs[i] /= self.scaling_factor
             self.new_points[i] = self.get_rect_points(i)
         
-            
+    def rotate(self, angle_degrees, rotation_axis):
+        if self.selected_rect_idx != -1:
+            angle_radians = np.radians(angle_degrees)
+            rotation_vector = angle_radians * rotation_axis
+            rotation = R.from_rotvec(rotation_vector)
+            pts_list = self.new_points[self.selected_rect_idx]
+            self.tangents[self.selected_rect_idx] = rotation.apply(self.tangents[self.selected_rect_idx])
+            self.binormals[self.selected_rect_idx] = rotation.apply(self.binormals[self.selected_rect_idx])
+            # self.centers[self.selected_rect_idx] = rotation.apply(self.centers[self.selected_rect_idx])
+            center = 0.25*(pts_list[0] + pts_list[1] + pts_list[2] + pts_list[3])
+            for i, pt in enumerate(pts_list):
+                self.new_points[self.selected_rect_idx][i] = rotation.apply(pt - center) + center
+
+
+    def translate(self, axis):
+        if self.selected_rect_idx != -1:
+            pts_list = self.new_points[self.selected_rect_idx]
+            self.centers[self.selected_rect_idx] = axis + self.centers[self.selected_rect_idx]
+            for i, pt in enumerate(pts_list):
+                self.new_points[self.selected_rect_idx][i] = axis + pt
+
+
