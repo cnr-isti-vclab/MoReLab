@@ -86,6 +86,9 @@ class Video:
         self.curve_groups_regular = []
         self.curve_pts_regular = []
         self.curve_3d_point_regular = []
+        self.bPaint_regular = []
+        self.bAssignDepth_regular = []
+        self.temp_pts_regular = []
 
         for i in range(n):
             self.rect_groups_regular.append([])
@@ -93,7 +96,10 @@ class Video:
             self.cylinder_groups_regular.append([])
             self.curve_groups_regular.append([])
             self.curve_pts_regular.append([])
+            self.temp_pts_regular.append([])
             self.curve_3d_point_regular.append([])
+            self.bPaint_regular.append(True)
+            self.bAssignDepth_regular.append(False)
 
     
     
@@ -258,6 +264,7 @@ class Video:
             self.features_network.append([])
             self.hide_network.append([])
 
+
     def init_3D_network(self, n):
         self.rect_groups_network = []
         self.quad_groups_network = []
@@ -265,6 +272,9 @@ class Video:
         self.curve_groups_network = []
         self.curve_pts_network = []
         self.curve_3d_point_network = []
+        self.temp_pts_network = []
+        self.bPaint_network = []
+        self.bAssignDepth_network = []
 
         for i in range(n):
             self.rect_groups_network.append([])
@@ -272,4 +282,6 @@ class Video:
             self.cylinder_groups_network.append([])
             self.curve_groups_network.append([])
             self.curve_pts_network.append([])
-            self.curve_3d_point_network.append([])
+            self.temp_pts_network.append([])
+            self.bPaint_network.append(True)
+            self.bAssignDepth_network.append(False)

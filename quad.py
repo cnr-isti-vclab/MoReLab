@@ -111,7 +111,7 @@ class Quad_Tool(QObject):
             rotation = R.from_rotvec(rotation_vector)
             pts_list = self.all_pts[self.selected_quad_idx]
             center = 0.25*(pts_list[0] + pts_list[1] + pts_list[2] + pts_list[3])
-            print("--------------------------------")
+            # print("--------------------------------")
             for i, pt in enumerate(pts_list):
                 self.all_pts[self.selected_quad_idx][i] = rotation.apply(pt - center) + center
 

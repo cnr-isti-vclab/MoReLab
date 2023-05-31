@@ -313,7 +313,15 @@ def write_faces_ply(filename,vert_arr, face_arr, rgb_points=None):
         ]
     )
     data.write(filename)
-    
+
+
+def is_integer_num(n):
+    if isinstance(n, int):
+        return True
+    if isinstance(n, float):
+        return n.is_integer()
+    return False
+
     
     
 def write_vertices_ply(filename,xyz_points,rgb_points=None):

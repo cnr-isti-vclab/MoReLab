@@ -1,3 +1,4 @@
+import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -223,30 +224,27 @@ class Window(QMainWindow):
             ###### PLY Date for General curved cylinder
 
             curve_data_list = []
-            num_bases = 0
+            num_bases_list = []
             sectorCount = self.widget.gl_viewer.obj.cylinder_obj.sectorCount
             
             if len(self.widget.gl_viewer.obj.curve_obj.final_cylinder_bases) > 0:
                 for i, cylinder_bases in enumerate(self.widget.gl_viewer.obj.curve_obj.final_cylinder_bases):
-                    # print("Data for cylinder # "+str(i+1))
-                    general_bases = []
-                    base_centers = np.vstack(self.widget.gl_viewer.obj.curve_obj.final_base_centers[i])
-                    for j, bases in enumerate(cylinder_bases):
-                        general_bases.append(np.vstack(bases))
+                    if not self.widget.gl_viewer.obj.curve_obj.deleted[i]:
+                        general_bases = []
+                        base_centers = np.vstack(self.widget.gl_viewer.obj.curve_obj.final_base_centers[i])
+                        for j, bases in enumerate(cylinder_bases):
+                            general_bases.append(np.vstack(bases))
 
-                    tops = np.vstack(self.widget.gl_viewer.obj.curve_obj.final_cylinder_tops[i][-1])
-                    top_center = self.widget.gl_viewer.obj.curve_obj.final_top_centers[i][-1].reshape((1,3))
-                            
-                    num_bases = base_centers.shape[0]
-                    general_cylinder = np.concatenate((base_centers, np.vstack(general_bases), tops, top_center))
-                    curve_data_list.append(general_cylinder)
-                    # for j in range(general_cylinder.shape[0]):
-                    #     print(general_cylinder[j, :])
+                        tops = np.vstack(self.widget.gl_viewer.obj.curve_obj.final_cylinder_tops[i][-1])
+                        top_center = self.widget.gl_viewer.obj.curve_obj.final_top_centers[i][-1].reshape((1,3))
 
-            # print("Num : "+str(len(curve_data_list)))
-            # print("Num 2 : " + str(num_bases))
+                        num_bases_list.append(base_centers.shape[0])
+                        general_cylinder = np.concatenate((base_centers, np.vstack(general_bases), tops, top_center))
+                        curve_data_list.append(general_cylinder)
+
             if len(curve_data_list) > 0:
                 curve_data = np.vstack(curve_data_list)
+
 
             ##### PLY Date for rect
     
@@ -369,16 +367,18 @@ class Window(QMainWindow):
                 face_data_quad[2*i+1,2] = idx_list[3]
 
 
-            ###### Face data for curved cylinder 
-
-            face_data_general = np.zeros(shape=(len(curve_data_list) * (2*sectorCount*(num_bases+1)) , 3), dtype=int)
+            ###### Face data for curved cylinder
+            total_curve_size = 0
+            for num in num_bases_list:
+                total_curve_size = total_curve_size + 2*sectorCount*(num+1)
+            face_data_general = np.zeros(shape=(total_curve_size , 3), dtype=int)
 
             if len(curve_data_list) > 0:
                 start = bundle_adjustment_ply_data.shape[0] + cam_data.shape[0] + 4*len(rect_data_list) + len(new_base_centers) * (2*(sectorCount+1) + 2)
-                # print("Start : "+str(start))                
-                num_cyl = num_bases
+                # print("Start : "+str(start))
                 if len(curve_data_list) > 0:
                     for k in range(len(curve_data_list)):
+                        num_cyl = num_bases_list[k]
                         ###### Bases
                         for j in range(sectorCount):
                             face_data_general[j + k*(2*sectorCount + 2*sectorCount*num_cyl), 0] = start
@@ -428,7 +428,7 @@ class Window(QMainWindow):
                             face_data_general[start_idx + 2*sectorCount + j + k*(2*sectorCount + 2*sectorCount*num_cyl), 1] = start + num_cyl*(sectorCount + 1 + 1) + j + 1
                             face_data_general[start_idx + 2*sectorCount + j + k*(2*sectorCount + 2*sectorCount*num_cyl), 2] = start + num_cyl*(sectorCount + 1 + 1) + j
                 
-                        start = start + general_cylinder.shape[0] 
+                        start = start + curve_data_list[k].shape[0]
          
             all_faces = np.concatenate((face_data, face_data_cyl, face_data_quad, face_data_general))
 

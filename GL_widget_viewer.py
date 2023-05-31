@@ -167,8 +167,6 @@ class GL_Widget(QOpenGLWidget):
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t: 
                     glViewport(int(self.util_.offset_x), -1*int(self.util_.offset_y), int(self.width()), int(self.height()))
-                    # print(tup[1].shape)
-                    # print(tup[1])
 
                     self.util_.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
                     glMatrixMode(GL_PROJECTION)
@@ -205,14 +203,13 @@ class GL_Widget(QOpenGLWidget):
                         
                     # if self.obj.ctrl_wdg.ui.bBezier:
 
+                    self.render_bezier(v, t)
                     if len(self.obj.curve_obj.final_cylinder_bases) > 0:
                         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
                         self.render_general_cylinder(False, True)
                         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE)
                         self.render_general_cylinder(False, False)
                         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
-                    else:
-                        self.render_bezier(v, t)
 
 
         glDisable(GL_CULL_FACE)
@@ -568,21 +565,7 @@ class GL_Widget(QOpenGLWidget):
                 glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
                 glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
                 glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-                glEnd()      
-                
-                
-    def render_curve_planes(self):
-        for i, pt_tup in enumerate(self.obj.curve_obj.planes):
-            glColor3f(0.38, 0.85, 0.211)
-            glBegin(GL_TRIANGLES)      
-            glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
-            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-    
-            glVertex3f(pt_tup[2][0], pt_tup[2][1], pt_tup[2][2])
-            glVertex3f(pt_tup[1][0], pt_tup[1][1], pt_tup[1][2])
-            glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
-            glEnd()
+                glEnd()
             
             
     def render_bezier(self, v, t):
@@ -590,45 +573,49 @@ class GL_Widget(QOpenGLWidget):
         glColor3f(0.0, 0.0, 0.0)
         pts = []
         if self.obj.ctrl_wdg.kf_method == "Regular":
-            pts = v.curve_3d_point_regular[t]
+            all_pts = v.curve_pts_regular[t]
         elif self.obj.ctrl_wdg.kf_method == "Network":
-            pts = v.curve_3d_point_network[t]
-        
-        if len(pts) > 4:
-            glBegin(GL_LINE_STRIP)
-            for i in range(5, len(pts), 1):
-                point = pts[i]
-                glVertex3f(point[0], point[1], point[2])
-            glEnd()
-    
-            glColor(0.0, 0.0, 0.0)
-            # glPointSize(10)
-            glPointSize(5*self.util_._zoom)
-            glBegin(GL_POINTS)
-            for i in range(1,5,1):
-                p = pts[i]
-                glVertex3f(p[0], p[1], p[2])
-            glEnd()
-            
-        if len(self.obj.curve_obj.final_bezier) > 0:
-            
-            ctrl_pts = self.obj.curve_obj.ctrl_pts_final[-1]
-            glColor3f(1.0, 0.0, 0.0)
-            glPointSize(5*self.util_._zoom)
-            glBegin(GL_POINTS)
-            for i in range(ctrl_pts.shape[0]):
-                p = ctrl_pts[i]
-                glVertex3f(p[0], p[1], p[2])
-            glEnd()
+            all_pts = v.curve_pts_network[t]
 
-            
-            glColor3f(1.0, 0.0, 0.0)        
-            glBegin(GL_LINE_STRIP)
-            points = self.obj.curve_obj.final_bezier[-1]
-            for i in range(points.shape[0]):
-                glVertex3f(points[i,0], points[i,1], points[i,2])
-            glEnd()
-            
+        
+        for k in range(len(all_pts), 0, -1):
+            pts = all_pts[k-1]
+            if k > len(self.obj.curve_obj.final_cylinder_bases):
+                    
+                glColor(0.0, 0.0, 0.0)
+
+                glBegin(GL_LINE_STRIP)
+                for i in range(5, len(pts), 1):
+                    point = pts[i]
+                    glVertex3f(point[0], point[1], point[2])
+                glEnd()
+
+                # glPointSize(10)
+                glPointSize(5*self.util_._zoom)
+                glBegin(GL_POINTS)
+                for i in range(1,5,1):
+                    p = pts[i]
+                    glVertex3f(p[0], p[1], p[2])
+                glEnd()
+
+        for k in range(len(self.obj.curve_obj.final_bezier), 0, -1):
+            if k > len(self.obj.curve_obj.final_cylinder_bases):   
+                ctrl_pts = self.obj.curve_obj.ctrl_pts_final[k-1]
+                glColor3f(1.0, 0.0, 0.0)
+                glPointSize(5*self.util_._zoom)
+                glBegin(GL_POINTS)
+                for i in range(ctrl_pts.shape[0]):
+                    p = ctrl_pts[i]
+                    glVertex3f(p[0], p[1], p[2])
+                glEnd()
+    
+                points = self.obj.curve_obj.final_bezier[k-1]
+                glColor3f(1.0, 0.0, 0.0)
+                glBegin(GL_LINE_STRIP)
+                for i in range(points.shape[0]):
+                    glVertex3f(points[i,0], points[i,1], points[i,2])
+                glEnd()
+
         
     def render_general_cylinder(self, offscreen_bool = False, fill_flag=False):
         ##### Draw initial base of the cylinder

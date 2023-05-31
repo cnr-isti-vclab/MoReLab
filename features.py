@@ -51,14 +51,14 @@ class Features(QWidget):
             v.init_3D_regular(len(v.key_frames_regular))
             for t in range(len(v.key_frames_regular)):
                 for i, fc in enumerate(v.features_regular[t]):
-                        self.init_3D_feature_regular(v, t)
+                    self.init_3D_feature_regular(v, t)
 
 
         elif self.ctrl_wdg.kf_method == "Network":
             v.init_3D_network(len(v.key_frames_network))
             for t in range(len(v.key_frames_network)):
                 for i, fc in enumerate(v.features_network[t]):
-                        self.init_3D_feature_network(v, t)
+                    self.init_3D_feature_network(v, t)
 
         
     def get_correspondent_pts(self, v):

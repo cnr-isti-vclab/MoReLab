@@ -551,7 +551,7 @@ class Document(QWidget):
                 b_vec_mat = np.loadtxt(os.path.join(c, 'b_vec.csv'), delimiter=',')
                 N_mat = np.loadtxt(os.path.join(c, 'N.csv'), delimiter=',')
 
-                print(t_vec_mat.shape)
+                # print(t_vec_mat.shape)
 
                 if n_cyl == 1:
                     self.ctrl_wdg.gl_viewer.obj.cylinder_obj.radii.append(radii_mat)

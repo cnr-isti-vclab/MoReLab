@@ -365,11 +365,11 @@ class Cylinder_Tool(QObject):
 
     def scale_up(self):
         i = self.selected_cylinder_idx
-        print("Index : "+str(i))
+        # print("Index : "+str(i))
         if i != -1:
             radius = self.radii[i] * self.scaling_factor
             self.radii[i] = radius
-            print("Radius : "+str(radius))
+            # print("Radius : "+str(radius))
             cyl_axis = 0.05*(self.top_centers[i] - self.centers[i])
             self.centers[i] = self.centers[i] - cyl_axis
             self.top_centers[i] = self.top_centers[i] + cyl_axis

@@ -5,6 +5,7 @@ from scipy.spatial import distance
 from scipy.optimize import minimize, least_squares
 from scipy.spatial.transform import Rotation as R
 from scipy import linalg
+import copy
 
 import numpy as np
 import math
@@ -14,9 +15,11 @@ class Curve_Tool(QObject):
     def __init__(self, ctrl_wdg):
         super().__init__(ctrl_wdg)
         self.ctrl_wdg = ctrl_wdg
-        self.data_val = []
+        self.data_val_regular = []
+        self.data_val_network = []
         self.dist_thresh_select = 10.0
         self.curve_3d_point = []
+        self.all_curves = []
         self.radius_point = []
         self.planes = []
         self.num_pts = 30
@@ -33,48 +36,41 @@ class Curve_Tool(QObject):
         self.colors = [(0,0,0)]
         self.selected_curve_idx = -1
         self.deleted = []
+        self.bpick = True
+        self.n_final_curves = 0
+        self.temp_pts = []
         
         
 
     def reset(self, ctrl_wdg):
         self.__init__(ctrl_wdg)
 
-    def make_curve(self, x, y, w1, w2, h1, h2):
+    def mark_point(self, x, y, w1, w2, h1, h2):
         if x > w1 and y > h1 and x < w2 and y < h2:
             v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
             t = self.ctrl_wdg.selected_thumbnail_index
             if self.ctrl_wdg.kf_method == "Regular":
-                v.curve_groups_regular[t].append([x,y])
-            elif self.ctrl_wdg.kf_method == "Network":
-                v.curve_groups_network[t].append([x,y])
-            
-        
-        
-            
-    def select_feature(self, x, y):
-        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
-        t = self.ctrl_wdg.selected_thumbnail_index
-        
-        feature_selected = False
+                self.data_val_regular.append([x,y])
+                if len(self.data_val_regular) == 4:
+                    v.curve_groups_regular[t].append(self.data_val_regular)
+                    self.data_val_regular = []
+                    v.bPaint_regular[t] = False
+                    v.bAssignDepth_regular[t] = True
+                    # print("Mark ------------")
+                    # print(len(v.curve_groups_regular[t]))
 
-        if self.ctrl_wdg.kf_method == "Regular":
-            for i, fc in enumerate(v.features_regular[t]):
-                if not v.hide_regular[t][i]:
-                    d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
-                    if d < self.dist_thresh_select:
-                        v.curve_pts_regular[t].append(i)
-                        feature_selected = True
-                        
-        elif self.ctrl_wdg.kf_method == "Network":
-            for i, fc in enumerate(v.features_network[t]):
-                if not v.hide_network[t][i]:
-                    d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
-                    if d < self.dist_thresh_select and len(self.data_val) == 0:
-                        v.curve_pts_network[t].append(i)
-                        feature_selected = True
-                            
-        return feature_selected
-    
+            elif self.ctrl_wdg.kf_method == "Network":
+                self.data_val_network.append([x, y])
+                if len(self.data_val_network) == 4:
+                    v.curve_groups_network[t].append(self.data_val_network)
+                    self.data_val_network = []
+                    v.bPaint_network[t] = False
+                    v.bAssignDepth_network[t] = True
+
+        return True
+
+
+
     def check_vector(self, z):
         # print(z)
         s = np.dot(z, z)
@@ -107,24 +103,28 @@ class Curve_Tool(QObject):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         t = self.ctrl_wdg.selected_thumbnail_index
         # print("Projection")
-        # print(M)
-        pts = []
-        data_val = []
+
+        all_pts = []
+        all_data_val = []
         if self.ctrl_wdg.kf_method == "Regular":
             if len(v.curve_groups_regular) > 0:
-                pts = v.curve_3d_point_regular[t]
-                data_val = v.curve_groups_regular[t]
+                all_pts = v.curve_3d_point_regular[t]
+                all_data_val = v.curve_groups_regular[t]
         if self.ctrl_wdg.kf_method == "Network":
             if len(v.curve_groups_network) > 0:
-                pts = v.curve_3d_point_network[t]
-                data_val = v.curve_groups_network[t]
-        
+                all_pts = v.curve_3d_point_network[t]
+                all_data_val = v.curve_groups_network[t]
+
         z_vec = M[2, 0:3]
         z_vec = z_vec/np.linalg.norm(z_vec)
-            
-        if len(pts) > 0 and len(data_val) == 4:
+
+        if len(all_data_val) > 0:
+            pts = all_pts[-1]
+            data_val = all_data_val[-1]
+            # pts is 3d point. data_val is list of 2D points.
             a, b, c = -z_vec[0], -z_vec[1], -z_vec[2]
-            d = np.dot(z_vec, pts[0])
+            d = np.dot(z_vec, pts)
+
             N = np.array([a, b, c])
             Ps = []
             for i, pp in enumerate(data_val):
@@ -137,21 +137,34 @@ class Curve_Tool(QObject):
                 A_10 = M[1,0] - py*M[2,0]
                 A_11 = M[1,1] - py*M[2,1]
                 A_12 = M[1,2] - py*M[2,2]
-                
+
                 A = np.array([[A_00, A_01, A_02],[A_10, A_11, A_12], [a, b, c]])
                 B = np.array([px*M[2,3] - M[0,3], py*M[2,3] - M[1,3], -d])
-                
+
                 X = np.linalg.solve(A, B)
-                
-                # print(X)
+
                 Ps.append(X)
                 if self.ctrl_wdg.kf_method == "Regular":
                     v.curve_3d_point_regular[t].append(X)
                 elif self.ctrl_wdg.kf_method == "Network":
                     v.curve_3d_point_network[t].append(X)
-            
+
             self.bezier_curve_range(Ps, v, t)
-        
+                # print(len(Ps))
+            if self.ctrl_wdg.kf_method == "Regular":
+                v.curve_pts_regular[t].append(copy.deepcopy(v.curve_3d_point_regular[t]))
+                v.temp_pts_regular[t].append(copy.deepcopy(v.curve_3d_point_regular[t]))
+                v.curve_3d_point_regular[t] = []
+
+            elif self.ctrl_wdg.kf_method == "Network":
+                v.curve_pts_network[t].append(copy.deepcopy(v.curve_3d_point_network[t]))
+                v.temp_pts_network[t].append(copy.deepcopy(v.curve_3d_point_network[t]))
+                v.curve_3d_point_network[t] = []
+                
+            # for p in v.curve_pts_regular[t]:
+            #     print(len(p))
+
+
 
 
     def find_final_curve(self):
@@ -159,89 +172,119 @@ class Curve_Tool(QObject):
         proj_tuples = self.ctrl_wdg.gl_viewer.obj.camera_projection_mat
         x0 = []
         cp = []
-        points = []
+        self.curve_2d_points = []
+        # for d in v.curve_3d_point_regular:
+            # print(len(d))
         for i, tup in enumerate(proj_tuples):
+            # print("i : "+str(i))
             pts = []
             data_val = []
             pts2 = []
-            # print("Image index : "+str(tup[0]))
+            
             if self.ctrl_wdg.kf_method == "Regular":
-                pts = v.curve_3d_point_regular[tup[0]][5:]
-                pts2 = v.curve_3d_point_regular[tup[0]][1:5]
-                val_list = v.curve_groups_regular[tup[0]]
-                for tup in val_list:
-                    data_val.append([self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(tup[0]), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(tup[1])])
-                
+                d_temp = v.temp_pts_regular[tup[0]]
+                # print(len(d_temp))
+                if len(d_temp) > 0:
+                    all_data = d_temp[-1]
+                    # print("aaaaaaaaaaaa")
+                    # print(len(all_data))
+
+                    pts = all_data[5:]
+                    pts2 = all_data[1:5]
+
+                    val_list = v.curve_groups_regular[tup[0]][-1]
+
+                    for tup in val_list:
+                        data_val.append([self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(tup[0]), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(tup[1])])
+
             elif self.ctrl_wdg.kf_method == "Network":
-                pts = v.curve_3d_point_network[tup[0]][5:]
-                pts2 = v.curve_3d_point_network[tup[0]][1:5]
+                pts = v.curve_pts_network[-1][tup[0]][5:]
+                pts2 = v.curve_pts_network[-1][tup[0]][1:5]
                 val_list = v.curve_groups_network[tup[0]]
                 for tup in val_list:
                     data_val.append([self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(tup[0]), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(tup[1])])
-                
+
             if len(pts) > 10:
-                # self.bezier_control_points.append(np.vstack(pts2))
                 a = np.asarray(data_val)
+                # print(a.shape)
                 self.curve_2d_points.append((i, a))
                 x0.append(np.vstack(pts2)) # Control points
-        
+                # print(np.vstack(pts2).shape)
+
+        # print(len(x0))
         if len(x0) > 0:
             x0_array = np.vstack(x0)
-
             x1 = x0_array.ravel()
 
             res = least_squares(self.minimize_curve_error, x1, verbose=0, ftol=1e-15, method='trf')
             ctrl_pts = res.x.reshape((int(len(res.x)/3), 3))
             ctrl_pts = ctrl_pts[:4, :]
-            
+
             self.ctrl_pts_final.append(ctrl_pts)
             Ps = []
+            radii = []
             for j in range(self.num_pts):
                 k = j / float(self.num_pts - 1)
                 Ps.append(self.bezier(k, ctrl_pts))
-                
-                self.final_bezier_radii.append(self.calc_radius(k, ctrl_pts[0,:], ctrl_pts[1,:], ctrl_pts[2,:], ctrl_pts[3,:]))
-                
-                
+
+                radii.append(self.calc_radius(k, ctrl_pts[0,:], ctrl_pts[1,:], ctrl_pts[2,:], ctrl_pts[3,:]))
+
+            self.final_bezier_radii.append(radii)
             self.final_bezier.append(np.asarray(Ps))
-            
+
+            if self.ctrl_wdg.kf_method == "Regular":
+                for i, bool_assign in enumerate(v.bAssignDepth_regular):
+                    v.bAssignDepth_regular[i] = False
+                    v.temp_pts_regular[i] = []
+
+            elif self.ctrl_wdg.kf_method == "Network":
+                for i, bool_assign in enumerate(v.bAssignDepth_network):
+                    v.bAssignDepth_network[i] = False
+                    v.temp_pts_network[i] = []
+
+
+            self.ctrl_wdg.gl_viewer.util_.bRadius = True
 
 
     def make_general_cylinder(self):
         # print("Make general cylinder")
-        
         Ps = self.final_bezier[-1]
+        radii = self.final_bezier_radii[-1]
         BC, TC, CB, CT = [], [], [], []
-        # print(Ps)
+        # print(self.radius_point[-1])
         for i in range(0,len(Ps)-1,1):
             P1 = Ps[i]
             if len(CT)==0:          ##### First step
-                P3 = self.project_P3(P1, Ps[i+1], self.radius_point[0])
+                P3 = self.project_P3(P1, Ps[i+1], self.radius_point[-1])
                 P2 = np.cross(Ps[i+1] - Ps[i] , P3 - Ps[i]) + Ps[i]
 
-            else:                
-                
-                P3 = self.project_P3(P1, Ps[i+1], cyl_tops[0])             
+            else:
+
+                P3 = self.project_P3(P1, Ps[i+1], cyl_tops[0])
                 P2 = np.cross(Ps[i+1] - Ps[i], P3 - Ps[i]) + Ps[i]
 
             r = np.linalg.norm(P3 - P1) # Circle cylinder
-            
+
             P4 = Ps[i+1]
 
+            cyl_bases, cyl_tops, center_base, center_top, _, _, _, _, _ = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.make_cylinder(
+                P1, P2, P3, P4)
+
             # print(self.final_bezier_radii[i], r)
-            if self.final_bezier_radii[i] > 1.05*r:
-                cyl_bases, cyl_tops, center_base, center_top, _, _, _, _, _ = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.make_cylinder(P1, P2, P3, P4)
+            if radii[i] > r:
                 BC.append(center_base)
                 TC.append(center_top)
                 CB.append(cyl_bases)
                 CT.append(cyl_tops)
-
+    
         if len(BC) > 0:
             self.final_base_centers.append(BC)
             self.final_top_centers.append(TC)
             self.final_cylinder_bases.append(CB)
             self.final_cylinder_tops.append(CT)
             
+            # print("Number of general cylinders : "+str(len(self.final_base_centers)))
+
             self.curve_count.append(self.ctrl_wdg.rect_obj.primitive_count)
             c = self.ctrl_wdg.rect_obj.getRGBfromI(self.ctrl_wdg.rect_obj.primitive_count)
             self.colors.append(c)
@@ -388,7 +431,6 @@ class Curve_Tool(QObject):
         radius = abs(1/curvature)
         # print("Radius : "+str(radius))
         return radius
-            
             
             
             

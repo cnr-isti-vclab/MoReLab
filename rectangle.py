@@ -54,7 +54,7 @@ class Rectangle_Tool(QObject):
                             self.data_val.append(data[i,:])
                             # print("selected rectangle")
                             for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                print(v.rect_groups_regular)
+                                # print(v.rect_groups_regular)
                                 v.rect_groups_regular[img_ind][i] = self.group_num
                             feature_selected = True
 

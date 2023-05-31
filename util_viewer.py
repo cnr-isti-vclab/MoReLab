@@ -44,6 +44,7 @@ class Util_viewer(QWidget):
         self.dist_label = QLabel("Measured distance : "+str(0.00))
         self.dist_label.setMinimumSize(self.parent_viewer.obj.ctrl_wdg.monitor_width*0.2, self.parent_viewer.obj.ctrl_wdg.monitor_height*0.02)
         self.dist_label.setAlignment(Qt.AlignCenter)
+        self.bRadius = False
 
         
         
@@ -170,9 +171,18 @@ class Util_viewer(QWidget):
         t = ctrl_wdg.selected_thumbnail_index
         
         
-        if ctrl_wdg.ui.bBezier and event.key() == Qt.Key_F and len(self.parent_viewer.obj.curve_obj.final_bezier) == 0:
-            self.parent_viewer.obj.curve_obj.find_final_curve()
-            
+        if ctrl_wdg.ui.bBezier and event.key() == Qt.Key_F :
+            bfinal_curve = False
+            if ctrl_wdg.kf_method == "Regular":
+                if False in v.bAssignDepth_regular:
+                    bfinal_curve = True
+            elif ctrl_wdg.kf_method == "Network":
+                if False in v.bAssignDepth_network:
+                    bfinal_curve = True
+
+            if bfinal_curve:
+                self.parent_viewer.obj.curve_obj.find_final_curve()
+
         if ctrl_wdg.ui.bPick and len(self.parent_viewer.obj.curve_obj.final_base_centers) > 0 and event.key() == Qt.Key_C and event.modifiers() & Qt.ControlModifier:
             self.parent_viewer.obj.curve_obj.final_base_centers.append(self.parent_viewer.obj.curve_obj.final_base_centers[self.parent_viewer.obj.curve_obj.selected_curve_idx].copy())
             self.parent_viewer.obj.curve_obj.final_top_centers.append(self.parent_viewer.obj.curve_obj.final_top_centers[self.parent_viewer.obj.curve_obj.selected_curve_idx].copy())
@@ -475,7 +485,7 @@ class Util_viewer(QWidget):
                 self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
                 ctrl_wdg.rect_obj.selected_quad_idx = -1
                 
-                
+
     def util_mouse_press(self, event, ctrl_wdg):
         a = event.pos()
         x = int((a.x()-self.parent_viewer.width()/2 - self.offset_x)/self._zoom + self.parent_viewer.width()/2) 
@@ -520,20 +530,17 @@ class Util_viewer(QWidget):
                     selected_feature = self.parent_viewer.obj.cylinder_obj.select_feature(x, y)
                     
                 if ctrl_wdg.ui.bBezier:
-                    if len(self.parent_viewer.obj.curve_obj.final_bezier) == 0:
-                        # print("Inside")
-                        if ctrl_wdg.kf_method == "Regular":
-                            if len(v.curve_groups_regular[t]) < 4 and len(v.features_regular[t]) > 0:
-                                self.parent_viewer.obj.curve_obj.make_curve(x, y, self.w1, self.w2, self.h1, self.h2)
-                                selected_feature = True
-                                
-                        elif ctrl_wdg.kf_method == "Network":
-                            if len(v.curve_groups_network[t]) < 4 and len(v.features_network[t]) > 0:
-                                self.parent_viewer.obj.curve_obj.make_curve(x, y, self.w1, self.w2, self.h1, self.h2)
-                                selected_feature = True
+                    if ctrl_wdg.kf_method == "Regular":
+                        if v.bPaint_regular[t]:
+                            selected_feature = self.parent_viewer.obj.curve_obj.mark_point(x, y, self.w1, self.w2, self.h1, self.h2)
+
+                    elif ctrl_wdg.kf_method == "Network":
+                        if v.bPaint_network[t]:
+                            selected_feature = self.parent_viewer.obj.curve_obj.mark_point(x, y, self.w1, self.w2, self.h1, self.h2)
 
                     
                 if not selected_feature:
+                    # print("Not selected ")
                     self.x = a.x()
                     self.y = a.y()
                     self.x_zoomed, self.y_zoomed = x, y
@@ -655,82 +662,90 @@ class Util_viewer(QWidget):
                                 painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
                                 painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
                                 painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-                            
-
-
-            # Painting for selected curve point
-            if (len(v.curve_pts_regular) > 0 or len(v.curve_pts_network) > 0) :
-                if ctrl_wdg.kf_method == "Regular":
-                    if len(v.curve_pts_regular[t]) > 0:
-                        ind = v.curve_pts_regular[t][0]
-                        fc = v.features_regular[t][ind]
-                        painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                        painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                        painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-                        
-                elif ctrl_wdg.kf_method == "Network":
-                    if len(v.curve_pts_network[t]) > 0:
-                        ind = v.curve_pts_network[t][-1]
-                        fc = v.features_network[t][ind]
-                        painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                        painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
-                        painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
 
                             
             # #### Painting for Curve
-            if len(ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases) == 0 and (len(v.curve_groups_regular) > 0 or len(v.curve_groups_network) > 0):
+            
+            if len(v.curve_groups_regular) > 0 or len(v.curve_groups_network) > 0:
                 # print(v.curve_groups_regular[t])
                 if ctrl_wdg.kf_method == "Regular":
-                    data_val = v.curve_groups_regular[t]
+                    data_val = self.parent_viewer.obj.curve_obj.data_val_regular
+                    original_list = v.curve_groups_regular[t]
+                    bool_temp = v.bPaint_regular[t]
 
                 elif ctrl_wdg.kf_method == "Network":
-                    data_val = v.curve_groups_network[t]
+                    data_val = self.parent_viewer.obj.curve_obj.data_val_network
+                    original_list = v.curve_groups_network[t]
+                    bool_temp = v.bPaint_network[t]
 
-                if 0 < len(data_val) < 4:
+                if len(data_val) > 0:
                     painter.drawLine(QLineF(data_val[-1][0], data_val[-1][1] ,  self.current_pos[0], self.current_pos[1]))
-            
+
                 for i, p in enumerate(data_val):
-                    painter.drawEllipse(p[0]-3, p[1]-3, 6, 6)
+                    if len(p) > 0:
+                        painter.drawEllipse(p[0]-3, p[1]-3, 6, 6)
                 
                 for j in range(len(data_val) - 1):
-                    painter.drawLine(QLineF(data_val[j][0], data_val[j][1] ,  data_val[j+1][0], data_val[j+1][1]))
+                    if len(data_val[j+1]) > 0:
+                        painter.drawLine(QLineF(data_val[j][0], data_val[j][1] ,  data_val[j+1][0], data_val[j+1][1]))
+                
+                if len(original_list) > 0 and not bool_temp:
+                    data_val = original_list[-1]
+                    for i, p in enumerate(data_val):
+                        # print(p)
+                        if len(p) > 0 :
+                            painter.drawEllipse(p[0] - 3, p[1] - 3, 6, 6)
+    
+                    for j in range(len(data_val) - 1):
+                        if len(data_val[j + 1]) > 0:
+                            painter.drawLine(QLineF(data_val[j][0], data_val[j][1], data_val[j + 1][0], data_val[j + 1][1]))
  
             painter.end()
             
                 
     def util_select_3d(self, dd, px, co, ctrl_wdg):
-        # print("select and pick")
         v = ctrl_wdg.mv_panel.movie_caps[ctrl_wdg.mv_panel.selected_movie_idx]
         t = ctrl_wdg.selected_thumbnail_index
-        if ctrl_wdg.ui.bBezier and len(self.parent_viewer.obj.curve_obj.radius_point) == 0 and dd < 1:
-            if len(self.parent_viewer.obj.curve_obj.final_bezier) > 0 and len(self.parent_viewer.obj.curve_obj.radius_point) < 1 :
+        if ctrl_wdg.ui.bBezier and dd < 1:
+            assign_depth = False
+
+            if ctrl_wdg.kf_method == "Regular":
+                assign_depth = v.bAssignDepth_regular[t]
+
+            elif ctrl_wdg.kf_method == "Network":
+                assign_depth = v.bAssignDepth_network[t]
+
+            if assign_depth:
+                # print("Assign depth")
+                if ctrl_wdg.kf_method == "Regular":
+                    v.curve_3d_point_regular[t].append(np.array(px))
+
+                    for j, tup in enumerate(self.parent_viewer.obj.camera_projection_mat):
+                        if tup[0] == t:
+                            G = self.parent_viewer.obj.camera_projection_mat[j][1][0:3, :]
+                            P = np.matmul(self.parent_viewer.obj.K, G)
+                            self.parent_viewer.obj.curve_obj.estimate_plane(P)
+
+                elif ctrl_wdg.kf_method == "Network":
+                    v.curve_3d_point_network[t].append(np.array(px))
+                    for j, tup in enumerate(self.parent_viewer.obj.camera_projection_mat):
+                        if tup[0] == t:
+                            G = self.parent_viewer.obj.camera_projection_mat[j][1][0:3, :]
+                            P = np.matmul(self.parent_viewer.obj.K, G)
+                            self.parent_viewer.obj.curve_obj.estimate_plane(P)
+
+            if self.bRadius:
                 self.parent_viewer.obj.curve_obj.radius_point.append(np.array(px))
-                if len(self.parent_viewer.obj.curve_obj.radius_point) == 1:
-                    self.parent_viewer.obj.curve_obj.make_general_cylinder()
-                    
-            
-            else:
-                if dd < 1:
-                    if ctrl_wdg.kf_method == "Regular":
-                        if len(v.curve_3d_point_regular[t]) < 1:
-                            v.curve_3d_point_regular[t].append(np.array(px))
-                            for j, tup in enumerate(self.parent_viewer.obj.camera_projection_mat):
-                                if tup[0] == t:
-                                    G = self.parent_viewer.obj.camera_projection_mat[j][1][0:3, :]
-                                    P = np.matmul(self.parent_viewer.obj.K, G)
-                                    self.parent_viewer.obj.curve_obj.estimate_plane(P)
-                                    
-                    elif ctrl_wdg.kf_method == "Network":
-                        if len(v.curve_3d_point_network[t]) < 1:
-                            v.curve_3d_point_network[t].append(np.array(px))
-                            
-                            for j, tup in enumerate(self.parent_viewer.obj.camera_projection_mat):
-                                if tup[0] == t: 
-                                    G = self.parent_viewer.obj.camera_projection_mat[j][1][0:3, :]
-                                    P = np.matmul(self.parent_viewer.obj.K, G)
-                                    
-                                    self.parent_viewer.obj.curve_obj.estimate_plane(P) 
+                self.parent_viewer.obj.curve_obj.make_general_cylinder()
+                self.bRadius = False
+                if ctrl_wdg.kf_method == "Regular":
+                    for i in range(len(v.key_frames_regular)):
+                        v.bPaint_regular[i] = True
+
+                elif ctrl_wdg.kf_method == "Network":
+                    for i in range(len(v.key_frames_network)):
+                        v.bPaint_network[i] = True
 
                 
         if dd < 1:
@@ -739,17 +754,28 @@ class Util_viewer(QWidget):
                 if len(self.parent_viewer.obj.cylinder_obj.data_val) == 4:
                     data_val = self.parent_viewer.obj.cylinder_obj.data_val
                     if ctrl_wdg.ui.bnCylinder:
-                        bases, tops, center, top_c = self.parent_viewer.obj.cylinder_obj.make_new_cylinder(data_val[0], data_val[1], data_val[2], data_val[3])
+                        bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.parent_viewer.obj.cylinder_obj.make_new_cylinder(data_val[0], data_val[1], data_val[2], data_val[3])
                         if len(bases) > 0:
                             self.parent_viewer.obj.cylinder_obj.bool_cylinder_type.append(False)
+                            self.parent_viewer.obj.cylinder_obj.heights.append(height)
+                            self.parent_viewer.obj.cylinder_obj.radii.append(radius)
+                            self.parent_viewer.obj.cylinder_obj.b_vecs.append(b_vec)
+                            self.parent_viewer.obj.cylinder_obj.t_vecs.append(t_vec)
+                            self.parent_viewer.obj.cylinder_obj.Ns.append(N)
                             self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data(bases, tops, center, top_c)
+
                         else:
                             straight_line_dialogue()
                             del self.parent_viewer.obj.cylinder_obj.data_val[-1]
 
                     else:
-                        bases, tops, center, top_c = self.parent_viewer.obj.cylinder_obj.make_cylinder(data_val[0], data_val[1], data_val[2], data_val[3])
+                        bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.parent_viewer.obj.cylinder_obj.make_cylinder(data_val[0], data_val[1], data_val[2], data_val[3])
                         self.parent_viewer.obj.cylinder_obj.bool_cylinder_type.append(True)
+                        self.parent_viewer.obj.cylinder_obj.heights.append(height)
+                        self.parent_viewer.obj.cylinder_obj.radii.append(radius)
+                        self.parent_viewer.obj.cylinder_obj.b_vecs.append(b_vec)
+                        self.parent_viewer.obj.cylinder_obj.t_vecs.append(t_vec)
+                        self.parent_viewer.obj.cylinder_obj.Ns.append(N)
                         self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data(bases, tops, center, top_c)
 
                     
