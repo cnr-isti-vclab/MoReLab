@@ -183,17 +183,82 @@ class Util_viewer(QWidget):
             if bfinal_curve:
                 self.parent_viewer.obj.curve_obj.find_final_curve()
 
-        if ctrl_wdg.ui.bPick and len(self.parent_viewer.obj.curve_obj.final_base_centers) > 0 and event.key() == Qt.Key_C and event.modifiers() & Qt.ControlModifier:
-            self.parent_viewer.obj.curve_obj.final_base_centers.append(self.parent_viewer.obj.curve_obj.final_base_centers[self.parent_viewer.obj.curve_obj.selected_curve_idx].copy())
-            self.parent_viewer.obj.curve_obj.final_top_centers.append(self.parent_viewer.obj.curve_obj.final_top_centers[self.parent_viewer.obj.curve_obj.selected_curve_idx].copy())
-            self.parent_viewer.obj.curve_obj.final_cylinder_bases.append(copy.deepcopy(self.parent_viewer.obj.curve_obj.final_cylinder_bases[self.parent_viewer.obj.curve_obj.selected_curve_idx]))
-            self.parent_viewer.obj.curve_obj.final_cylinder_tops.append(copy.deepcopy(self.parent_viewer.obj.curve_obj.final_cylinder_tops[self.parent_viewer.obj.curve_obj.selected_curve_idx]))
-            
-            self.parent_viewer.obj.curve_obj.curve_count.append(ctrl_wdg.rect_obj.primitive_count)
-            c = ctrl_wdg.rect_obj.getRGBfromI(ctrl_wdg.rect_obj.primitive_count)
-            self.parent_viewer.obj.curve_obj.colors.append(c)
-            ctrl_wdg.rect_obj.primitive_count += 1
-            self.parent_viewer.obj.curve_obj.deleted.append(False)
+        if ctrl_wdg.ui.bPick and event.key() == Qt.Key_C and event.modifiers() & Qt.ControlModifier:
+            if self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
+                idx = self.parent_viewer.obj.curve_obj.selected_curve_idx
+                self.parent_viewer.obj.curve_obj.final_base_centers.append(self.parent_viewer.obj.curve_obj.final_base_centers[idx].copy())
+                self.parent_viewer.obj.curve_obj.final_top_centers.append(self.parent_viewer.obj.curve_obj.final_top_centers[idx].copy())
+                self.parent_viewer.obj.curve_obj.final_cylinder_bases.append(copy.deepcopy(self.parent_viewer.obj.curve_obj.final_cylinder_bases[idx]))
+                self.parent_viewer.obj.curve_obj.final_cylinder_tops.append(copy.deepcopy(self.parent_viewer.obj.curve_obj.final_cylinder_tops[idx]))
+                
+                self.parent_viewer.obj.curve_obj.curve_count.append(ctrl_wdg.rect_obj.primitive_count)
+                c = ctrl_wdg.rect_obj.getRGBfromI(ctrl_wdg.rect_obj.primitive_count)
+                self.parent_viewer.obj.curve_obj.colors.append(c)
+                ctrl_wdg.rect_obj.primitive_count += 1
+                self.parent_viewer.obj.curve_obj.selected_curve_idx = len(self.parent_viewer.obj.curve_obj.final_base_centers) - 1
+                self.parent_viewer.obj.curve_obj.deleted.append(False)
+                
+            elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
+                idx = self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx
+                
+                self.parent_viewer.obj.cylinder_obj.vertices_cylinder.append(copy.deepcopy(self.parent_viewer.obj.cylinder_obj.vertices_cylinder[idx]))
+                self.parent_viewer.obj.cylinder_obj.top_vertices.append(copy.deepcopy(self.parent_viewer.obj.cylinder_obj.top_vertices[idx]))
+                self.parent_viewer.obj.cylinder_obj.centers.append(copy.deepcopy(self.parent_viewer.obj.cylinder_obj.centers[idx]))
+                self.parent_viewer.obj.cylinder_obj.top_centers.append(copy.deepcopy(self.parent_viewer.obj.cylinder_obj.top_centers[idx]))
+                self.parent_viewer.obj.cylinder_obj.heights.append(self.parent_viewer.obj.cylinder_obj.heights[idx])
+                self.parent_viewer.obj.cylinder_obj.radii.append(self.parent_viewer.obj.cylinder_obj.radii[idx])
+                self.parent_viewer.obj.cylinder_obj.t_vecs.append(self.parent_viewer.obj.cylinder_obj.t_vecs[idx].copy())
+                self.parent_viewer.obj.cylinder_obj.b_vecs.append(self.parent_viewer.obj.cylinder_obj.b_vecs[idx].copy())
+                self.parent_viewer.obj.cylinder_obj.Ns.append(self.parent_viewer.obj.cylinder_obj.Ns[idx].copy())
+                self.parent_viewer.obj.cylinder_obj.occurrence_groups.append(copy.deepcopy(self.parent_viewer.obj.cylinder_obj.occurrence_groups[idx]))
+                
+                self.parent_viewer.obj.cylinder_obj.bool_cylinder_type.append(self.parent_viewer.obj.cylinder_obj.bool_cylinder_type[idx])
+                self.parent_viewer.obj.cylinder_obj.cylinder_count.append(ctrl_wdg.rect_obj.primitive_count)
+                c = ctrl_wdg.rect_obj.getRGBfromI(ctrl_wdg.rect_obj.primitive_count)
+                self.parent_viewer.obj.cylinder_obj.colors.append(c)
+                ctrl_wdg.rect_obj.primitive_count += 1
+                self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = len(self.parent_viewer.obj.cylinder_obj.vertices_cylinder) - 1
+
+            elif ctrl_wdg.rect_obj.selected_rect_idx != -1:
+                idx = ctrl_wdg.rect_obj.selected_rect_idx
+
+                ctrl_wdg.rect_obj.tangents.append(ctrl_wdg.rect_obj.tangents[idx].copy())
+                ctrl_wdg.rect_obj.binormals.append(ctrl_wdg.rect_obj.binormals[idx].copy())
+                ctrl_wdg.rect_obj.normals.append(ctrl_wdg.rect_obj.normals[idx].copy())
+                ctrl_wdg.rect_obj.centers.append(ctrl_wdg.rect_obj.centers[idx].copy())
+                ctrl_wdg.rect_obj.min_Ts.append(ctrl_wdg.rect_obj.min_Ts[idx].copy())
+                ctrl_wdg.rect_obj.max_Ts.append(ctrl_wdg.rect_obj.max_Ts[idx].copy())
+                ctrl_wdg.rect_obj.min_Bs.append(ctrl_wdg.rect_obj.min_Bs[idx].copy())
+                ctrl_wdg.rect_obj.max_Bs.append(ctrl_wdg.rect_obj.max_Bs[idx].copy())
+                
+                ctrl_wdg.rect_obj.occurence_groups.append(copy.deepcopy(ctrl_wdg.rect_obj.occurence_groups[idx]))
+                ctrl_wdg.rect_obj.new_points.append(copy.deepcopy(ctrl_wdg.rect_obj.new_points[idx]))
+                ctrl_wdg.rect_obj.rect_counts.append(ctrl_wdg.rect_obj.primitive_count)
+                c = ctrl_wdg.rect_obj.getRGBfromI(ctrl_wdg.rect_obj.primitive_count)
+                ctrl_wdg.rect_obj.colors.append(c)
+                ctrl_wdg.rect_obj.primitive_count += 1
+                ctrl_wdg.rect_obj.selected_rect_idx = len(ctrl_wdg.rect_obj.new_points) - 1
+                ctrl_wdg.rect_obj.deleted.append(False)
+                ctrl_wdg.rect_obj.group_num += 1
+                
+            elif ctrl_wdg.quad_obj.selected_quad_idx != -1:
+                idx = ctrl_wdg.quad_obj.selected_quad_idx
+                
+                ctrl_wdg.quad_obj.occurence_groups.append(copy.deepcopy(ctrl_wdg.quad_obj.occurence_groups[idx]))
+                ctrl_wdg.quad_obj.all_pts.append(copy.deepcopy(ctrl_wdg.quad_obj.all_pts[idx]))
+                ctrl_wdg.quad_obj.group_counts.append(ctrl_wdg.rect_obj.primitive_count)
+                c = ctrl_wdg.rect_obj.getRGBfromI(ctrl_wdg.rect_obj.primitive_count)
+                ctrl_wdg.quad_obj.colors.append(c)
+                ctrl_wdg.rect_obj.primitive_count += 1
+                ctrl_wdg.quad_obj.selected_quad_idx = len(ctrl_wdg.quad_obj.all_pts) - 1
+                ctrl_wdg.quad_obj.deleted.append(False)
+                ctrl_wdg.quad_obj.group_num += 1
+                
+            else:
+                del_primitive_dialogue()
+
+                
+
             
             # print("Count : "+str(len(self.parent_viewer.obj.curve_obj.final_base_centers)))
             
@@ -468,10 +533,16 @@ class Util_viewer(QWidget):
             if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
                 if self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1: 
                     self.parent_viewer.obj.cylinder_obj.delete_cylinder(self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
+                    self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
+                    
                 elif ctrl_wdg.rect_obj.selected_rect_idx != -1:
                     ctrl_wdg.rect_obj.delete_rect(ctrl_wdg.rect_obj.selected_rect_idx)
+                    ctrl_wdg.rect_obj.selected_rect_idx = -1
+                    
                 elif ctrl_wdg.quad_obj.selected_quad_idx != -1:
                     ctrl_wdg.quad_obj.delete_quad(ctrl_wdg.quad_obj.selected_quad_idx)
+                    ctrl_wdg.quad_obj.selected_quad_idx = -1
+                    
                 elif self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
                     self.parent_viewer.obj.curve_obj.deleted[self.parent_viewer.obj.curve_obj.selected_curve_idx] = True
                     self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
@@ -757,12 +828,7 @@ class Util_viewer(QWidget):
                         bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.parent_viewer.obj.cylinder_obj.make_new_cylinder(data_val[0], data_val[1], data_val[2], data_val[3])
                         if len(bases) > 0:
                             self.parent_viewer.obj.cylinder_obj.bool_cylinder_type.append(False)
-                            self.parent_viewer.obj.cylinder_obj.heights.append(height)
-                            self.parent_viewer.obj.cylinder_obj.radii.append(radius)
-                            self.parent_viewer.obj.cylinder_obj.b_vecs.append(b_vec)
-                            self.parent_viewer.obj.cylinder_obj.t_vecs.append(t_vec)
-                            self.parent_viewer.obj.cylinder_obj.Ns.append(N)
-                            self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data(bases, tops, center, top_c)
+                            self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
 
                         else:
                             straight_line_dialogue()
@@ -771,12 +837,7 @@ class Util_viewer(QWidget):
                     else:
                         bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.parent_viewer.obj.cylinder_obj.make_cylinder(data_val[0], data_val[1], data_val[2], data_val[3])
                         self.parent_viewer.obj.cylinder_obj.bool_cylinder_type.append(True)
-                        self.parent_viewer.obj.cylinder_obj.heights.append(height)
-                        self.parent_viewer.obj.cylinder_obj.radii.append(radius)
-                        self.parent_viewer.obj.cylinder_obj.b_vecs.append(b_vec)
-                        self.parent_viewer.obj.cylinder_obj.t_vecs.append(t_vec)
-                        self.parent_viewer.obj.cylinder_obj.Ns.append(N)
-                        self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data(bases, tops, center, top_c)
+                        self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
 
                     
             if ctrl_wdg.ui.bPick:

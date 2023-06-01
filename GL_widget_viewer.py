@@ -291,7 +291,18 @@ class GL_Widget(QOpenGLWidget):
                         self.obj.cylinder_obj.scale_up()
                     else:
                         self.obj.cylinder_obj.scale_down()
+                        
+                elif self.obj.curve_obj.selected_curve_idx != -1:
+                    if event.angleDelta().y() > 0:
+                        self.obj.curve_obj.scale_up()
+                    else:
+                        self.obj.curve_obj.scale_down()
 
+                elif self.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
+                    if event.angleDelta().y() > 0:
+                        self.obj.ctrl_wdg.quad_obj.scale_up()
+                    else:
+                        self.obj.ctrl_wdg.quad_obj.scale_down()
 
 
             else:

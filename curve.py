@@ -39,6 +39,12 @@ class Curve_Tool(QObject):
         self.bpick = True
         self.n_final_curves = 0
         self.temp_pts = []
+        self.b_vecs = []
+        self.t_vecs = []
+        self.Ns = []
+        self.heights = []
+        self.radii = []
+        self.scaling_factor = 1.1
         
         
 
@@ -250,7 +256,7 @@ class Curve_Tool(QObject):
         # print("Make general cylinder")
         Ps = self.final_bezier[-1]
         radii = self.final_bezier_radii[-1]
-        BC, TC, CB, CT = [], [], [], []
+        BC, TC, CB, CT, t_vecs_cyl, b_vecs_cyl, Ns_cyl, heights_cyl, radii_cyl  = [], [], [], [], [], [], [], [], []
         # print(self.radius_point[-1])
         for i in range(0,len(Ps)-1,1):
             P1 = Ps[i]
@@ -267,21 +273,32 @@ class Curve_Tool(QObject):
 
             P4 = Ps[i+1]
 
-            cyl_bases, cyl_tops, center_base, center_top, _, _, _, _, _ = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.make_cylinder(
+            cyl_bases, cyl_tops, center_base, center_top, height, radius, b_vec, t_vec, N = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.make_cylinder(
                 P1, P2, P3, P4)
 
             # print(self.final_bezier_radii[i], r)
             if radii[i] > r:
+
                 BC.append(center_base)
                 TC.append(center_top)
                 CB.append(cyl_bases)
                 CT.append(cyl_tops)
+                b_vecs_cyl.append(b_vec)
+                t_vecs_cyl.append(t_vec)
+                Ns_cyl.append(N)
+                heights_cyl.append(height)
+                radii_cyl.append(radius)
     
         if len(BC) > 0:
             self.final_base_centers.append(BC)
             self.final_top_centers.append(TC)
             self.final_cylinder_bases.append(CB)
             self.final_cylinder_tops.append(CT)
+            self.t_vecs.append(t_vecs_cyl)
+            self.b_vecs.append(b_vecs_cyl)
+            self.Ns.append(Ns_cyl)
+            self.heights.append(heights_cyl)
+            self.radii.append(radii_cyl)
             
             # print("Number of general cylinders : "+str(len(self.final_base_centers)))
 
@@ -290,43 +307,7 @@ class Curve_Tool(QObject):
             self.colors.append(c)
             self.ctrl_wdg.rect_obj.primitive_count += 1
             self.deleted.append(False)
-        
-    def rotate(self, angle_degrees, rotation_axis, center):
-        if len(self.final_base_centers) > 0:
-            angle_radians = np.radians(angle_degrees)
-            rotation_vector = angle_radians * rotation_axis
-            rotation = R.from_rotvec(rotation_vector)
-            for i, pt in enumerate(self.final_base_centers[self.selected_curve_idx]):
-                self.final_base_centers[self.selected_curve_idx][i] = rotation.apply(pt-center) + center
-                
-            for i, pt in enumerate(self.final_top_centers[self.selected_curve_idx]):
-                self.final_top_centers[self.selected_curve_idx][i] = rotation.apply(pt-center) + center
-    
-            for i, base in enumerate(self.final_cylinder_bases[self.selected_curve_idx]):
-                for j, pt in enumerate(base):
-                    self.final_cylinder_bases[self.selected_curve_idx][i][j] = rotation.apply(pt-center) + center
-        
-            for i, top in enumerate(self.final_cylinder_tops[self.selected_curve_idx]):
-                for j, pt in enumerate(top):
-                    self.final_cylinder_tops[self.selected_curve_idx][i][j] = rotation.apply(pt-center) + center
-                    
-                    
-                    
-    def translate(self, vec):
-        if len(self.final_base_centers) > 0:
-            for i, pt in enumerate(self.final_base_centers[self.selected_curve_idx]):
-                self.final_base_centers[self.selected_curve_idx][i] = pt + vec        
-    
-            for i, pt in enumerate(self.final_top_centers[self.selected_curve_idx]):
-                self.final_top_centers[self.selected_curve_idx][i] = pt + vec
-    
-            for i, base in enumerate(self.final_cylinder_bases[self.selected_curve_idx]):
-                for j, pt in enumerate(base):
-                    self.final_cylinder_bases[self.selected_curve_idx][i][j] = pt + vec
-        
-            for i, top in enumerate(self.final_cylinder_tops[self.selected_curve_idx]):
-                for j, pt in enumerate(top):
-                    self.final_cylinder_tops[self.selected_curve_idx][i][j] = pt + vec
+
     
         
         
@@ -432,5 +413,98 @@ class Curve_Tool(QObject):
         # print("Radius : "+str(radius))
         return radius
             
+
+
+        
+    def rotate(self, angle_degrees, rotation_axis, center):
+        if len(self.final_base_centers) > 0:
+            angle_radians = np.radians(angle_degrees)
+            rotation_vector = angle_radians * rotation_axis
+            rotation = R.from_rotvec(rotation_vector)
+            for i, pt in enumerate(self.final_base_centers[self.selected_curve_idx]):
+                self.final_base_centers[self.selected_curve_idx][i] = rotation.apply(pt-center) + center
+                
+            for i, pt in enumerate(self.final_top_centers[self.selected_curve_idx]):
+                self.final_top_centers[self.selected_curve_idx][i] = rotation.apply(pt-center) + center
+    
+            for i, base in enumerate(self.final_cylinder_bases[self.selected_curve_idx]):
+                for j, pt in enumerate(base):
+                    self.final_cylinder_bases[self.selected_curve_idx][i][j] = rotation.apply(pt-center) + center
+        
+            for i, top in enumerate(self.final_cylinder_tops[self.selected_curve_idx]):
+                for j, pt in enumerate(top):
+                    self.final_cylinder_tops[self.selected_curve_idx][i][j] = rotation.apply(pt-center) + center
+                    
+                    
+                    
+    def translate(self, vec):
+        if len(self.final_base_centers) > 0:
+            for i, pt in enumerate(self.final_base_centers[self.selected_curve_idx]):
+                self.final_base_centers[self.selected_curve_idx][i] = pt + vec        
+    
+            for i, pt in enumerate(self.final_top_centers[self.selected_curve_idx]):
+                self.final_top_centers[self.selected_curve_idx][i] = pt + vec
+    
+            for i, base in enumerate(self.final_cylinder_bases[self.selected_curve_idx]):
+                for j, pt in enumerate(base):
+                    self.final_cylinder_bases[self.selected_curve_idx][i][j] = pt + vec
+        
+            for i, top in enumerate(self.final_cylinder_tops[self.selected_curve_idx]):
+                for j, pt in enumerate(top):
+                    self.final_cylinder_tops[self.selected_curve_idx][i][j] = pt + vec            
             
             
+    def scale_up(self):
+        i = self.selected_curve_idx
+        # print("Index : "+str(i))
+        if i != -1:
+            for j in range(len(self.radii[i])):
+                radius = self.radii[i][j] * self.scaling_factor
+                self.radii[i][j] = radius
+                # print("Radius : "+str(radius))
+                cyl_axis = 0.05*(self.final_top_centers[i][j] - self.final_base_centers[i][j])
+                self.final_base_centers[i][j] = self.final_base_centers[i][j] - cyl_axis
+                self.final_top_centers[i][j] = self.final_top_centers[i][j] + cyl_axis
+                height = np.linalg.norm(self.final_top_centers[i][j] - self.final_base_centers[i][j])
+                # print("Height : "+str(height))
+                center = self.final_base_centers[i][j]
+                sectorCount = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.sectorCount
+                sectorStep = 2 * np.pi / sectorCount
+                t_vec, b_vec, N = self.t_vecs[i][j], self.b_vecs[i][j], self.Ns[i][j]
+    
+                # print(t_vec)
+                for k in range(sectorCount + 1):
+                    # print(self.final_cylinder_bases[i][j][sectorCount - k])
+                    sectorAngle = k * sectorStep  # theta
+                    self.final_cylinder_bases[i][j][sectorCount - k] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
+                        sectorAngle) * t_vec
+                    self.final_cylinder_tops[i][j][sectorCount - k] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
+                        sectorAngle) * t_vec + height * N
+
+
+    def scale_down(self):
+        i = self.selected_curve_idx
+        # print("Index : "+str(i))
+        if i != -1:
+            for j in range(len(self.radii[i])):
+                radius = self.radii[i][j] / self.scaling_factor
+                self.radii[i][j] = radius
+                # print("Radius : "+str(radius))
+                cyl_axis = 0.05*(self.final_top_centers[i][j] - self.final_base_centers[i][j])
+                self.final_base_centers[i][j] = self.final_base_centers[i][j] + cyl_axis
+                self.final_top_centers[i][j] = self.final_top_centers[i][j] - cyl_axis
+                height = np.linalg.norm(self.final_top_centers[i][j] - self.final_base_centers[i][j])
+                # print("Height : "+str(height))
+                center = self.final_base_centers[i][j]
+                sectorCount = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.sectorCount
+                sectorStep = 2 * np.pi / sectorCount
+                t_vec, b_vec, N = self.t_vecs[i][j], self.b_vecs[i][j], self.Ns[i][j]
+    
+                # print(t_vec)
+                for k in range(sectorCount + 1):
+                    # print(self.final_cylinder_bases[i][j][sectorCount - k])
+                    sectorAngle = k * sectorStep  # theta
+                    self.final_cylinder_bases[i][j][sectorCount - k] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
+                        sectorAngle) * t_vec
+                    self.final_cylinder_tops[i][j][sectorCount - k] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
+                        sectorAngle) * t_vec + height * N

@@ -61,26 +61,15 @@ class Cylinder_Tool(QObject):
                                 if self.ctrl_wdg.ui.bnCylinder:
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     if len(bases) > 0:
-                                        self.heights.append(height)
-                                        self.radii.append(radius)
-                                        self.b_vecs.append(b_vec)
-                                        self.t_vecs.append(t_vec)
-                                        self.Ns.append(N)
                                         self.bool_cylinder_type.append(False)
-                                        self.refresh_cylinder_data(bases, tops, center, top_c)
+                                        self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
                                     else:
                                         straight_line_dialogue()
                                         del self.data_val[-1]
                                 else:
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     self.bool_cylinder_type.append(True)
-                                    self.heights.append(height)
-                                    self.radii.append(radius)
-                                    self.b_vecs.append(b_vec)
-                                    self.t_vecs.append(t_vec)
-                                    self.Ns.append(N)
-
-                                    self.refresh_cylinder_data(bases, tops, center, top_c)
+                                    self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
 
              
             elif self.ctrl_wdg.kf_method == "Network":
@@ -99,31 +88,26 @@ class Cylinder_Tool(QObject):
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     if len(bases) > 0:
                                         self.bool_cylinder_type.append(False)
-                                        self.heights.append(height)
-                                        self.radii.append(radius)
-                                        self.b_vecs.append(b_vec)
-                                        self.t_vecs.append(t_vec)
-                                        self.Ns.append(N)
-                                        self.refresh_cylinder_data(bases, tops, center, top_c)
+                                        self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
                                     else:
                                         straight_line_dialogue()
                                         del self.data_val[-1]
                                 else:
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     self.bool_cylinder_type.append(True)
-                                    self.heights.append(height)
-                                    self.radii.append(radius)
-                                    self.b_vecs.append(b_vec)
-                                    self.t_vecs.append(t_vec)
-                                    self.Ns.append(N)
-                                    self.refresh_cylinder_data(bases, tops, center, top_c)
+                                    self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
 
 
         return feature_selected
     
     
-    def refresh_cylinder_data(self, bases, tops, center, top_c):
+    def refresh_cylinder_data(self, bases, tops, center, top_c, height, radius, b_vec, t_vec, N):
         self.occurrence_groups.append(self.order)
+        self.heights.append(height)
+        self.radii.append(radius)
+        self.b_vecs.append(b_vec)
+        self.t_vecs.append(t_vec)
+        self.Ns.append(N)
         # print("Primitive count : "+str(self.ctrl_wdg.rect_obj.primitive_count))
         self.cylinder_count.append(self.ctrl_wdg.rect_obj.primitive_count)
         c = self.ctrl_wdg.rect_obj.getRGBfromI(self.ctrl_wdg.rect_obj.primitive_count)

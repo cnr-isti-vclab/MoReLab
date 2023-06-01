@@ -247,7 +247,7 @@ def export_ply_dialogue():
     
 def del_primitive_dialogue():
     msgBox = QMessageBox()
-    msgBox.setText("No 3D primitive has been selected. Please click on a 3D primitive to delete.")
+    msgBox.setText("No 3D primitive has been selected. Please click on a 3D primitive.")
     msgBox.setWindowTitle("Export PLY")
     msgBox.setStandardButtons(QMessageBox.Ok)
     returnValue = msgBox.exec()

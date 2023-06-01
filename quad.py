@@ -20,6 +20,7 @@ class Quad_Tool(QObject):
         self.deleted = []
         self.selected_quad_idx = -1
         self.all_pts = []
+        self.scaling_factor = 1.1
 
 
     def reset(self, ctrl_wdg):
@@ -122,3 +123,20 @@ class Quad_Tool(QObject):
             for i, pt in enumerate(pts_list):
                 self.all_pts[self.selected_quad_idx][i] = axis + pt
 
+    def scale_up(self):
+        i = self.selected_quad_idx
+        if i != -1:
+            self.all_pts[i][0] = self.all_pts[i][0] * self.scaling_factor
+            self.all_pts[i][1] = self.all_pts[i][1] * self.scaling_factor
+            self.all_pts[i][2] = self.all_pts[i][2] / self.scaling_factor
+            self.all_pts[i][3] = self.all_pts[i][3] / self.scaling_factor
+            
+
+    def scale_down(self):
+        i = self.selected_quad_idx
+        if i != -1:
+            self.all_pts[i][0] = self.all_pts[i][0] / self.scaling_factor
+            self.all_pts[i][1] = self.all_pts[i][1] / self.scaling_factor
+            self.all_pts[i][2] = self.all_pts[i][2] * self.scaling_factor
+            self.all_pts[i][3] = self.all_pts[i][3] * self.scaling_factor
+            
