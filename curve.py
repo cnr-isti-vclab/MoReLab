@@ -437,21 +437,21 @@ class Curve_Tool(QObject):
                     
                     
                     
-    def translate(self, vec):
+    def translate(self, vec, idx):
         if len(self.final_base_centers) > 0:
-            for i, pt in enumerate(self.final_base_centers[self.selected_curve_idx]):
-                self.final_base_centers[self.selected_curve_idx][i] = pt + vec        
+            for i, pt in enumerate(self.final_base_centers[idx]):
+                self.final_base_centers[idx][i] = pt + vec        
     
-            for i, pt in enumerate(self.final_top_centers[self.selected_curve_idx]):
-                self.final_top_centers[self.selected_curve_idx][i] = pt + vec
+            for i, pt in enumerate(self.final_top_centers[idx]):
+                self.final_top_centers[idx][i] = pt + vec
     
-            for i, base in enumerate(self.final_cylinder_bases[self.selected_curve_idx]):
+            for i, base in enumerate(self.final_cylinder_bases[idx]):
                 for j, pt in enumerate(base):
-                    self.final_cylinder_bases[self.selected_curve_idx][i][j] = pt + vec
+                    self.final_cylinder_bases[idx][i][j] = pt + vec
         
-            for i, top in enumerate(self.final_cylinder_tops[self.selected_curve_idx]):
+            for i, top in enumerate(self.final_cylinder_tops[idx]):
                 for j, pt in enumerate(top):
-                    self.final_cylinder_tops[self.selected_curve_idx][i][j] = pt + vec            
+                    self.final_cylinder_tops[idx][i][j] = pt + vec            
             
             
     def scale_up(self):

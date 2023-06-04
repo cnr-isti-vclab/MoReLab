@@ -295,16 +295,16 @@ class Util_viewer(QWidget):
                         self.parent_viewer.obj.curve_obj.rotate(0.1, z_axis, center)
 
                 if event.key() == Qt.Key_Right:
-                    self.parent_viewer.obj.curve_obj.translate(np.array([0.005, 0, 0]))
+                    self.parent_viewer.obj.curve_obj.translate(np.array([0.005, 0, 0]), self.parent_viewer.obj.curve_obj.selected_curve_idx)
 
                 if event.key() == Qt.Key_Left:
-                    self.parent_viewer.obj.curve_obj.translate(np.array([-0.005, 0, 0]))
+                    self.parent_viewer.obj.curve_obj.translate(np.array([-0.005, 0, 0]), self.parent_viewer.obj.curve_obj.selected_curve_idx)
 
                 if event.key() == Qt.Key_Up:
-                    self.parent_viewer.obj.curve_obj.translate(np.array([0, 0.005, 0]))
+                    self.parent_viewer.obj.curve_obj.translate(np.array([0, 0.005, 0]), self.parent_viewer.obj.curve_obj.selected_curve_idx)
 
                 if event.key() == Qt.Key_Down:
-                    self.parent_viewer.obj.curve_obj.translate(np.array([0, -0.005, 0]))
+                    self.parent_viewer.obj.curve_obj.translate(np.array([0, -0.005, 0]), self.parent_viewer.obj.curve_obj.selected_curve_idx)
 
             elif self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
                 P1 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][0]
@@ -330,16 +330,16 @@ class Util_viewer(QWidget):
                         self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(-5, np.cross(P2 - P1, P4 - P1))
 
                 if event.key() == Qt.Key_Right:
-                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(0.01*(P2 - P1))
+                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(0.01*(P2 - P1), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
 
                 if event.key() == Qt.Key_Left:
-                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(-0.01*(P2 - P1))
+                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(-0.01*(P2 - P1), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
 
                 if event.key() == Qt.Key_Down:
-                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(0.01*(P4-P1))
+                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(0.01*(P4-P1), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
 
                 if event.key() == Qt.Key_Up:
-                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(-0.01*(P4 - P1))
+                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(-0.01*(P4 - P1), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
 
 
             elif self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
@@ -366,21 +366,20 @@ class Util_viewer(QWidget):
                         self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(-5, np.cross(P2 - P1, P4 - P1))
 
                 if event.key() == Qt.Key_Right:
-                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(0.01*(P2 - P1))
+                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(0.01*(P2 - P1), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
 
                 if event.key() == Qt.Key_Left:
-                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(-0.01*(P2 - P1))
+                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(-0.01*(P2 - P1), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
 
                 if event.key() == Qt.Key_Down:
-                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(0.01*(P4-P1))
+                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(0.01*(P4-P1), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
 
                 if event.key() == Qt.Key_Up:
-                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(-0.01*(P4 - P1))
+                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(-0.01*(P4 - P1), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
 
             elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
                 P1 = self.parent_viewer.obj.cylinder_obj.centers[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx]
-                P4 = self.parent_viewer.obj.cylinder_obj.top_centers[
-                    self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx]
+                P4 = self.parent_viewer.obj.cylinder_obj.top_centers[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx]
                 P3 = self.parent_viewer.obj.cylinder_obj.vertices_cylinder[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx][0]
                 P2 = np.cross(P4 - P1, P3 - P1) + P1
                 if event.key() == Qt.Key_X:
@@ -402,16 +401,16 @@ class Util_viewer(QWidget):
                         self.parent_viewer.obj.cylinder_obj.rotate(-5, P2 - P1)
 
                 if event.key() == Qt.Key_Right:
-                    self.parent_viewer.obj.cylinder_obj.translate(0.01*(P3 - P1))
+                    self.parent_viewer.obj.cylinder_obj.translate(0.01*(P3 - P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
 
                 if event.key() == Qt.Key_Left:
-                    self.parent_viewer.obj.cylinder_obj.translate(-0.01*(P3 - P1))
+                    self.parent_viewer.obj.cylinder_obj.translate(-0.01*(P3 - P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
 
                 if event.key() == Qt.Key_Down:
-                    self.parent_viewer.obj.cylinder_obj.translate(0.01*(P4-P1))
+                    self.parent_viewer.obj.cylinder_obj.translate(0.01*(P4-P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
 
                 if event.key() == Qt.Key_Up:
-                    self.parent_viewer.obj.cylinder_obj.translate(-0.01*(P4 - P1))
+                    self.parent_viewer.obj.cylinder_obj.translate(-0.01*(P4 - P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
 
 
 
@@ -592,7 +591,7 @@ class Util_viewer(QWidget):
                                     self.move_feature_bool = True
             
             selected_feature = False
-            if (ctrl_wdg.ui.bRect or ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bBezier) and len(self.parent_viewer.obj.ply_pts) > 0:
+            if (ctrl_wdg.ui.bRect or ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bBezier or ctrl_wdg.ui.bAnchor) and len(self.parent_viewer.obj.ply_pts) > 0:
                 if ctrl_wdg.ui.bRect:
                     selected_feature = ctrl_wdg.rect_obj.select_feature(x, y)
                 if ctrl_wdg.ui.bQuad:
@@ -778,49 +777,52 @@ class Util_viewer(QWidget):
     def util_select_3d(self, dd, px, co, ctrl_wdg):
         v = ctrl_wdg.mv_panel.movie_caps[ctrl_wdg.mv_panel.selected_movie_idx]
         t = ctrl_wdg.selected_thumbnail_index
-        if ctrl_wdg.ui.bBezier and dd < 1:
-            assign_depth = False
-
-            if ctrl_wdg.kf_method == "Regular":
-                assign_depth = v.bAssignDepth_regular[t]
-
-            elif ctrl_wdg.kf_method == "Network":
-                assign_depth = v.bAssignDepth_network[t]
-
-            if assign_depth:
-                # print("Assign depth")
-                if ctrl_wdg.kf_method == "Regular":
-                    v.curve_3d_point_regular[t].append(np.array(px))
-
-                    for j, tup in enumerate(self.parent_viewer.obj.camera_projection_mat):
-                        if tup[0] == t:
-                            G = self.parent_viewer.obj.camera_projection_mat[j][1][0:3, :]
-                            P = np.matmul(self.parent_viewer.obj.K, G)
-                            self.parent_viewer.obj.curve_obj.estimate_plane(P)
-
-                elif ctrl_wdg.kf_method == "Network":
-                    v.curve_3d_point_network[t].append(np.array(px))
-                    for j, tup in enumerate(self.parent_viewer.obj.camera_projection_mat):
-                        if tup[0] == t:
-                            G = self.parent_viewer.obj.camera_projection_mat[j][1][0:3, :]
-                            P = np.matmul(self.parent_viewer.obj.K, G)
-                            self.parent_viewer.obj.curve_obj.estimate_plane(P)
-
-            if self.bRadius:
-                self.parent_viewer.obj.curve_obj.radius_point.append(np.array(px))
-                self.parent_viewer.obj.curve_obj.make_general_cylinder()
-                self.bRadius = False
-                if ctrl_wdg.kf_method == "Regular":
-                    for i in range(len(v.key_frames_regular)):
-                        v.bPaint_regular[i] = True
-
-                elif ctrl_wdg.kf_method == "Network":
-                    for i in range(len(v.key_frames_network)):
-                        v.bPaint_network[i] = True
-
                 
         if dd < 1:
-            if ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bCylinder:
+            if ctrl_wdg.ui.bBezier:
+                assign_depth = False
+
+                if ctrl_wdg.kf_method == "Regular":
+                    assign_depth = v.bAssignDepth_regular[t]
+
+                elif ctrl_wdg.kf_method == "Network":
+                    assign_depth = v.bAssignDepth_network[t]
+
+                if assign_depth:
+                    # print("Assign depth")
+                    if ctrl_wdg.kf_method == "Regular":
+                        v.curve_3d_point_regular[t].append(np.array(px))
+
+                        for j, tup in enumerate(self.parent_viewer.obj.camera_projection_mat):
+                            if tup[0] == t:
+                                G = self.parent_viewer.obj.camera_projection_mat[j][1][0:3, :]
+                                P = np.matmul(self.parent_viewer.obj.K, G)
+                                self.parent_viewer.obj.curve_obj.estimate_plane(P)
+
+                    elif ctrl_wdg.kf_method == "Network":
+                        v.curve_3d_point_network[t].append(np.array(px))
+                        for j, tup in enumerate(self.parent_viewer.obj.camera_projection_mat):
+                            if tup[0] == t:
+                                G = self.parent_viewer.obj.camera_projection_mat[j][1][0:3, :]
+                                P = np.matmul(self.parent_viewer.obj.K, G)
+                                self.parent_viewer.obj.curve_obj.estimate_plane(P)
+
+                if self.bRadius:
+                    self.parent_viewer.obj.curve_obj.radius_point.append(np.array(px))
+                    self.parent_viewer.obj.curve_obj.make_general_cylinder()
+                    self.bRadius = False
+                    if ctrl_wdg.kf_method == "Regular":
+                        for i in range(len(v.key_frames_regular)):
+                            v.bPaint_regular[i] = True
+
+                    elif ctrl_wdg.kf_method == "Network":
+                        for i in range(len(v.key_frames_network)):
+                            v.bPaint_network[i] = True
+                            
+                            
+                            
+                
+            elif ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bCylinder:
                 self.parent_viewer.obj.cylinder_obj.data_val.append(np.array(px))
                 if len(self.parent_viewer.obj.cylinder_obj.data_val) == 4:
                     data_val = self.parent_viewer.obj.cylinder_obj.data_val
@@ -840,7 +842,9 @@ class Util_viewer(QWidget):
                         self.parent_viewer.obj.cylinder_obj.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
 
                     
-            if ctrl_wdg.ui.bPick:
+
+
+            elif ctrl_wdg.ui.bPick:
                 ID = ctrl_wdg.rect_obj.getIfromRGB(co[0], co[1], co[2])
                 # print("ID : "+str(ID))
                 # print(self.parent_viewer.obj.curve_obj.curve_count)
@@ -873,55 +877,95 @@ class Util_viewer(QWidget):
                     ctrl_wdg.quad_obj.selected_quad_idx = -1
                     
                     
-        if ctrl_wdg.ui.bMeasure and dd < 1:
-            # print(self.x_zoomed, self.y_zoomed)
-            if self.bCalibrate:
-                if self.clicked_once:
-                    self.bCalibrate = False
-                    self.create_calibration_panel()
-                    if self.cal_dialog.exec():
-                        measured_dist = float(self.e1.text())
-                        # print("Measured distance : "+str(measured_dist))
-                        dist = np.sqrt(np.sum(np.square(np.array(px)-self.calc_last_3d_pos)))
-                        
-                        self.calibration_factor = measured_dist/dist
-                        # print("calibration factor : "+str(self.calibration_factor))
-                        self.set_distance(measured_dist)
+                    
+            elif ctrl_wdg.ui.bMeasure:
+                # print(self.x_zoomed, self.y_zoomed)
+                if self.bCalibrate:
+                    if self.clicked_once:
+                        self.bCalibrate = False
+                        self.create_calibration_panel()
+                        if self.cal_dialog.exec():
+                            measured_dist = float(self.e1.text())
+                            # print("Measured distance : "+str(measured_dist))
+                            dist = np.sqrt(np.sum(np.square(np.array(px)-self.calc_last_3d_pos)))
+                            
+                            self.calibration_factor = measured_dist/dist
+                            # print("calibration factor : "+str(self.calibration_factor))
+                            self.set_distance(measured_dist)
+                            if ctrl_wdg.kf_method == "Regular":
+                                v.measured_distances_regular[t].append(measured_dist)
+                            elif ctrl_wdg.kf_method == "Network":
+                                v.measured_distances_network[t].append(measured_dist)
+    
+                        self.clicked_once = not self.clicked_once
+                    else:
+                        self.last_pos = np.array([self.x_zoomed, self.y_zoomed])
+                        self.calc_last_3d_pos = np.array(px)
                         if ctrl_wdg.kf_method == "Regular":
-                            v.measured_distances_regular[t].append(measured_dist)
+                            v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
                         elif ctrl_wdg.kf_method == "Network":
-                            v.measured_distances_network[t].append(measured_dist)
-
-                    self.clicked_once = not self.clicked_once
-                else:
-                    self.last_pos = np.array([self.x_zoomed, self.y_zoomed])
-                    self.calc_last_3d_pos = np.array(px)
-                    if ctrl_wdg.kf_method == "Regular":
-                        v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
-                    elif ctrl_wdg.kf_method == "Network":
-                        v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))                        
-                
-            else:                
-                if self.clicked_once and self.calibration_factor != 1:
-                    self.dist = self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
-                    # print("Calculated distance : "+str(self.dist))
-                    self.set_distance(self.dist)
-                    if ctrl_wdg.kf_method == "Regular":
-                        v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
-                        v.measured_distances_regular[t].append(self.dist)
-                    elif ctrl_wdg.kf_method == "Network":
-                        v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))
-                        v.measured_distances_network[t].append(self.dist)
-                    # print("Distance is measured as : "+str(self.dist))
-                else:
-                    self.last_pos = np.array([self.x_zoomed, self.y_zoomed])
-                    if ctrl_wdg.kf_method == "Regular":
-                        v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
-                    elif ctrl_wdg.kf_method == "Network":
-                        v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))
-                    self.last_3d_pos = np.array(px)
+                            v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))                        
+                    
+                    
+                    
+                else:                
+                    if self.clicked_once and self.calibration_factor != 1:
+                        self.dist = self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
+                        # print("Calculated distance : "+str(self.dist))
+                        self.set_distance(self.dist)
+                        if ctrl_wdg.kf_method == "Regular":
+                            v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
+                            v.measured_distances_regular[t].append(self.dist)
+                        elif ctrl_wdg.kf_method == "Network":
+                            v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))
+                            v.measured_distances_network[t].append(self.dist)
+                        # print("Distance is measured as : "+str(self.dist))
+                    else:
+                        self.last_pos = np.array([self.x_zoomed, self.y_zoomed])
+                        if ctrl_wdg.kf_method == "Regular":
+                            v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
+                        elif ctrl_wdg.kf_method == "Network":
+                            v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))
+                        self.last_3d_pos = np.array(px)
+                    
+            
+            elif ctrl_wdg.ui.bAnchor:
+                if ctrl_wdg.rect_obj.bFirstAnchor and not ctrl_wdg.rect_obj.bSecondAnchor:    
+                    ctrl_wdg.rect_obj.first_anchor = np.array(px)
+                    ctrl_wdg.rect_obj.bFirstAnchor = False
+                    ctrl_wdg.rect_obj.bSecondAnchor = True
+                    
+                elif ctrl_wdg.rect_obj.bSecondAnchor and not ctrl_wdg.rect_obj.bFirstAnchor:
+                    ctrl_wdg.rect_obj.second_anchor = np.array(px)
+                    ctrl_wdg.rect_obj.bFirstAnchor = True
+                    ctrl_wdg.rect_obj.bSecondAnchor = False
+                    
+                    vec = ctrl_wdg.rect_obj.first_anchor - ctrl_wdg.rect_obj.second_anchor
+                    
+                    ID = ctrl_wdg.rect_obj.getIfromRGB(co[0], co[1], co[2])
                     
 
+                    if ID in ctrl_wdg.rect_obj.rect_counts:
+                        idx = ctrl_wdg.rect_obj.rect_counts.index(ID)
+                        # print("Index : "+str(idx))
+                        ctrl_wdg.rect_obj.translate(vec, idx)
+                        
+                    elif ID in ctrl_wdg.quad_obj.group_counts:
+                        idx = ctrl_wdg.quad_obj.group_counts.index(ID)
+                        # print("Index : "+str(idx))
+                        ctrl_wdg.quad_obj.translate(vec, idx)   
+                        
+                    elif ID in ctrl_wdg.gl_viewer.obj.cylinder_obj.cylinder_count:
+                        idx = ctrl_wdg.gl_viewer.obj.cylinder_obj.cylinder_count.index(ID)
+                        # print("Index : "+str(idx))
+                        ctrl_wdg.gl_viewer.obj.cylinder_obj.translate(vec, idx)   
+
+                    elif ID in ctrl_wdg.gl_viewer.obj.curve_obj.curve_count:
+                        idx = ctrl_wdg.gl_viewer.obj.curve_obj.curve_count.index(ID)
+                        # print("Index : "+str(idx))
+                        ctrl_wdg.gl_viewer.obj.curve_obj.translate(vec, idx)                                       
+                
+            
              
             self.clicked_once = not self.clicked_once
 

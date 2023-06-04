@@ -329,22 +329,22 @@ class Cylinder_Tool(QObject):
                     self.top_vertices[self.selected_cylinder_idx][i] = rotation.apply(pt - cyl_center) + cyl_center
 
 
-    def translate(self, axis):
-        if self.selected_cylinder_idx != -1:
-            base_center = self.centers[self.selected_cylinder_idx]
+    def translate(self, axis, idx):
+        if idx != -1:
+            base_center = self.centers[idx]
             if -1 not in base_center:
-                base_vertices = self.vertices_cylinder[self.selected_cylinder_idx]
-                top_center = self.top_centers[self.selected_cylinder_idx]
-                top_vertices = self.top_vertices[self.selected_cylinder_idx]
+                base_vertices = self.vertices_cylinder[idx]
+                top_center = self.top_centers[idx]
+                top_vertices = self.top_vertices[idx]
 
-                self.centers[self.selected_cylinder_idx] = base_center + axis
-                self.top_centers[self.selected_cylinder_idx] = top_center + axis
+                self.centers[idx] = base_center + axis
+                self.top_centers[idx] = top_center + axis
 
                 for i, pt in enumerate(base_vertices):
-                    self.vertices_cylinder[self.selected_cylinder_idx][i] = pt + axis
+                    self.vertices_cylinder[idx][i] = pt + axis
 
                 for i, pt in enumerate(top_vertices):
-                    self.top_vertices[self.selected_cylinder_idx][i] = pt + axis
+                    self.top_vertices[idx][i] = pt + axis
 
 
     def scale_up(self):

@@ -117,11 +117,11 @@ class Quad_Tool(QObject):
                 self.all_pts[self.selected_quad_idx][i] = rotation.apply(pt - center) + center
 
 
-    def translate(self, axis):
-        if self.selected_quad_idx != -1:
-            pts_list = self.all_pts[self.selected_quad_idx]
+    def translate(self, axis, idx):
+        if idx != -1:
+            pts_list = self.all_pts[idx]
             for i, pt in enumerate(pts_list):
-                self.all_pts[self.selected_quad_idx][i] = axis + pt
+                self.all_pts[idx][i] = axis + pt
 
     def scale_up(self):
         i = self.selected_quad_idx

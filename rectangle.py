@@ -32,6 +32,10 @@ class Rectangle_Tool(QObject):
         self.min_Bs = []
         self.max_Bs = []
         self.selected_rect_idx = -1
+        self.bFirstAnchor = True
+        self.bSecondAnchor = False
+        self.first_anchor = np.array([0.0, 0.0, 0.0])
+        self.second_anchor = np.array([0.0, 0.0, 0.0])
 
     def reset(self, ctrl_wdg):
         self.__init__(ctrl_wdg)
@@ -232,11 +236,11 @@ class Rectangle_Tool(QObject):
                 self.new_points[self.selected_rect_idx][i] = rotation.apply(pt - center) + center
 
 
-    def translate(self, axis):
-        if self.selected_rect_idx != -1:
-            pts_list = self.new_points[self.selected_rect_idx]
-            self.centers[self.selected_rect_idx] = axis + self.centers[self.selected_rect_idx]
+    def translate(self, axis, idx):
+        if idx != -1:
+            pts_list = self.new_points[idx]
+            self.centers[idx] = axis + self.centers[idx]
             for i, pt in enumerate(pts_list):
-                self.new_points[self.selected_rect_idx][i] = axis + pt
+                self.new_points[idx][i] = axis + pt
 
-
+        

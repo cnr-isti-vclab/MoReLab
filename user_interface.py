@@ -19,8 +19,8 @@ class UserInterface(QWidget):
         self.create_wdg1()
         self.create_scroll_area()
         self.add_tool_icons()
-        self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-        self.set_flags(True, False, False, False, False, False, False, False, False)
+        self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+        self.set_flags(True, False, False, False, False, False, False, False, False, False)
 
         
         
@@ -221,82 +221,94 @@ class UserInterface(QWidget):
         self.measure_tool.setToolTip("Measuring Tool")
         self.measure_tool.clicked.connect(self.implement_measure_tool)
         
-
+        self.anchor_tool = QPushButton()
+        self.anchor_tool.setIcon(QIcon("./icons/big-anchor.png"))
+        self.anchor_tool.setIconSize(QSize(icon_size, icon_size))
+        self.anchor_tool.setStyleSheet(self.tool_btn_style)
+        self.anchor_tool.setToolTip("Anchor Tool")
+        self.anchor_tool.clicked.connect(self.implement_anchor_tool)
         
 
 
     def implement_move_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(True, False, False, False, False, False, False, False, False)
+            self.set_styles(self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(True, False, False, False, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
             
             
     def implement_feature_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, True, False, False, False, False, False, False, False)
+            self.set_styles(self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, True, False, False, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
             
             
     def implement_rect_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, True, False, False, False, False, False, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, True, False, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             
             
     def implement_cylinder_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, True, False, False, False, False, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, True, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             
     def implement_new_cylinder_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, False, True, False, False, False, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, False, True, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
                      
     def implement_bezier_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, False, False, True, False, False, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, False, False, True, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             
     def implement_measure_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, False, False, False, True, False, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, False, False, False, True, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))            
             
     def implement_picking_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, False, False, False, False, True, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, False, False, False, False, True, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
             
     def implement_quad_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style)
-            self.set_flags(False, False, False, False, False, False, False, False, True)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, False, False, False, False, False, True, False)
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
+            
+    def implement_anchor_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style)
+            self.set_flags(False, False, False, False, False, False, False, False, False, True)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
 
         
         
-    def set_styles(self, mv, ft, quad, cyl, new_cyl, bz, measure, pick, connect_dots):
-        self.mv_tool.setStyleSheet(mv)
-        self.ft_tool.setStyleSheet(ft)
-        self.rect_tool.setStyleSheet(quad)
-        self.cyl_tool.setStyleSheet(cyl)
-        self.new_cyl_tool.setStyleSheet(new_cyl)
-        self.bz_tool.setStyleSheet(bz)
-        self.measure_tool.setStyleSheet(measure)
-        self.pick_tool.setStyleSheet(pick)
-        self.quad_tool.setStyleSheet(connect_dots)
+    def set_styles(self, mv_sty, ft_sty, quad_sty, cyl_sty, new_cyl_sty, bz_sty, measure_sty, pick_sty, connect_dots_sty, anchor_sty):
+        self.mv_tool.setStyleSheet(mv_sty)
+        self.ft_tool.setStyleSheet(ft_sty)
+        self.rect_tool.setStyleSheet(quad_sty)
+        self.cyl_tool.setStyleSheet(cyl_sty)
+        self.new_cyl_tool.setStyleSheet(new_cyl_sty)
+        self.bz_tool.setStyleSheet(bz_sty)
+        self.measure_tool.setStyleSheet(measure_sty)
+        self.pick_tool.setStyleSheet(pick_sty)
+        self.quad_tool.setStyleSheet(connect_dots_sty)
+        self.anchor_tool.setStyleSheet(anchor_sty)
 
 
-    def set_flags(self, move_bool, cross_hair, bRect, bCylinder, bnCylinder, bBezier, bMeasure, bPick, bQuad):
+    def set_flags(self, move_bool, cross_hair, bRect, bCylinder, bnCylinder, bBezier, bMeasure, bPick, bQuad, bAnchor):
         self.move_bool = move_bool
         self.cross_hair = cross_hair
         self.bRect = bRect
@@ -306,6 +318,7 @@ class UserInterface(QWidget):
         self.bMeasure = bMeasure
         self.bPick = bPick
         self.bQuad = bQuad
+        self.bAnchor = bAnchor
         
 
 
