@@ -188,6 +188,7 @@ class Window(QMainWindow):
         self.toolbar.addWidget(self.widget.ui.bz_tool)
         self.toolbar.addWidget(self.widget.ui.pick_tool)
         self.toolbar.addWidget(self.widget.ui.measure_tool)
+        self.toolbar.addWidget(self.widget.ui.anchor_tool)
 
 
 

@@ -210,8 +210,7 @@ class Util_viewer(QWidget):
                 self.parent_viewer.obj.cylinder_obj.t_vecs.append(self.parent_viewer.obj.cylinder_obj.t_vecs[idx].copy())
                 self.parent_viewer.obj.cylinder_obj.b_vecs.append(self.parent_viewer.obj.cylinder_obj.b_vecs[idx].copy())
                 self.parent_viewer.obj.cylinder_obj.Ns.append(self.parent_viewer.obj.cylinder_obj.Ns[idx].copy())
-                self.parent_viewer.obj.cylinder_obj.occurrence_groups.append(copy.deepcopy(self.parent_viewer.obj.cylinder_obj.occurrence_groups[idx]))
-                
+
                 self.parent_viewer.obj.cylinder_obj.bool_cylinder_type.append(self.parent_viewer.obj.cylinder_obj.bool_cylinder_type[idx])
                 self.parent_viewer.obj.cylinder_obj.cylinder_count.append(ctrl_wdg.rect_obj.primitive_count)
                 c = ctrl_wdg.rect_obj.getRGBfromI(ctrl_wdg.rect_obj.primitive_count)
@@ -231,7 +230,6 @@ class Util_viewer(QWidget):
                 ctrl_wdg.rect_obj.min_Bs.append(ctrl_wdg.rect_obj.min_Bs[idx].copy())
                 ctrl_wdg.rect_obj.max_Bs.append(ctrl_wdg.rect_obj.max_Bs[idx].copy())
                 
-                ctrl_wdg.rect_obj.occurence_groups.append(copy.deepcopy(ctrl_wdg.rect_obj.occurence_groups[idx]))
                 ctrl_wdg.rect_obj.new_points.append(copy.deepcopy(ctrl_wdg.rect_obj.new_points[idx]))
                 ctrl_wdg.rect_obj.rect_counts.append(ctrl_wdg.rect_obj.primitive_count)
                 c = ctrl_wdg.rect_obj.getRGBfromI(ctrl_wdg.rect_obj.primitive_count)
@@ -243,8 +241,11 @@ class Util_viewer(QWidget):
                 
             elif ctrl_wdg.quad_obj.selected_quad_idx != -1:
                 idx = ctrl_wdg.quad_obj.selected_quad_idx
-                
-                ctrl_wdg.quad_obj.occurence_groups.append(copy.deepcopy(ctrl_wdg.quad_obj.occurence_groups[idx]))
+
+                data_val = ctrl_wdg.quad_obj.all_pts[idx]
+                c1, c2, c3, c4 = 0.5 * (data_val[0] + data_val[1]), 0.5 * (data_val[1] + data_val[2]), 0.5 * (data_val[2] + data_val[3]), 0.5 * (data_val[3] + data_val[0])
+                ctrl_wdg.quad_obj.vector1s.append([data_val[0] - c4, data_val[1] - c2, data_val[3] - c4, data_val[2] - c2, data_val[0] - c1, data_val[1] - c1, data_val[3] - c3, data_val[2] - c3])
+
                 ctrl_wdg.quad_obj.all_pts.append(copy.deepcopy(ctrl_wdg.quad_obj.all_pts[idx]))
                 ctrl_wdg.quad_obj.group_counts.append(ctrl_wdg.rect_obj.primitive_count)
                 c = ctrl_wdg.rect_obj.getRGBfromI(ctrl_wdg.rect_obj.primitive_count)
@@ -260,7 +261,7 @@ class Util_viewer(QWidget):
                 
 
             
-            # print("Count : "+str(len(self.parent_viewer.obj.curve_obj.final_base_centers)))
+        ######################## Transformation of primitives ########################
             
         if ctrl_wdg.ui.bPick:
             if self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
@@ -413,7 +414,6 @@ class Util_viewer(QWidget):
                     self.parent_viewer.obj.cylinder_obj.translate(-0.01*(P4 - P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
 
 
-
         if ctrl_wdg.ui.cross_hair and event.key() == Qt.Key_Escape:
             self.parent_viewer.obj.feature_panel.selected_feature_idx = -1
             
@@ -430,7 +430,9 @@ class Util_viewer(QWidget):
         if ctrl_wdg.ui.cross_hair and f != -1:
             if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
                 self.parent_viewer.obj.delete_feature()
-                
+
+            ######################## Move Features  ########################
+
             elif event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
                 if ctrl_wdg.kf_method == "Regular":
                     if event.key() == Qt.Key_Left:
@@ -469,14 +471,18 @@ class Util_viewer(QWidget):
                         y = v.features_network[t][f].y_loc
 
                     self.parent_viewer.obj.move_feature(x, y, v.features_network[t][f])
-                
+
+        ######################## Copy and Pase features  ########################
+
         if ctrl_wdg.ui.cross_hair and event.modifiers() & Qt.ControlModifier:
             self.parent_viewer.obj.feature_panel.selected_feature_idx = -1
             if event.key() == Qt.Key_C:
                 ctrl_wdg.copy_features()
             elif event.key() == Qt.Key_V:
                 ctrl_wdg.paste_features()
-            
+
+        ######################## Move all features on a frame ########################
+
             if ctrl_wdg.kf_method == "Regular":
                 if event.key() == Qt.Key_Left:
                     for i,fc in enumerate(v.features_regular[t]):
@@ -528,6 +534,8 @@ class Util_viewer(QWidget):
             
             self.parent_viewer.obj.feature_panel.display_data()
 
+        ######################## Delete primitives ########################
+
         if ctrl_wdg.ui.bPick:
             if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
                 if self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1: 
@@ -548,12 +556,15 @@ class Util_viewer(QWidget):
                     
                 else:
                     del_primitive_dialogue()
-                    
-            if event.key() == Qt.Key_Escape:                        
+
+
+            ######################## Deselect primitives ########################
+
+            if event.key() == Qt.Key_Escape:
                 ctrl_wdg.rect_obj.selected_rect_idx = -1
                 self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
                 self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
-                ctrl_wdg.rect_obj.selected_quad_idx = -1
+                ctrl_wdg.quad_obj.selected_quad_idx = -1
                 
 
     def util_mouse_press(self, event, ctrl_wdg):
@@ -639,8 +650,13 @@ class Util_viewer(QWidget):
             painter.drawImage(self.w1, self.h1, self.img_file)
             
             if ctrl_wdg.kf_method == "Regular":
+                # print(len(v.features_regular))
                 if len(v.features_regular) > 0:
                     for i, fc in enumerate(v.features_regular[t]):
+                        # print(i)
+                        #
+                        # print(v.hide_regular[t][i])
+                        # print("------------------------------------------")
                         if not v.hide_regular[t][i]:
                             painter.drawLine(QLineF(fc.x_loc - fc.l/2 , fc.y_loc , fc.x_loc + fc.l/2 , fc.y_loc))
                             painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
@@ -714,7 +730,7 @@ class Util_viewer(QWidget):
                                 painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
 
-            # Painting for Sphere Tool
+            # Painting for Cylinder Tool
             if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) :
                 if ctrl_wdg.kf_method == "Regular":
                     if len(v.cylinder_groups_regular[t]) > 0:
@@ -906,8 +922,7 @@ class Util_viewer(QWidget):
                         elif ctrl_wdg.kf_method == "Network":
                             v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))                        
                     
-                    
-                    
+
                 else:                
                     if self.clicked_once and self.calibration_factor != 1:
                         self.dist = self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))

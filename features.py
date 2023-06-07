@@ -28,6 +28,7 @@ class Features(QWidget):
         self.camera_poses = []
         self.camera_projection_mat = []
         self.global_indices = []
+        self.dist_thresh = 20
         self.K = np.eye(3)
         self.cylinder_obj = Cylinder_Tool(self.ctrl_wdg)
         self.curve_obj = Curve_Tool(self.ctrl_wdg)
@@ -47,6 +48,7 @@ class Features(QWidget):
 
         t = self.ctrl_wdg.selected_thumbnail_index
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        
         if self.ctrl_wdg.kf_method == "Regular":
             v.init_3D_regular(len(v.key_frames_regular))
             for t in range(len(v.key_frames_regular)):
@@ -108,12 +110,15 @@ class Features(QWidget):
                     tmp_arr = np.zeros((len(tmp3), 2), dtype=float)
                     for cnt in range(len(tmp3)):
                         tmp_arr[cnt, :] = tmp3[cnt]
-                    # print(tmp_arr.shape)
+
                     all_pts.append(tmp_arr)
+                    
+                    
         # for i in range
         if len(img_indices) < 2:
             numFeature_dialogue()
             return np.zeros((1,1)), [], []         # Dummy return 
+        
         else:
             return all_pts, img_indices, visible_labels
 
@@ -140,11 +145,7 @@ class Features(QWidget):
             self.initialize_mats()
 
             self.all_ply_pts.append(all_points)
-
-            opt_points_ext = np.concatenate((opt_points, np.ones((opt_points.shape[0], 1))), axis=1)
-
             w.done(0)
-
             print("Bundle adjustment has been computed.")
             
             self.img_indices = img_indices
@@ -154,60 +155,19 @@ class Features(QWidget):
             for i in range(opt_cameras.shape[0]):
                 R = getRotation(opt_cameras[i,:3], 'e')
                 t = opt_cameras[i,3:].reshape((3,1))
-
                 cam_ext = np.concatenate((np.concatenate((R, t), axis=1), np.array([0,0,0,1]).reshape((1,4))), axis=0)
-                # ppm =np.concatenate((np.matmul(self.K, (np.concatenate((R, t), axis=1))), np.array([0,0,0,1]).reshape((1,4))), axis=0)
-
-                
                 self.camera_projection_mat.append((img_indices[i], cam_ext))
-                
-                # print(cam_ext)
                 
                 cm = calc_camera_pos(R, t)
                 cam_pos_list.append([cm[0,0], cm[0,1], cm[0,2]])
             
             array_camera_poses = np.asarray(cam_pos_list)
-            # print(array_camera_poses)
-            # print(self.camera_projection_mat)
+
             self.camera_poses.append(array_camera_poses)
             ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
             # print(ply_pts)
             self.ply_pts.append(opt_points)
-        
-        
-    def add_feature(self,x,y):
-        if self.ctrl_wdg.ui.cross_hair:
-            t = self.ctrl_wdg.selected_thumbnail_index
-            m_idx = self.ctrl_wdg.mv_panel.selected_movie_idx
-            v = self.ctrl_wdg.mv_panel.movie_caps[m_idx]
-            # print("===========================================")
 
-            if self.ctrl_wdg.kf_method == "Regular":
-                v.n_objects_kf_regular[t] += 1
-                label = v.n_objects_kf_regular[t]
-            elif self.ctrl_wdg.kf_method == "Network":
-                v.n_objects_kf_network[t] += 1
-                label = v.n_objects_kf_network[t]
-            
-            # print(label)
-            fc = FeatureCrosshair(x, y, label)                
-
-            if self.ctrl_wdg.kf_method == "Regular":
-                v.features_regular[t].append(fc)
-                v.hide_regular[t].append(False)
-                self.init_3D_feature_regular(v, t)
-                
-                
-            elif self.ctrl_wdg.kf_method == "Network":
-                v.features_network[t].append(fc)
-                v.hide_network[t].append(False)
-                self.init_3D_feature_network(v, t)
-
-
-                
-            self.feature_panel.selected_feature_idx = -1
-            self.feature_panel.display_data()
-            
 
     def init_3D_feature_regular(self, v, t):
         v.rect_groups_regular[t].append(-1)
@@ -220,11 +180,57 @@ class Features(QWidget):
         v.quad_groups_network[t].append(-1)
         v.cylinder_groups_network[t].append(-1)
 
+        
+    def add_feature(self,x,y,label=-1):
+        if self.ctrl_wdg.ui.cross_hair:
+            t = self.ctrl_wdg.selected_thumbnail_index
+            m_idx = self.ctrl_wdg.mv_panel.selected_movie_idx
+            v = self.ctrl_wdg.mv_panel.movie_caps[m_idx]
+            # print("===========================================")
+
+            if self.ctrl_wdg.kf_method == "Regular":
+                if label == -1:
+                    v.n_objects_kf_regular[t] += 1
+                    label = v.n_objects_kf_regular[t]
+                fc = FeatureCrosshair(x, y, label)
+                v.features_regular[t].append(fc)
+                # print("-------------------------------------")
+                v.hide_regular[t].append(False)
+                self.init_3D_feature_regular(v, t)
+
+            elif self.ctrl_wdg.kf_method == "Network":
+                if label == -1:
+                    v.n_objects_kf_network[t] += 1
+                    label = v.n_objects_kf_network[t]
+                fc = FeatureCrosshair(x, y, label)
+                v.features_network[t].append(fc)
+                v.hide_network[t].append(False)
+                self.init_3D_feature_network(v, t)
+
+
+            self.feature_panel.selected_feature_idx = -1
+            self.feature_panel.display_data()
+            
+    def count_visible_features(self, img_idx):
+        m_idx = self.ctrl_wdg.mv_panel.selected_movie_idx
+        v = self.ctrl_wdg.mv_panel.movie_caps[m_idx]
+        num_features = 0
+        if self.ctrl_wdg.kf_method == "Regular":
+            hide_list = v.hide_regular[img_idx]
+        elif self.ctrl_wdg.kf_method == "Network":
+            hide_list = v.hide_network[img_idx]
+
+        for bool_hide in hide_list:
+            if bool_hide:
+                num_features = num_features + 1
+
+        return num_features
+
+
     def delete_feature(self):
         t = self.ctrl_wdg.selected_thumbnail_index            
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         i = self.feature_panel.selected_feature_idx
-        # print("To be deleted : "+str(i+1))
         
         if self.ctrl_wdg.ui.cross_hair and i != -1:
             found = False
@@ -272,6 +278,86 @@ class Features(QWidget):
                 fc.x_loc = updated_cursor_x
                 fc.y_loc = updated_cursor_y
                 self.feature_panel.display_data()
+
+    def rename_feature(self, x, y):
+        print("Double mouse right click")
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        t = self.ctrl_wdg.selected_thumbnail_index
+        feature_idx = -1
+        if self.ctrl_wdg.kf_method == "Regular" and len(v.features_regular) > 0:
+            for i, fc in enumerate(v.features_regular[t]):
+                if not v.hide_regular[t][i]:
+                    d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
+                    if d < self.dist_thresh:
+                        self.create_renaming_panel()
+                        if self.rename_dialog.exec():
+                            new_label = int(self.e1.text())
+                            found, idx = self.get_feature_index(new_label)
+                            if found:
+                                duplicate_dialogue()
+                            else:
+                                v.features_regular[t][i].label = str(new_label)
+
+
+        elif self.ctrl_wdg.kf_method == "Network" and len(v.features_network) > 0:
+            for i, fc in enumerate(v.features_network[t]):
+                if not v.hide_network[t][i]:
+                    d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
+                    if d < self.dist_thresh:
+                        self.create_renaming_panel()
+                        if self.rename_dialog.exec():
+                            new_label = int(self.e1.text())
+                            found, idx = self.get_feature_index(new_label)
+                            if found:
+                                duplicate_dialogue()
+                            else:
+                                v.features_network[t][i].label = str(new_label)
+
+    def get_feature_index(self, label_int):
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        t = self.ctrl_wdg.selected_thumbnail_index
+        found = False
+        idx = -1
+        if self.ctrl_wdg.kf_method == "Regular" and len(v.features_regular) > 0:
+            for i, fc in enumerate(v.features_regular[t]):
+                if not v.hide_regular[t][i] and not found:
+                    if int(v.features_regular[t][i].label) == label_int:
+                        found = True
+                        idx = i
+
+        elif self.ctrl_wdg.kf_method == "Network" and len(v.features_network) > 0:
+            for i, fc in enumerate(v.features_network[t]):
+                if not v.hide_network[t][i] and not found:
+                    if int(v.features_network[t][i].label) == label_int:
+                        found = True
+                        idx = i
+
+        return found, idx
+
+
+
+    def create_renaming_panel(self):
+        self.rename_dialog = QDialog()
+        self.rename_dialog.setWindowTitle("Rename a feature panel")
+
+        QBtn = QDialogButtonBox.Ok
+
+        buttonBox = QDialogButtonBox(QBtn)
+        buttonBox.accepted.connect(self.rename_dialog.accept)
+
+        label = QLabel("Enter the new label of the feature : ")
+
+        self.e1 = QLineEdit("1")
+        self.e1.setValidator(QIntValidator())
+        self.e1.setMaxLength(10)
+        self.e1.setFont(QFont("Arial", 20))
+
+        cal_layout = QVBoxLayout()
+        cal_layout.addWidget(label)
+        cal_layout.addWidget(self.e1)
+        cal_layout.addWidget(buttonBox)
+        self.rename_dialog.setLayout(cal_layout)
+
             
 
 

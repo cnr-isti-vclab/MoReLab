@@ -15,7 +15,6 @@ class Cylinder_Tool(QObject):
         self.selected_cylinder_idx = -1
         self.group_num = 0
         self.order = []
-        self.occurrence_groups = []
         self.data_val = []
         self.vertices_cylinder = []
         self.top_vertices = []
@@ -61,12 +60,24 @@ class Cylinder_Tool(QObject):
                                 if self.ctrl_wdg.ui.bnCylinder:
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     if len(bases) > 0:
+                                        for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
+                                            # print(v.rect_groups_regular)
+                                            v.cylinder_groups_regular[img_ind][i] = -1
+                                            v.cylinder_groups_regular[img_ind][self.order[0]] = -1
+                                            v.cylinder_groups_regular[img_ind][self.order[1]] = -1
+                                            v.cylinder_groups_regular[img_ind][self.order[2]] = -1
                                         self.bool_cylinder_type.append(False)
                                         self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
                                     else:
                                         straight_line_dialogue()
                                         del self.data_val[-1]
                                 else:
+                                    for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
+                                        # print(v.rect_groups_regular)
+                                        v.cylinder_groups_regular[img_ind][i] = -1
+                                        v.cylinder_groups_regular[img_ind][self.order[0]] = -1
+                                        v.cylinder_groups_regular[img_ind][self.order[1]] = -1
+                                        v.cylinder_groups_regular[img_ind][self.order[2]] = -1
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     self.bool_cylinder_type.append(True)
                                     self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
@@ -87,12 +98,24 @@ class Cylinder_Tool(QObject):
                                 if self.ctrl_wdg.ui.bnCylinder:
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     if len(bases) > 0:
+                                        for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
+                                            # print(v.rect_groups_regular)
+                                            v.cylinder_groups_network[img_ind][i] = -1
+                                            v.cylinder_groups_network[img_ind][self.order[0]] = -1
+                                            v.cylinder_groups_network[img_ind][self.order[1]] = -1
+                                            v.cylinder_groups_network[img_ind][self.order[2]] = -1
                                         self.bool_cylinder_type.append(False)
                                         self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
                                     else:
                                         straight_line_dialogue()
                                         del self.data_val[-1]
                                 else:
+                                    for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
+                                        # print(v.rect_groups_regular)
+                                        v.cylinder_groups_network[img_ind][i] = -1
+                                        v.cylinder_groups_network[img_ind][self.order[0]] = -1
+                                        v.cylinder_groups_network[img_ind][self.order[1]] = -1
+                                        v.cylinder_groups_network[img_ind][self.order[2]] = -1
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     self.bool_cylinder_type.append(True)
                                     self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
@@ -102,7 +125,6 @@ class Cylinder_Tool(QObject):
     
     
     def refresh_cylinder_data(self, bases, tops, center, top_c, height, radius, b_vec, t_vec, N):
-        self.occurrence_groups.append(self.order)
         self.heights.append(height)
         self.radii.append(radius)
         self.b_vecs.append(b_vec)
@@ -190,18 +212,6 @@ class Cylinder_Tool(QObject):
     def delete_cylinder(self, idx):
         if idx != -1:
             self.centers[idx] = np.array([-1, -1, -1])
-            occ = self.occurrence_groups[idx]
-            v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
-
-            if self.ctrl_wdg.kf_method == "Regular":
-                for i, c in enumerate(occ):
-                    for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                        v.cylinder_groups_regular[img_ind][c] = -1
-            elif self.ctrl_wdg.kf_method == "Network":
-                for i, c in enumerate(occ):
-                    for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                        v.cylinder_groups_network[img_ind][c] = -1
-                    
             self.selected_cylinder_idx = -1
                 
                 

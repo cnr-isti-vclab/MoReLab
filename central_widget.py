@@ -39,9 +39,6 @@ class Widget(QWidget):
         self.mv_panel = MoviePanel(self)
         self.rect_obj = Rectangle_Tool(self)
         self.quad_obj = Quad_Tool(self)
-        self.copied_data = {}
-        
-        
         
         
     def find_kfs(self):
@@ -175,6 +172,7 @@ class Widget(QWidget):
     def copy_features(self):
         # print("Copy features")
         t = self.selected_thumbnail_index
+        self.copied_data = {}
         if t != -1:
             self.copied_data = {"img_index" : t,
                                 "old_kf_method" : self.kf_method,
@@ -201,8 +199,9 @@ class Widget(QWidget):
                             if not v.hide_regular[t][i]:
                                 self.gl_viewer.obj.add_feature(fc.x_loc, fc.y_loc)
                             else:
+                                print("Adding and deleting feature")
                                 self.gl_viewer.obj.add_feature(fc.x_loc, fc.y_loc)
-                                self.gl_viewer.obj.selected_feature_idx = i
+                                self.gl_viewer.obj.feature_panel.selected_feature_idx = i
                                 self.gl_viewer.obj.delete_feature()
                     else:
                         filledImage_dialogue()

@@ -50,6 +50,7 @@ class MoviePanel(QTreeWidget):
             temp_idx = self.items.index(selection)
             if temp_idx != self.selected_movie_idx:
                 self.selected_movie_idx = temp_idx
+                self.ctrl_wdg.selected_thumbnail_index = -1
                 self.select_movie()
                 # self.ctrl_wdg.gl_viewer.obj.compute_sfm()
 

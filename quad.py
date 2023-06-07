@@ -12,7 +12,6 @@ class Quad_Tool(QObject):
         self.ctrl_wdg = ctrl_wdg
         self.dist_thresh_select = 10.0
         self.group_num = 0
-        self.occurence_groups = []
         self.colors = [(0,0,0)]
         self.order = []
         self.data_val = []
@@ -21,6 +20,7 @@ class Quad_Tool(QObject):
         self.selected_quad_idx = -1
         self.all_pts = []
         self.scaling_factor = 1.1
+        self.vector1s = []
 
 
     def reset(self, ctrl_wdg):
@@ -46,9 +46,13 @@ class Quad_Tool(QObject):
                                 v.quad_groups_regular[img_ind][i] = self.group_num
 
                             feature_selected = True
-                            # print("selected quad")
-
                             if len(self.data_val) == 4:
+                                for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
+                                    # print(v.rect_groups_regular)
+                                    v.quad_groups_regular[img_ind][i] = -1
+                                    v.quad_groups_regular[img_ind][self.order[0]] = -1
+                                    v.quad_groups_regular[img_ind][self.order[1]] = -1
+                                    v.quad_groups_regular[img_ind][self.order[2]] = -1
                                 self.add_quad()
 
                                 
@@ -63,16 +67,21 @@ class Quad_Tool(QObject):
                                 v.quad_groups_network[img_ind][i] = self.group_num
 
                             feature_selected = True
-
                             if len(self.data_val) == 4:
+                                for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
+                                    # print(v.rect_groups_regular)
+                                    v.quad_groups_network[img_ind][i] = -1
+                                    v.quad_groups_network[img_ind][self.order[0]] = -1
+                                    v.quad_groups_network[img_ind][self.order[1]] = -1
+                                    v.quad_groups_network[img_ind][self.order[2]] = -1
                                 self.add_quad()
 
-             
         return feature_selected
     
     
     def add_quad(self):
-        self.occurence_groups.append(self.order)
+        c1, c2, c3, c4 = 0.5*(self.data_val[0]+self.data_val[1]), 0.5*(self.data_val[1]+self.data_val[2]), 0.5*(self.data_val[2]+self.data_val[3]), 0.5*(self.data_val[3]+self.data_val[0])
+        self.vector1s.append([self.data_val[0] - c4, self.data_val[1] - c2, self.data_val[3] - c4, self.data_val[2] - c2, self.data_val[0] - c1, self.data_val[1] - c1, self.data_val[3] - c3, self.data_val[2] - c3])
         self.all_pts.append(self.data_val)
         # print("Primitive count : "+str(self.primitive_count))
         self.group_counts.append(self.ctrl_wdg.rect_obj.primitive_count)
@@ -90,19 +99,6 @@ class Quad_Tool(QObject):
     def delete_quad(self, idx):
         if idx != -1:
             self.deleted[idx] = True
-            occ = self.occurence_groups[idx]
-            v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
-
-            if self.ctrl_wdg.kf_method == "Regular":
-                for i, c in enumerate(occ):
-                    for t in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                        v.quad_groups_regular[t][c] = -1
-
-            elif self.ctrl_wdg.kf_method == "Network":
-                for i, c in enumerate(occ):
-                    for t in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                        v.quad_groups_network[t][c] = -1
-                
             self.selected_quad_idx = -1
 
     def rotate(self, angle_degrees, rotation_axis):
@@ -123,20 +119,39 @@ class Quad_Tool(QObject):
             for i, pt in enumerate(pts_list):
                 self.all_pts[idx][i] = axis + pt
 
+
     def scale_up(self):
         i = self.selected_quad_idx
         if i != -1:
-            self.all_pts[i][0] = self.all_pts[i][0] * self.scaling_factor
-            self.all_pts[i][1] = self.all_pts[i][1] * self.scaling_factor
-            self.all_pts[i][2] = self.all_pts[i][2] / self.scaling_factor
-            self.all_pts[i][3] = self.all_pts[i][3] / self.scaling_factor
-            
+            pts_list = self.all_pts[i]
+
+            vec1, vec2, vec3, vec4 = self.vector1s[i][0], self.vector1s[i][1], self.vector1s[i][2], self.vector1s[i][3]
+            self.all_pts[i][3] = pts_list[3] + 0.5*vec3
+            self.all_pts[i][2] = pts_list[2] + 0.5*vec4
+            self.all_pts[i][0] = pts_list[0] + 0.5*vec1
+            self.all_pts[i][1] = pts_list[1] + 0.5*vec2
+
+            vec5, vec6, vec7, vec8 = self.vector1s[i][4], self.vector1s[i][5], self.vector1s[i][6], self.vector1s[i][7]
+            self.all_pts[i][3] = self.all_pts[i][3] + 0.5*vec7
+            self.all_pts[i][2] = self.all_pts[i][2] + 0.5*vec8
+            self.all_pts[i][0] = self.all_pts[i][0] + 0.5*vec5
+            self.all_pts[i][1] = self.all_pts[i][1] + 0.5*vec6
+
 
     def scale_down(self):
         i = self.selected_quad_idx
         if i != -1:
-            self.all_pts[i][0] = self.all_pts[i][0] / self.scaling_factor
-            self.all_pts[i][1] = self.all_pts[i][1] / self.scaling_factor
-            self.all_pts[i][2] = self.all_pts[i][2] * self.scaling_factor
-            self.all_pts[i][3] = self.all_pts[i][3] * self.scaling_factor
+            pts_list = self.all_pts[i]
+
+            vec1, vec2, vec3, vec4 = self.vector1s[i][0], self.vector1s[i][1], self.vector1s[i][2], self.vector1s[i][3]
+            self.all_pts[i][3] = pts_list[3] - 0.5*vec3
+            self.all_pts[i][2] = pts_list[2] - 0.5*vec4
+            self.all_pts[i][0] = pts_list[0] - 0.5*vec1
+            self.all_pts[i][1] = pts_list[1] - 0.5*vec2
+
+            vec5, vec6, vec7, vec8 = self.vector1s[i][4], self.vector1s[i][5], self.vector1s[i][6], self.vector1s[i][7]
+            self.all_pts[i][3] = self.all_pts[i][3] - 0.5*vec7
+            self.all_pts[i][2] = self.all_pts[i][2] - 0.5*vec8
+            self.all_pts[i][0] = self.all_pts[i][0] - 0.5*vec5
+            self.all_pts[i][1] = self.all_pts[i][1] - 0.5*vec6
             

@@ -92,6 +92,7 @@ def duplicate_dialogue():
     msgBox.setStandardButtons(QMessageBox.Ok)
     # msgBox.buttonClicked.connect(msgButtonClick)     
     returnValue = msgBox.exec()
+
     
     
 def increment_dialogue():

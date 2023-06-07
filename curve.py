@@ -277,17 +277,17 @@ class Curve_Tool(QObject):
                 P1, P2, P3, P4)
 
             # print(self.final_bezier_radii[i], r)
-            if radii[i] > r:
 
-                BC.append(center_base)
-                TC.append(center_top)
-                CB.append(cyl_bases)
-                CT.append(cyl_tops)
-                b_vecs_cyl.append(b_vec)
-                t_vecs_cyl.append(t_vec)
-                Ns_cyl.append(N)
-                heights_cyl.append(height)
-                radii_cyl.append(radius)
+
+            BC.append(center_base)
+            TC.append(center_top)
+            CB.append(cyl_bases)
+            CT.append(cyl_tops)
+            b_vecs_cyl.append(b_vec)
+            t_vecs_cyl.append(t_vec)
+            Ns_cyl.append(N)
+            heights_cyl.append(height)
+            radii_cyl.append(radius)
     
         if len(BC) > 0:
             self.final_base_centers.append(BC)

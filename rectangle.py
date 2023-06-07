@@ -12,7 +12,6 @@ class Rectangle_Tool(QObject):
         self.ctrl_wdg = ctrl_wdg
         self.dist_thresh_select = 10.0
         self.group_num = 0
-        self.occurence_groups = []
         self.colors = [(0,0,0)]
         self.centers_x = []
         self.centers_y = []
@@ -63,6 +62,12 @@ class Rectangle_Tool(QObject):
                             feature_selected = True
 
                             if len(self.data_val) == 4:
+                                for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
+                                    # print(v.rect_groups_regular)
+                                    v.rect_groups_regular[img_ind][i] = -1
+                                    v.rect_groups_regular[img_ind][self.order[0]] = -1
+                                    v.rect_groups_regular[img_ind][self.order[1]] = -1
+                                    v.rect_groups_regular[img_ind][self.order[2]] = -1
                                 self.add_rectangle()
 
                                 
@@ -78,6 +83,12 @@ class Rectangle_Tool(QObject):
                             feature_selected = True
 
                             if len(self.data_val) == 4:
+                                for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
+                                    # print(v.rect_groups_regular)
+                                    v.rect_groups_network[img_ind][i] = -1
+                                    v.rect_groups_network[img_ind][self.order[0]] = -1
+                                    v.rect_groups_network[img_ind][self.order[1]] = -1
+                                    v.rect_groups_network[img_ind][self.order[2]] = -1
                                 self.add_rectangle()
 
              
@@ -87,9 +98,6 @@ class Rectangle_Tool(QObject):
     
     
     def add_rectangle(self):
-        # print(self.order)
-        self.occurence_groups.append(self.order)
-        # print("Primitive count : "+str(self.primitive_count))
         self.rect_counts.append(self.primitive_count)
         c = self.getRGBfromI(self.primitive_count)
         self.colors.append(c)
@@ -187,18 +195,6 @@ class Rectangle_Tool(QObject):
     def delete_rect(self, idx):
         if idx != -1:
             self.deleted[idx] = True
-            occ = self.occurence_groups[idx]
-            v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
-
-            if self.ctrl_wdg.kf_method == "Regular":
-                for i, c in enumerate(occ):
-                    for t in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                        v.rect_groups_regular[t][c] = -1
-            elif self.ctrl_wdg.kf_method == "Network":
-                for i, c in enumerate(occ):
-                    for t in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                        v.rect_groups_network[t][c] = -1
-                    
             self.selected_rect_idx = -1
                     
     def scale_up(self):

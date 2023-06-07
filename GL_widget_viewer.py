@@ -235,11 +235,11 @@ class GL_Widget(QOpenGLWidget):
         measured_dist = []
         
         if self.obj.ctrl_wdg.kf_method == "Regular":
-            if len(v.measured_pos_regular) > 0:
+            if len(v.measured_pos_regular) > 0 and t!=-1:
                 measured_pos = v.measured_pos_regular[t]
                 measured_dist = v.measured_distances_regular[t]
         elif self.obj.ctrl_wdg.kf_method == "Network":
-            if len(v.measured_pos_network) > 0:
+            if len(v.measured_pos_network) > 0 and t!=-1:
                 measured_pos = v.measured_pos_network[t]
                 measured_dist = v.measured_distances_network[t]
             
@@ -262,13 +262,16 @@ class GL_Widget(QOpenGLWidget):
     def mouseDoubleClickEvent(self, event):
         a = event.pos()
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
+        t = self.obj.ctrl_wdg.selected_thumbnail_index
         if self.util_.img_file is not None and self.obj.ctrl_wdg.ui.cross_hair:
-            # print(a.x(), a.y())
             if a.x() > 0 and a.y() > 0:
-                x = int((a.x()-self.width()/2 - self.util_.offset_x)/self.util_._zoom + self.width()/2) 
-                y = int((a.y()-self.height()/2 - self.util_.offset_y)/self.util_._zoom + self.height()/2)
+                x = int((a.x() - self.width() / 2 - self.util_.offset_x) / self.util_._zoom + self.width() / 2)
+                y = int((a.y() - self.height() / 2 - self.util_.offset_y) / self.util_._zoom + self.height() / 2)
                 if x > self.util_.w1 and y > self.util_.h1 and x < self.util_.w2 and y < self.util_.h2:
-                    self.obj.add_feature(x, y)
+                    if event.button() == Qt.RightButton:
+                        self.obj.rename_feature(x, y)
+                    elif event.button() == Qt.LeftButton:
+                        self.obj.add_feature(x, y)
 
 
     def keyPressEvent(self, event):
