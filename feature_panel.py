@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+from collections import Counter
 
 
 class FeaturePanel(QTreeWidget):
@@ -19,7 +20,8 @@ class FeaturePanel(QTreeWidget):
         self.frames = []
         self.Xs = []
         self.Ys = []
-        
+
+
     def display_data(self):
         # print("Movie : "+str(self.ctrl_wdg.mv_panel.selected_movie_idx))
         if self.ctrl_wdg.mv_panel.selected_movie_idx != -1:
@@ -29,62 +31,82 @@ class FeaturePanel(QTreeWidget):
             self.clear()
             self.items = []
             self.labels = []
-            
+            # print(v.n_objects_kf_regular)
             self.labels, self.frames, self.Xs, self.Ys = [], [], [], []
             # print(len(v.features_network))
             if self.ctrl_wdg.kf_method == "Regular":
                 if len(v.features_regular) > 0:
                     for i in range(max(v.n_objects_kf_regular)):
-                        l = -1
-                        xs, ys, fr = [], [], []
+                        ls, xs, ys, fr = [], [], [], []
                         for j,fc_list in enumerate(v.features_regular):
                             if len(fc_list) > 0 and len(v.hide_regular[j]) > i:
                                 if not v.hide_regular[j][i]:
-                                    l = i+1
+                                    # print("Label : "+str(fc_list[i].label))
+                                    ls.append(int(fc_list[i].label))
                                     fr.append(j+1)
                                     xs.append(self.transform_x(fc_list[i].x_loc))
                                     ys.append(self.transform_y(fc_list[i].y_loc))
-                                
-                        self.labels.append(l)
+
+                        self.labels.append(ls)
                         self.frames.append(fr)
                         self.Xs.append(xs)
                         self.Ys.append(ys)
-            
             elif self.ctrl_wdg.kf_method == "Network":
                 if len(v.features_network) > 0:
                     for i in range(max(v.n_objects_kf_network)):
-                        l = -1
-                        xs, ys, fr = [], [], []
+                        ls, xs, ys, fr = [], [], [], []
                         for j,fc_list in enumerate(v.features_network):
                             if len(fc_list) > 0 and len(v.hide_network[j]) > i:
                                 if not v.hide_network[j][i]:
-                                    l = i+1
+                                    # print("Label : "+str(fc_list[i].label))
+                                    ls.append(int(fc_list[i].label))
                                     fr.append(j+1)
                                     xs.append(self.transform_x(fc_list[i].x_loc))
                                     ys.append(self.transform_y(fc_list[i].y_loc))
-                                
-                        self.labels.append(l)
+
+                        self.labels.append(ls)
                         self.frames.append(fr)
                         self.Xs.append(xs)
                         self.Ys.append(ys)
-            
             if len(self.labels) > 0:
-                for i,l in enumerate(self.labels):
-                    if l != -1:
-                        item = QTreeWidgetItem(["Feature "+str(l)])
-                        child1 = QTreeWidgetItem(["Label", str(l)])
+                # print(self.labels)
+                # print(self.frames)
+                for i,labels in enumerate(self.labels):
+
+                    # print(labels)
+                    counts, unique_labels = self.find_unique_elements(labels)
+                    # print(counts)
+                    # print(unique_labels)
+                    # print(self.frames[i])
+                    # print("========================================")
+                    k_ind = 0
+                    for j, count in enumerate(counts):
+                        new_frames = []
+                        new_Xs = []
+                        new_Ys = []
+                        new_l = unique_labels[j]
+                        for k in range(count):
+                            new_frames.append(self.frames[i][k_ind])
+                            new_Xs.append(self.Xs[i][k_ind])
+                            new_Ys.append(self.Ys[i][k_ind])
+                            k_ind += 1
+
+                        # print(k_ind)
+
+                        item = QTreeWidgetItem(["Feature "+str(new_l)])
+                        child1 = QTreeWidgetItem(["Label", str(new_l)])
                         str_vf = ""
                         str_loc = ""
-                        
-                        for j,ff in enumerate(self.frames[i]):
-                            if j==0:
+
+                        for h,ff in enumerate(new_frames):
+                            if h==0:
                                 str_vf = str_vf + str(ff)
-                                str_loc = str_loc + '('+str(self.Xs[i][j])+ ',' + str(self.Ys[i][j])+')'
+                                str_loc = str_loc + '('+str(new_Xs[h])+ ',' + str(new_Ys[h])+')'
                             else:
-                                str_vf = str_vf + ', ' +str(ff) 
-                                str_loc = str_loc + ', ('+str(self.Xs[i][j])+ ',' + str(self.Ys[i][j])+')'
-                        
-                        
+                                str_vf = str_vf + ', ' +str(ff)
+                                str_loc = str_loc + ', ('+str(new_Xs[h])+ ',' + str(new_Ys[h])+')'
+
+
                         child2 = QTreeWidgetItem(["Images", str_vf])
                         child3 = QTreeWidgetItem(["Location", str_loc])
                         item.addChild(child1)
@@ -113,18 +135,9 @@ class FeaturePanel(QTreeWidget):
             if self.ctrl_wdg.ui.cross_hair:
                 ch = selection.child(0)
                 label = int(ch.text(1))
-                v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
-                bd = False
-                if self.ctrl_wdg.kf_method == "Regular":    
-                    if label - 1 < v.n_objects_kf_regular[self.ctrl_wdg.selected_thumbnail_index]:
-                        if not v.hide_regular[self.ctrl_wdg.selected_thumbnail_index][label - 1]:
-                            bd = True
-                elif self.ctrl_wdg.kf_method == "Network":    
-                    if label - 1 < v.n_objects_kf_network[self.ctrl_wdg.selected_thumbnail_index]:
-                        if not v.hide_network[self.ctrl_wdg.selected_thumbnail_index][label - 1]:
-                            bd = True
-                if bd:
-                    self.selected_feature_idx = label - 1
+                found, idx = self.get_feature_index(label, self.ctrl_wdg.selected_thumbnail_index)
+                if found:
+                    self.selected_feature_idx = idx
                     tree_idx = self.items.index(selection)
                     self.items[tree_idx].setSelected(True)
                 else:
@@ -178,4 +191,32 @@ class FeaturePanel(QTreeWidget):
     def inv_trans_y(self, y):
         y2 = self.ctrl_wdg.gl_viewer.util_.h1 + (y/self.factor_y)
         # y2 = y
-        return int(y2)              
+        return int(y2)
+
+
+    def find_unique_elements(self, input_list):
+        unique_list = list(Counter(input_list).keys())
+        count_list = list(Counter(input_list).values())
+
+        return count_list, unique_list
+
+    def get_feature_index(self, label_int, img_idx):
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        t = img_idx
+        found = False
+        idx = -1
+        if self.ctrl_wdg.kf_method == "Regular" and len(v.features_regular) > 0:
+            for i, fc in enumerate(v.features_regular[t]):
+                if not v.hide_regular[t][i] and not found:
+                    if int(v.features_regular[t][i].label) == label_int:
+                        found = True
+                        idx = i
+
+        elif self.ctrl_wdg.kf_method == "Network" and len(v.features_network) > 0:
+            for i, fc in enumerate(v.features_network[t]):
+                if not v.hide_network[t][i] and not found:
+                    if int(v.features_network[t][i].label) == label_int:
+                        found = True
+                        idx = i
+
+        return found, idx

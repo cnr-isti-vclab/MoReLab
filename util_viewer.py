@@ -45,7 +45,7 @@ class Util_viewer(QWidget):
         self.dist_label.setMinimumSize(self.parent_viewer.obj.ctrl_wdg.monitor_width*0.2, self.parent_viewer.obj.ctrl_wdg.monitor_height*0.02)
         self.dist_label.setAlignment(Qt.AlignCenter)
         self.bRadius = False
-
+        self.ft_dist = 10
         
         
         
@@ -658,16 +658,16 @@ class Util_viewer(QWidget):
                         # print(v.hide_regular[t][i])
                         # print("------------------------------------------")
                         if not v.hide_regular[t][i]:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2 , fc.y_loc , fc.x_loc + fc.l/2 , fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2 , fc.y_loc , fc.x_loc + self.ft_dist/2 , fc.y_loc))
+                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
                             painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
     
             elif ctrl_wdg.kf_method == "Network":
                 if len(v.features_network) > 0:
                     for i, fc in enumerate(v.features_network[t]):
                         if not v.hide_network[t][i]:
-                            painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                            painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc, fc.x_loc + self.ft_dist/2, fc.y_loc))
+                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
                             painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                                    
             pen = QPen(QColor(0, 255, 0))
@@ -679,14 +679,14 @@ class Util_viewer(QWidget):
             if self.parent_viewer.obj.feature_panel.selected_feature_idx != -1 and ctrl_wdg.ui.cross_hair:
                 if ctrl_wdg.kf_method == "Regular" and len(v.features_regular[t]) > 0 and not v.hide_regular[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]:
                     fc = v.features_regular[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]
-                    painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
-                    painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                    painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc, fc.x_loc + self.ft_dist/2, fc.y_loc))
+                    painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
                     painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                 
                 elif ctrl_wdg.kf_method == "Network" and len(v.features_network[t]) > 0 and not v.hide_network[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]:
                     fc = v.features_network[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]
-                    painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc, fc.x_loc + fc.l/2, fc.y_loc))
-                    painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                    painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc, fc.x_loc + self.ft_dist/2, fc.y_loc))
+                    painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
                     painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
             
             
@@ -696,8 +696,8 @@ class Util_viewer(QWidget):
                     if len(v.rect_groups_regular[t]) > 0:
                         for i, fc in enumerate(v.features_regular[t]):
                             if v.rect_groups_regular[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
                                 painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
                     
@@ -705,8 +705,8 @@ class Util_viewer(QWidget):
                     if len(v.rect_groups_network[t]) > 0:
                         for i, fc in enumerate(v.features_network[t]):
                             if v.rect_groups_network[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
                                 painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
                             
@@ -716,8 +716,8 @@ class Util_viewer(QWidget):
                     if len(v.quad_groups_regular[t]) > 0:
                         for i, fc in enumerate(v.features_regular[t]):
                             if v.quad_groups_regular[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
                                 painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
                     
@@ -725,8 +725,8 @@ class Util_viewer(QWidget):
                     if len(v.quad_groups_network[t]) > 0:
                         for i, fc in enumerate(v.features_network[t]):
                             if v.quad_groups_network[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
                                 painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
 
@@ -736,8 +736,8 @@ class Util_viewer(QWidget):
                     if len(v.cylinder_groups_regular[t]) > 0:
                         for i, fc in enumerate(v.features_regular[t]):
                             if v.cylinder_groups_regular[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
                                 painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
                     
@@ -745,8 +745,8 @@ class Util_viewer(QWidget):
                     if len(v.cylinder_groups_network[t]) > 0:
                         for i, fc in enumerate(v.features_network[t]):
                             if v.cylinder_groups_network[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - fc.l/2, fc.y_loc , fc.x_loc + fc.l/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc-fc.l/2, fc.x_loc, fc.y_loc+fc.l/2))
+                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
                                 painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
 

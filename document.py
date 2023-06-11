@@ -334,10 +334,10 @@ class Document(QWidget):
 
         a = os.path.join(project_path.split('.')[0], 'extracted_frames')
         movie_dirs = os.listdir(a)
-        print(a)
+        # print(a)
 
         for i,p in enumerate(mv_paths):
-            print(p)
+            # print(p)
             self.ctrl_wdg.selected_thumbnail_index = -1
             movie_name = split_path(p)
             # print(self.ctrl_wdg.grid_layout)
@@ -364,7 +364,7 @@ class Document(QWidget):
             self.ctrl_wdg.ui.cross_hair = True
 
             if len(v.key_frames_regular) > 0:
-                print(v.key_frames_regular[0].shape)
+                # print(v.key_frames_regular[0].shape)
                 self.ctrl_wdg.gl_viewer.util_.setPhoto(v.key_frames_regular[0])
                 hide_regular = video_data["hide_regular"]
                 x_locs = video_data["x_locs"]
@@ -376,8 +376,8 @@ class Document(QWidget):
                 diff_h = 0.75 * (self.ctrl_wdg.gl_viewer.util_.h1 - h1_past[i])
                 diff_w = 0.75 * (self.ctrl_wdg.gl_viewer.util_.w1 - w1_past[i])
 
-                print(diff_h)
-                print(diff_w)
+                # print(diff_h)
+                # print(diff_w)
 
                 # print(diff_h)
                 self.ctrl_wdg.kf_method = "Regular"
