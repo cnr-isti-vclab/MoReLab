@@ -20,6 +20,7 @@ class FeaturePanel(QTreeWidget):
         self.frames = []
         self.Xs = []
         self.Ys = []
+        self.selected_feature_group = []
 
 
     def display_data(self):
@@ -31,96 +32,79 @@ class FeaturePanel(QTreeWidget):
             self.clear()
             self.items = []
             self.labels = []
-            # print(v.n_objects_kf_regular)
-            self.labels, self.frames, self.Xs, self.Ys = [], [], [], []
-            # print(len(v.features_network))
-            if self.ctrl_wdg.kf_method == "Regular":
-                if len(v.features_regular) > 0:
-                    for i in range(max(v.n_objects_kf_regular)):
-                        ls, xs, ys, fr = [], [], [], []
-                        for j,fc_list in enumerate(v.features_regular):
-                            if len(fc_list) > 0 and len(v.hide_regular[j]) > i:
-                                if not v.hide_regular[j][i]:
-                                    # print("Label : "+str(fc_list[i].label))
-                                    ls.append(int(fc_list[i].label))
-                                    fr.append(j+1)
-                                    xs.append(self.transform_x(fc_list[i].x_loc))
-                                    ys.append(self.transform_y(fc_list[i].y_loc))
-
-                        self.labels.append(ls)
-                        self.frames.append(fr)
-                        self.Xs.append(xs)
-                        self.Ys.append(ys)
-            elif self.ctrl_wdg.kf_method == "Network":
-                if len(v.features_network) > 0:
-                    for i in range(max(v.n_objects_kf_network)):
-                        ls, xs, ys, fr = [], [], [], []
-                        for j,fc_list in enumerate(v.features_network):
-                            if len(fc_list) > 0 and len(v.hide_network[j]) > i:
-                                if not v.hide_network[j][i]:
-                                    # print("Label : "+str(fc_list[i].label))
-                                    ls.append(int(fc_list[i].label))
-                                    fr.append(j+1)
-                                    xs.append(self.transform_x(fc_list[i].x_loc))
-                                    ys.append(self.transform_y(fc_list[i].y_loc))
-
-                        self.labels.append(ls)
-                        self.frames.append(fr)
-                        self.Xs.append(xs)
-                        self.Ys.append(ys)
-            if len(self.labels) > 0:
-                # print(self.labels)
-                # print(self.frames)
-                for i,labels in enumerate(self.labels):
-
-                    # print(labels)
-                    counts, unique_labels = self.find_unique_elements(labels)
-                    # print(counts)
-                    # print(unique_labels)
-                    # print(self.frames[i])
-                    # print("========================================")
-                    k_ind = 0
-                    for j, count in enumerate(counts):
-                        new_frames = []
-                        new_Xs = []
-                        new_Ys = []
-                        new_l = unique_labels[j]
-                        for k in range(count):
-                            new_frames.append(self.frames[i][k_ind])
-                            new_Xs.append(self.Xs[i][k_ind])
-                            new_Ys.append(self.Ys[i][k_ind])
-                            k_ind += 1
-
-                        # print(k_ind)
-
-                        item = QTreeWidgetItem(["Feature "+str(new_l)])
-                        child1 = QTreeWidgetItem(["Label", str(new_l)])
-                        str_vf = ""
-                        str_loc = ""
-
-                        for h,ff in enumerate(new_frames):
-                            if h==0:
-                                str_vf = str_vf + str(ff)
-                                str_loc = str_loc + '('+str(new_Xs[h])+ ',' + str(new_Ys[h])+')'
-                            else:
-                                str_vf = str_vf + ', ' +str(ff)
-                                str_loc = str_loc + ', ('+str(new_Xs[h])+ ',' + str(new_Ys[h])+')'
-
-
-                        child2 = QTreeWidgetItem(["Images", str_vf])
-                        child3 = QTreeWidgetItem(["Location", str_loc])
-                        item.addChild(child1)
-                        item.addChild(child2)
-                        item.addChild(child3)
-                        self.items.append(item)
-                    
-            self.insertTopLevelItems(0, self.items)
-            self.itemClicked.connect(self.select_feature_child)
+            tmp2, tmp3 = [], []
             
-            if self.ctrl_wdg.ui.cross_hair and self.selected_feature_idx != -1:
-                self.select_feature()
-            else:
-                self.deselect_features()
+            
+            if self.ctrl_wdg.kf_method == "Regular":
+                for i,hr in enumerate(v.hide_regular):
+                    for j,hide in enumerate(hr):
+                        fc = v.features_regular[i][j]
+                        if not hide:
+                            tmp2.append(i)
+                            tmp3.append(int(fc.label))
+
+                        
+            elif self.ctrl_wdg.kf_method == "Network":
+                for i,hr in enumerate(v.hide_network):
+                    for j,hide in enumerate(hr):
+                        if not hide:
+                            tmp2.append(i)
+                            tmp3.append(int(fc.label))
+                            
+            if len(tmp2) > 0:         
+                final_img_indices_set =set(tmp2)
+                final_img_indices = sorted(final_img_indices_set)
+                
+                all_labels_set = set(tmp3)            
+                all_labels = sorted(all_labels_set)
+                
+                for i, label in enumerate(all_labels):
+                    tmp6, tmp7 = [], []
+                    self.labels.append(label)
+                    for j, img_idx in enumerate(final_img_indices):
+                        found, idx = self.get_feature_index(label, img_idx)
+                        if found:
+                            tmp6.append(img_idx + 1) # +1 is to get image number instead of index
+                            
+                            if self.ctrl_wdg.kf_method == "Regular":
+                                tmp7.append([self.transform_x(v.features_regular[img_idx][idx].x_loc), self.transform_y(v.features_regular[img_idx][idx].y_loc)])
+    
+                            elif self.ctrl_wdg.kf_method == "Network":
+                                tmp7.append([self.transform_x(v.features_network[img_idx][idx].x_loc), self.transform_y(v.features_network[img_idx][idx].y_loc)])
+       
+    
+                    item = QTreeWidgetItem(["Feature "+str(label)])
+                    child1 = QTreeWidgetItem(["Label", str(label)])
+                    str_vf = ""
+                    str_loc = ""
+    
+                    for h,ff in enumerate(tmp6):
+                        if h==0:
+                            str_vf = str_vf + str(ff)
+                            str_loc = str_loc + '('+str(tmp7[h][0])+ ',' + str(tmp7[h][1])+')'
+                        else:
+                            str_vf = str_vf + ', ' +str(ff)
+                            str_loc = str_loc + ', ('+str(tmp7[h][0])+ ',' + str(tmp7[h][0])+')'
+    
+    
+                    child2 = QTreeWidgetItem(["Images", str_vf])
+                    child3 = QTreeWidgetItem(["Location", str_loc])
+                    item.addChild(child1)
+                    item.addChild(child2)
+                    item.addChild(child3)
+                    self.items.append(item)
+                    
+                self.insertTopLevelItems(0, self.items)
+                self.itemClicked.connect(self.select_feature_child)
+                
+                if self.ctrl_wdg.ui.cross_hair and self.selected_feature_idx != -1:
+                    hide, label = self.get_feature_label(self.selected_feature_idx, t)
+                    if not hide:
+                        tree_idx = self.find_tree_idx(label)
+                        if tree_idx != -1:
+                            self.items[tree_idx].setSelected(True)
+                else:
+                    self.deselect_features()
 
 
     def deselect_features(self):
@@ -137,30 +121,28 @@ class FeaturePanel(QTreeWidget):
                 label = int(ch.text(1))
                 found, idx = self.get_feature_index(label, self.ctrl_wdg.selected_thumbnail_index)
                 if found:
-                    self.selected_feature_idx = idx
-                    tree_idx = self.items.index(selection)
-                    self.items[tree_idx].setSelected(True)
+                    self.select_feature(idx, label)
                 else:
                     self.deselect_features()
                     self.selected_feature_idx = -1
                 
 
-    def select_feature(self): # assuming that selected feature_idx has already been set
-        if self.selected_feature_idx != -1 and len(self.items) > 0 and self.ctrl_wdg.ui.cross_hair:
-            # print("Selected feature : "+str(self.selected_feature_idx))
+    def select_feature(self, feature_idx, feature_label): # assuming that selected feature_idx has already been set
+        if feature_idx != -1 and len(self.items) > 0 and self.ctrl_wdg.ui.cross_hair:
             self.deselect_features()
-            tree_idx = self.find_tree_idx()
-            # print(tree_idx)
-            self.items[tree_idx].setSelected(True)
+            self.selected_feature_idx = feature_idx
+            tree_idx = self.find_tree_idx(feature_label)
+            if tree_idx != -1:
+                self.items[tree_idx].setSelected(True)
             
-    def find_tree_idx(self):
-        count = 0
-        for i, l in enumerate(self.labels):
-            if l != -1:
-                if i == self.selected_feature_idx:
-                    return count
-                count = count + 1
-        return count          
+            
+    def find_tree_idx(self, query_label):         # query_label must be integer
+        idx = -1
+        for i, l in enumerate(self.labels):     # labels are in integers
+            if query_label == l:
+                idx = i
+
+        return idx          
 
 
 
@@ -220,3 +202,20 @@ class FeaturePanel(QTreeWidget):
                         idx = i
 
         return found, idx
+    
+    def get_feature_label(self, ft_idx, img_idx):
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        t = img_idx
+        hide = True
+        label = -1
+        if self.ctrl_wdg.kf_method == "Regular" and len(v.features_regular) > 0:
+            if len(v.features_regular[t]) > 0:
+                label = v.features_regular[t][ft_idx]
+                hide = v.hide_regular[t][ft_idx]
+
+        elif self.ctrl_wdg.kf_method == "Network" and len(v.features_network) > 0:
+            if len(v.features_network[t]) > 0:
+                label = v.features_network[t][ft_idx]
+                hide = v.hide_network[t][ft_idx]    
+                
+        return hide, label

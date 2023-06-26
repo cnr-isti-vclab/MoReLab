@@ -27,7 +27,6 @@ class Cylinder_Tool(QObject):
         self.b_vecs = []
         self.t_vecs = []
         self.Ns = []
-        self.scaling_factor = 1.1
         self.radii = []
         self.heights = []
         self.bool_cylinder_type = []
@@ -43,54 +42,43 @@ class Cylinder_Tool(QObject):
         
         feature_selected = False
 
-        if (len(v.features_regular) > 0 or len(v.features_network) > 0) and len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0:
+        if (len(v.features_regular) > 0 or len(v.features_network) > 0) and len(self.ctrl_wdg.gl_viewer.obj.all_ply_pts) > 0:
             data = self.ctrl_wdg.gl_viewer.obj.all_ply_pts[-1]    # 3D data from bundle adjustment
+            cnt = 0
             if self.ctrl_wdg.kf_method == "Regular":
                 for i, fc in enumerate(v.features_regular[t]):
                     if not v.hide_regular[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
-                            self.data_val.append(data[i,:])
-                            for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                v.cylinder_groups_regular[img_ind][i] = self.group_num
                             self.order.append(i)
+                            self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt],:])
+                            v.cylinder_groups_regular[t][i] = self.group_num
                             feature_selected = True
                             
                             if len(self.data_val) == 4:
                                 if self.ctrl_wdg.ui.bnCylinder:
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     if len(bases) > 0:
-                                        for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                            # print(v.rect_groups_regular)
-                                            v.cylinder_groups_regular[img_ind][i] = -1
-                                            v.cylinder_groups_regular[img_ind][self.order[0]] = -1
-                                            v.cylinder_groups_regular[img_ind][self.order[1]] = -1
-                                            v.cylinder_groups_regular[img_ind][self.order[2]] = -1
+
                                         self.bool_cylinder_type.append(False)
                                         self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
                                     else:
                                         straight_line_dialogue()
                                         del self.data_val[-1]
                                 else:
-                                    for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                        # print(v.rect_groups_regular)
-                                        v.cylinder_groups_regular[img_ind][i] = -1
-                                        v.cylinder_groups_regular[img_ind][self.order[0]] = -1
-                                        v.cylinder_groups_regular[img_ind][self.order[1]] = -1
-                                        v.cylinder_groups_regular[img_ind][self.order[2]] = -1
+
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     self.bool_cylinder_type.append(True)
                                     self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
-
+                        cnt += 1
              
             elif self.ctrl_wdg.kf_method == "Network":
                 for i, fc in enumerate(v.features_network[t]):
                     if not v.hide_network[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
-                            self.data_val.append(data[i,:])
-                            for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                v.cylinder_groups_network[img_ind][i] = self.group_num
+                            self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt],:])
+                            v.cylinder_groups_network[t][i] = self.group_num
                             self.order.append(i)
                             feature_selected = True
                             
@@ -98,33 +86,38 @@ class Cylinder_Tool(QObject):
                                 if self.ctrl_wdg.ui.bnCylinder:
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     if len(bases) > 0:
-                                        for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                            # print(v.rect_groups_regular)
-                                            v.cylinder_groups_network[img_ind][i] = -1
-                                            v.cylinder_groups_network[img_ind][self.order[0]] = -1
-                                            v.cylinder_groups_network[img_ind][self.order[1]] = -1
-                                            v.cylinder_groups_network[img_ind][self.order[2]] = -1
+
                                         self.bool_cylinder_type.append(False)
                                         self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
                                     else:
                                         straight_line_dialogue()
                                         del self.data_val[-1]
                                 else:
-                                    for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                        # print(v.rect_groups_regular)
-                                        v.cylinder_groups_network[img_ind][i] = -1
-                                        v.cylinder_groups_network[img_ind][self.order[0]] = -1
-                                        v.cylinder_groups_network[img_ind][self.order[1]] = -1
-                                        v.cylinder_groups_network[img_ind][self.order[2]] = -1
+                                    
+                                    v.cylinder_groups_network[t][i] = -1
+                                    for order in self.order:
+                                        v.cylinder_groups_network[t][order] = -1
+
                                     bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                     self.bool_cylinder_type.append(True)
                                     self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
-
+                        cnt += 1
 
         return feature_selected
     
     
     def refresh_cylinder_data(self, bases, tops, center, top_c, height, radius, b_vec, t_vec, N):
+        
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        t = self.ctrl_wdg.selected_thumbnail_index
+        
+        if self.ctrl_wdg.kf_method == "Regular":        
+            for order in self.order:
+                v.cylinder_groups_regular[t][order] = -1
+        elif self.ctrl_wdg.kf_method == "Network":        
+            for order in self.order:
+                v.cylinder_groups_network[t][order] = -1
+        
         self.heights.append(height)
         self.radii.append(radius)
         self.b_vecs.append(b_vec)
@@ -271,7 +264,7 @@ class Cylinder_Tool(QObject):
         center_2d, radius = self.define_circle(new_P1, new_P2, new_P3)
 
         if center_2d is None:
-            return [], [], 0, 0
+            return [], [], 0, 0, 0, 0, [], [], []
         center = p1 + center_2d[0]*b_vec + center_2d[1]*t_vec
 
         sectorStep = 2*np.pi/self.sectorCount
@@ -357,14 +350,14 @@ class Cylinder_Tool(QObject):
                     self.top_vertices[idx][i] = pt + axis
 
 
-    def scale_up(self):
+    def scale_up(self, scale):
         i = self.selected_cylinder_idx
         # print("Index : "+str(i))
         if i != -1:
-            radius = self.radii[i] * self.scaling_factor
+            radius = self.radii[i] * scale
             self.radii[i] = radius
             # print("Radius : "+str(radius))
-            cyl_axis = 0.05*(self.top_centers[i] - self.centers[i])
+            cyl_axis = (1/scale)*(self.top_centers[i] - self.centers[i])
             self.centers[i] = self.centers[i] - cyl_axis
             self.top_centers[i] = self.top_centers[i] + cyl_axis
             height = np.linalg.norm(self.top_centers[i] - self.centers[i])
@@ -388,13 +381,13 @@ class Cylinder_Tool(QObject):
                     self.top_vertices[i][j] = center + radius * np.cos(sectorAngle) * b_vec + radius*np.sin(sectorAngle) * t_vec - height * N
 
 
-    def scale_down(self):
+    def scale_down(self, scale):
         i = self.selected_cylinder_idx
         if i != -1:
-            radius = self.radii[i] / self.scaling_factor
+            radius = self.radii[i] / scale
             self.radii[i] = radius
 
-            cyl_axis = 0.05*(self.top_centers[i] - self.centers[i])
+            cyl_axis = (1/scale)*(self.top_centers[i] - self.centers[i])
             self.centers[i] = self.centers[i] + cyl_axis
             self.top_centers[i] = self.top_centers[i] - cyl_axis
 

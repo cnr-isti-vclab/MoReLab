@@ -76,15 +76,25 @@ class Document(QWidget):
         # #### --------------------- Save 3D data --------------------------
         b3D = False
         disp_bool = False
+        mapping = []
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         if self.ctrl_wdg.kf_method == "Regular":
             disp_bool = self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][0]
+            mapping_list = v.mapping_2d_3d_regular
         elif self.ctrl_wdg.kf_method == "Network":
             disp_bool = self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][1]
+            mapping_list = v.mapping_2d_3d_network
 
-        if len(self.ctrl_wdg.gl_viewer.obj.all_ply_pts) > 0 and disp_bool:
+        
+        if len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0 and disp_bool:
             b3D = True
+            for i, map_ in enumerate(mapping_list):
+                mapping.append([str(x) for x in map_])
+                # print(mapping)
+            
+
         
-        
+        # print(mapping)
         str_img_indices = []
         if len(self.ctrl_wdg.gl_viewer.obj.img_indices) > 0:
             for x in self.ctrl_wdg.gl_viewer.obj.img_indices:
@@ -133,6 +143,7 @@ class Document(QWidget):
             "h1" : h1_list,
             "w1" : w1_list,
             "bool_3D" : b3D,
+            "mapping" : mapping,
             "bool_display_list" : self.ctrl_wdg.mv_panel.global_display_bool,
             "img_indices" : str_img_indices,
             "bool_rect" : bRect,
@@ -155,7 +166,7 @@ class Document(QWidget):
         elif self.ctrl_wdg.kf_method == "Network":
             disp_bool = self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][1]
 
-        if len(self.ctrl_wdg.gl_viewer.obj.all_ply_pts) > 0 and disp_bool:
+        if len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0 and disp_bool:
 
             out_dir = os.path.join(name_project.split('.')[0], '3D_data')
             b_out = os.path.join(out_dir, 'camera_parameters')
@@ -163,14 +174,16 @@ class Document(QWidget):
                 os.makedirs(out_dir)
                 os.makedirs(b_out)
 
-            if len(self.ctrl_wdg.gl_viewer.obj.all_ply_pts) > 0:
+            if len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0:
                 ply_data_all = self.ctrl_wdg.gl_viewer.obj.all_ply_pts[-1]
                 ply_data = self.ctrl_wdg.gl_viewer.obj.ply_pts[-1]
                 camera_pose = self.ctrl_wdg.gl_viewer.obj.camera_poses[-1]
                 projections = self.ctrl_wdg.gl_viewer.obj.camera_projection_mat
+                
+                v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
 
-                np.savetxt(os.path.join(out_dir, 'ply_all.csv'), ply_data_all, delimiter=',')
                 np.savetxt(os.path.join(out_dir, 'ply.csv'), ply_data, delimiter=',')
+                np.savetxt(os.path.join(out_dir, 'all_ply.csv'), ply_data_all, delimiter=',')
                 np.savetxt(os.path.join(out_dir, 'cam_poses.csv'), camera_pose, delimiter=',')
 
 
@@ -195,6 +208,7 @@ class Document(QWidget):
 
                 quad_pts = self.ctrl_wdg.quad_obj.all_pts
                 quad_path = os.path.join(out_dir, 'quads')
+                occ = []
                 for i, quad_ in enumerate(quad_pts):
                     if not self.ctrl_wdg.quad_obj.deleted[i]:
                         if not os.path.exists(quad_path):
@@ -202,6 +216,10 @@ class Document(QWidget):
 
                         d = np.asarray(quad_)
                         np.savetxt(os.path.join(quad_path, 'quad_' + str(i) + '.csv'), d, delimiter=',')
+                        occ.append(np.asarray(self.ctrl_wdg.quad_obj.occurence_groups[i]))
+                        
+                if len(occ) > 0:
+                    np.savetxt(os.path.join(quad_path, 'occ.csv'), np.asarray(occ), delimiter=',')
 
 
                 ##### PLY Data for Cylinders
@@ -377,9 +395,6 @@ class Document(QWidget):
                 diff_w = 0.75 * (self.ctrl_wdg.gl_viewer.util_.w1 - w1_past[i])
 
                 # print(diff_h)
-                # print(diff_w)
-
-                # print(diff_h)
                 self.ctrl_wdg.kf_method = "Regular"
                 for j, hr_list in enumerate(hide_regular):
                     if len(hr_list) > 0:
@@ -387,7 +402,6 @@ class Document(QWidget):
                         for k, hide in enumerate(hr_list):
                             if not hide:
                                 self.ctrl_wdg.gl_viewer.obj.add_feature(int(diff_w + w*float(x_locs[j][k])), int(diff_h + h*float(y_locs[j][k])), labels[j][k])
-                                # self.ctrl_wdg.gl_viewer.obj.add_feature(int(x_locs[j][k]), int(y_locs[j][k]))
                             else:
                                 self.ctrl_wdg.gl_viewer.obj.add_feature(int(diff_w + w*float(x_locs[j][k])), int(diff_h + h*float(y_locs[j][k])), labels[j][k])
                                 # self.ctrl_wdg.gl_viewer.obj.add_feature(int(x_locs[j][k]), int(y_locs[j][k]))
@@ -435,23 +449,36 @@ class Document(QWidget):
         if data["bool_3D"]:
 
             ############### Load 3D data points ###############
+            
+            self.ctrl_wdg.gl_viewer.obj.initialize_mats()
 
             self.ctrl_wdg.gl_viewer.obj.img_indices = [int(x) for x in data["img_indices"]]
             self.ctrl_wdg.mv_panel.global_display_bool = data["bool_display_list"]
 
             self.ctrl_wdg.gl_viewer.obj.K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
 
-            # print(self.ctrl_wdg.gl_viewer.obj.img_indices)
-
             a = os.path.join(project_path.split('.')[0], '3D_data')
-            ply_all = np.loadtxt(os.path.join(a, 'ply_all.csv'), delimiter=',').astype(float)
             ply = np.loadtxt(os.path.join(a, 'ply.csv'), delimiter=',').astype(float)
+            all_ply = ply = np.loadtxt(os.path.join(a, 'all_ply.csv'), delimiter=',').astype(float)
             cam_poses = np.loadtxt(os.path.join(a, 'cam_poses.csv'), delimiter=',').astype(float)
+            mapping = []
+            for i, map_ in enumerate(data["mapping"]):
+                mapping.append([int(x) for x in map_])
+            
+            # print(mapping)
+            if self.ctrl_wdg.kf_method == "Regular":
+                v.mapping_2d_3d_regular = mapping
+            elif self.ctrl_wdg.kf_method == "Network":
+                v.mapping_2d_3d_network = mapping
 
             self.ctrl_wdg.gl_viewer.obj.ply_pts.append(ply)
-            self.ctrl_wdg.gl_viewer.obj.all_ply_pts.append(ply_all)
+            self.ctrl_wdg.gl_viewer.obj.all_ply_pts.append(all_ply)
             self.ctrl_wdg.gl_viewer.obj.camera_poses.append(cam_poses)
-
+                
+            # print("--------------------------")
+            # print(v.mapping_2d_3d_regular)
+            
+            
             b = os.path.join(a, 'camera_parameters')
             ext_paths = sorted(glob.glob(b+'/*.csv'))
             # print(ext_paths)
@@ -483,11 +510,17 @@ class Document(QWidget):
 
             if data["bool_quad"]:
                 c = os.path.join(a, 'quads')
-                ext_p = sorted(glob.glob(c + '/*.csv'))
+                num_quads = len(glob.glob(c + '/*.csv')) - 1
 
-                if len(ext_p) > 0:
-                    for i, path in enumerate(ext_p):
-                        q_arr = np.loadtxt(path, delimiter=',').astype(float)
+                if num_quads > 0:
+                    occ_arr = np.loadtxt(os.path.join(c, 'occ.csv'), delimiter=',').astype(int)
+                    if num_quads == 1:
+                        occ_arr = occ_arr.reshape((1, 4))
+                    # print(occ_arr)
+                    # print(occ_arr.shape)
+                    for i in range (num_quads):
+                        q_arr = np.loadtxt(os.path.join(c, 'quad_'+str(i)+'.csv'), delimiter=',').astype(float)
+                        self.ctrl_wdg.quad_obj.order = list(occ_arr[i, :])
                         self.ctrl_wdg.quad_obj.data_val.append(q_arr[0,:])
                         self.ctrl_wdg.quad_obj.data_val.append(q_arr[1,:])
                         self.ctrl_wdg.quad_obj.data_val.append(q_arr[2,:])

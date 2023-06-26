@@ -1,5 +1,5 @@
 import numpy as np
-import cv2, time
+import cv2, time, os
 from scipy.optimize import least_squares
 from scipy.sparse import lil_matrix
 # import matplotlib.pyplot as plt
@@ -47,26 +47,33 @@ def calc_error(params, points_2d, n_cameras, n_points, camera_indices, point_ind
     camera_params = params[:n_cameras * 6].reshape((n_cameras, 6))
     points_3d = params[n_cameras * 6:].reshape((n_points, 3))        
     points_proj = project(points_3d[point_indices], camera_params[camera_indices], K)
+    # np.save(os.path.join(folder, ))
     result = (points_2d - points_proj).ravel()
     return result
 
 
 
 
-def bundle_adjustment(xs, visible_labels, K):
-    assert len(xs) == len(visible_labels)
+def bundle_adjustment(xs, visible_labels, K, img_indices):
+    assert len(xs) == len(visible_labels) 
+    # print(xs)
+    # print(visible_labels)
     n_cameras = len(xs)
     points_2d = np.vstack(xs)
     cam_indices = np.array([])
     point_indices = np.array([])
     for i,x in enumerate(visible_labels):
-        print("Number of features in image # "+str(i+1)+" : "+str(len(x)))
+        print("Number of features in image # "+str(img_indices[i]+1)+" : "+str(len(x)))
         cam_indices = np.hstack((cam_indices, np.full_like(np.arange(len(x), dtype=int), i)))
-        point_indices = np.hstack((point_indices, x))
+        # print(cam_indices)
+        point_indices = np.hstack((point_indices, x-1))
+        # print("==========================================")
+        # print(point_indices)
         
     cam_indices = cam_indices.astype(int)
-    # print(cam_indices)
     point_indices = point_indices.astype(int)
+    
+    # print(cam_indices)
     # print(point_indices)
 
     # Initialize cameras and 3D points
@@ -78,19 +85,18 @@ def bundle_adjustment(xs, visible_labels, K):
     x0 = np.hstack((cameras.ravel(), Xs.ravel())) # camera pose and 3d points
 
     J = bundle_adjustment_sparsity(n_cameras=n_cameras, n_points=n_3d_points, camera_indices=cam_indices, point_indices=point_indices)
-    res = least_squares(calc_error, x0, verbose=0, ftol=1e-15, method='trf', jac_sparsity=J, args=(points_2d, n_cameras, n_3d_points, cam_indices, point_indices, K))
+    res = least_squares(calc_error, x0, verbose=1, xtol=1e-8, ftol=1e-15, method='trf', jac_sparsity=J, args=(points_2d, n_cameras, n_3d_points, cam_indices, point_indices, K))
 
     opt_cameras = res.x[:n_cameras * 6].reshape((n_cameras, 6)) # rotation and translation
-    opt_points = res.x[n_cameras * 6: ].reshape((n_3d_points, 3))  # 3d points
+    all_points = res.x[n_cameras * 6: ].reshape((n_3d_points, 3))  # 3d points
     
     # Remove deleted feature points
     final_points = []
-    for i in range(opt_points.shape[0]):
-        if not (opt_points[i,0] == 1 and opt_points[i,1] == 2 and opt_points[i,2] == 3):
-            final_points.append(opt_points[i,:])
+    for i in range(all_points.shape[0]):
+        if not (all_points[i,0] == 1 and all_points[i,1] == 2 and all_points[i,2] == 3):
+            final_points.append(all_points[i,:])
     
     final_points = np.asarray(final_points)
-    # print(final_points)
-    # print(final_points.shape)
+
     
-    return opt_cameras, final_points, opt_points
+    return opt_cameras,  all_points, final_points

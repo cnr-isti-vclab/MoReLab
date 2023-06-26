@@ -25,11 +25,10 @@ class Rectangle_Tool(QObject):
         self.binormals = []
         self.normals = []
         self.centers = []
-        self.scaling_factor = 1.1
         self.min_Ts = []
         self.max_Ts = []
-        self.min_Bs = []
         self.max_Bs = []
+        self.min_Bs = []
         self.selected_rect_idx = -1
         self.bFirstAnchor = True
         self.bSecondAnchor = False
@@ -46,58 +45,57 @@ class Rectangle_Tool(QObject):
         
         feature_selected = False
 
-        if (len(v.features_regular) > 0 or len(v.features_network) > 0) and len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0:
+        if (len(v.features_regular) > 0 or len(v.features_network) > 0) and len(self.ctrl_wdg.gl_viewer.obj.all_ply_pts) > 0:
             data = self.ctrl_wdg.gl_viewer.obj.all_ply_pts[-1]    # 3D data from bundle adjustment
+            cnt = 0
             if self.ctrl_wdg.kf_method == "Regular":
                 for i, fc in enumerate(v.features_regular[t]):
                     if not v.hide_regular[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
+                            self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt], :])
                             self.order.append(i)
-                            self.data_val.append(data[i,:])
-                            # print("selected rectangle")
-                            for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                # print(v.rect_groups_regular)
-                                v.rect_groups_regular[img_ind][i] = self.group_num
+                            v.rect_groups_regular[t][i] = self.group_num
                             feature_selected = True
-
+                                
                             if len(self.data_val) == 4:
-                                for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                    # print(v.rect_groups_regular)
-                                    v.rect_groups_regular[img_ind][i] = -1
-                                    v.rect_groups_regular[img_ind][self.order[0]] = -1
-                                    v.rect_groups_regular[img_ind][self.order[1]] = -1
-                                    v.rect_groups_regular[img_ind][self.order[2]] = -1
                                 self.add_rectangle()
 
+                        cnt += 1
                                 
             elif self.ctrl_wdg.kf_method == "Network":
                 for i, fc in enumerate(v.features_network[t]):
                     if not v.hide_network[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
-                            self.order.append(i)
-                            self.data_val.append(data[i,:])
-                            for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                v.rect_groups_network[img_ind][i] = self.group_num
-                            feature_selected = True
+                            found, idx = self.ctrl_wdg.gl_viewer.obj.feature_panel.get_feature_index(int(fc.label), t)
+                            if found:
+                                self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt], :])
+                                
+                                self.order.append(i)
+                                v.rect_groups_network[t][i] = self.group_num
+                                feature_selected = True
+    
+                                if len(self.data_val) == 4:
+                                    self.add_rectangle()
 
-                            if len(self.data_val) == 4:
-                                for img_ind in self.ctrl_wdg.gl_viewer.obj.img_indices:
-                                    # print(v.rect_groups_regular)
-                                    v.rect_groups_network[img_ind][i] = -1
-                                    v.rect_groups_network[img_ind][self.order[0]] = -1
-                                    v.rect_groups_network[img_ind][self.order[1]] = -1
-                                    v.rect_groups_network[img_ind][self.order[2]] = -1
-                                self.add_rectangle()
-
-             
+                        cnt += 1
         return feature_selected
     
     
     
     
     def add_rectangle(self):
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        t = self.ctrl_wdg.selected_thumbnail_index
+        
+        if self.ctrl_wdg.kf_method == "Regular":        
+            for order in self.order:
+                v.rect_groups_regular[t][order] = -1
+        elif self.ctrl_wdg.kf_method == "Network":        
+            for order in self.order:
+                v.rect_groups_network[t][order] = -1
+                
         self.rect_counts.append(self.primitive_count)
         c = self.getRGBfromI(self.primitive_count)
         self.colors.append(c)
@@ -197,25 +195,25 @@ class Rectangle_Tool(QObject):
             self.deleted[idx] = True
             self.selected_rect_idx = -1
                     
-    def scale_up(self):
+    def scale_up(self, scale):
         i = self.selected_rect_idx
         if i != -1:
             # print("Scaling up "+str(i)+"st/th rect")
-            self.max_Ts[i] *= self.scaling_factor
-            self.min_Ts[i] *= self.scaling_factor
-            self.max_Bs[i] *= self.scaling_factor
-            self.min_Bs[i] *= self.scaling_factor
+            self.max_Ts[i] *= scale
+            self.min_Ts[i] *= scale
+            self.max_Bs[i] *= scale
+            self.min_Bs[i] *= scale
             self.new_points[i] = self.get_rect_points(i)
 
 
-    def scale_down(self):
+    def scale_down(self, scale):
         i = self.selected_rect_idx
         if i != -1:
             # print("Scaling down "+str(i)+"st/th rect")
-            self.max_Ts[i] /= self.scaling_factor
-            self.min_Ts[i] /= self.scaling_factor
-            self.max_Bs[i] /= self.scaling_factor
-            self.min_Bs[i] /= self.scaling_factor
+            self.max_Ts[i] /= scale
+            self.min_Ts[i] /= scale
+            self.max_Bs[i] /= scale
+            self.min_Bs[i] /= scale
             self.new_points[i] = self.get_rect_points(i)
         
     def rotate(self, angle_degrees, rotation_axis):

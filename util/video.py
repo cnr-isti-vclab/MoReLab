@@ -74,6 +74,7 @@ class Video:
         self.n_objects_kf_regular = []
         self.features_regular = []
         self.hide_regular = []
+        self.count_deleted_regular = []
 
         if n!=-1:
             for i in range(n):
@@ -82,9 +83,12 @@ class Video:
                 self.measured_distances_regular.append([])
                 self.features_regular.append([])
                 self.hide_regular.append([])
+                self.count_deleted_regular.append([])
+
 
 
     def init_3D_regular(self, n=-1):
+        self.mapping_2d_3d_regular = []
         self.rect_groups_regular = []
         self.quad_groups_regular = []
         self.cylinder_groups_regular = []
@@ -97,6 +101,7 @@ class Video:
 
         if n!=-1:
             for i in range(n):
+                self.mapping_2d_3d_regular.append([])
                 self.rect_groups_regular.append([])
                 self.quad_groups_regular.append([])
                 self.cylinder_groups_regular.append([])

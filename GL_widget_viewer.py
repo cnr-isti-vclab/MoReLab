@@ -21,16 +21,18 @@ class GL_Widget(QOpenGLWidget):
         timer.setInterval(10)   # period, in milliseconds
         timer.timeout.connect(self.update)
         timer.start()
-
-        self.setFocusPolicy(Qt.StrongFocus)
-        self.showMaximized()
-        
-
+    
         self.obj = Features(parent)
         self.util_ = Util_viewer(self)
         self.setMouseTracking(True)
         self.setMinimumSize(self.obj.ctrl_wdg.monitor_width*0.56, self.obj.ctrl_wdg.monitor_height*0.67)
         self.util_.setPhoto()
+        
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.util_.openContextMenu__)     
+
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.showMaximized()
 
         self.painter = QPainter()
         self.setAutoFillBackground(False)
@@ -43,6 +45,7 @@ class GL_Widget(QOpenGLWidget):
         self.selected_color = (0.38, 0.85, 0.211)
 
         self.flag_g = False
+        
 
   
     def is_display(self):
@@ -60,7 +63,7 @@ class GL_Widget(QOpenGLWidget):
         t = self.obj.ctrl_wdg.selected_thumbnail_index
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
 
-######################################################################################
+        ######################################################################################
         # Offscreen rendering
         if not self.flag_g:
             self.flag_g = True
@@ -249,8 +252,8 @@ class GL_Widget(QOpenGLWidget):
                 p2 = measured_pos[i]
                 self.painter.drawLine(QLineF(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1])))
                 idx_t = int(i/2)
-                if len(measured_dist) > 0:
-                    self.painter.drawText(p2[0]-20, p2[1]+20, str(round(measured_dist[idx_t], 3)))
+                if len(measured_dist) > idx_t:
+                    self.painter.drawText(p2[0]-10, p2[1]+20, str(round(measured_dist[idx_t], 3)))
 
         # Draw transient Measuring Line
         if self.obj.ctrl_wdg.ui.bMeasure and self.util_.clicked_once:            
@@ -263,15 +266,32 @@ class GL_Widget(QOpenGLWidget):
         a = event.pos()
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
         t = self.obj.ctrl_wdg.selected_thumbnail_index
-        if self.util_.img_file is not None and self.obj.ctrl_wdg.ui.cross_hair:
-            if a.x() > 0 and a.y() > 0:
-                x = int((a.x() - self.width() / 2 - self.util_.offset_x) / self.util_._zoom + self.width() / 2)
-                y = int((a.y() - self.height() / 2 - self.util_.offset_y) / self.util_._zoom + self.height() / 2)
-                if x > self.util_.w1 and y > self.util_.h1 and x < self.util_.w2 and y < self.util_.h2:
+        if self.util_.img_file is not None and a.x() > 0 and a.y() > 0:
+            x = int((a.x() - self.width() / 2 - self.util_.offset_x) / self.util_._zoom + self.width() / 2)
+            y = int((a.y() - self.height() / 2 - self.util_.offset_y) / self.util_._zoom + self.height() / 2)
+            if x > self.util_.w1 and y > self.util_.h1 and x < self.util_.w2 and y < self.util_.h2:            
+                if self.obj.ctrl_wdg.ui.cross_hair:
                     if event.button() == Qt.RightButton:
                         self.obj.rename_feature(x, y)
                     elif event.button() == Qt.LeftButton:
                         self.obj.add_feature(x, y)
+                            
+                elif self.obj.ctrl_wdg.ui.crosshair_plus:
+                    if event.button() == Qt.RightButton:
+                        self.obj.rename_feature(x, y)
+                    elif event.button() == Qt.LeftButton:
+                        if self.obj.ctrl_wdg.kf_method == "Regular":
+                            num_ft_list = v.n_objects_kf_regular
+                            self.obj.add_feature(x, y, max(num_ft_list)+1+v.n_objects_kf_regular[t])
+
+                        elif self.obj.ctrl_wdg.kf_method == "Network":
+                            num_ft_list = v.n_objects_kf_network
+                            self.obj.add_feature(x, y, max(num_ft_list)+1+v.n_objects_kf_network[t])                        
+                        
+                
+                        
+                        
+        
 
 
     def keyPressEvent(self, event):
@@ -282,43 +302,16 @@ class GL_Widget(QOpenGLWidget):
 
     def wheelEvent(self, event):
         if self.util_.img_file is not None:
-            if self.obj.ctrl_wdg.ui.bPick:
-                if self.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
-                    if event.angleDelta().y() > 0:
-                        self.obj.ctrl_wdg.rect_obj.scale_up()
-                    else:
-                        self.obj.ctrl_wdg.rect_obj.scale_down()
-
-                elif self.obj.cylinder_obj.selected_cylinder_idx != -1:
-                    if event.angleDelta().y() > 0:
-                        self.obj.cylinder_obj.scale_up()
-                    else:
-                        self.obj.cylinder_obj.scale_down()
-                        
-                elif self.obj.curve_obj.selected_curve_idx != -1:
-                    if event.angleDelta().y() > 0:
-                        self.obj.curve_obj.scale_up()
-                    else:
-                        self.obj.curve_obj.scale_down()
-
-                elif self.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
-                    if event.angleDelta().y() > 0:
-                        self.obj.ctrl_wdg.quad_obj.scale_up()
-                    else:
-                        self.obj.ctrl_wdg.quad_obj.scale_down()
-
-
+            if event.angleDelta().y() > 0:
+                self.util_._zoom += 0.1
             else:
-                if event.angleDelta().y() > 0:
-                    self.util_._zoom += 0.1
-                else:
-                    self.util_._zoom -= 0.1
-                # print(self.width()/2)
-                if self.util_._zoom < 1:
-                    self.util_._zoom = 1
-                    self.util_.offset_x = 0
-                    self.util_.offset_y = 0
-                    self.util_.set_default_view_param()
+                self.util_._zoom -= 0.1
+            # print(self.width()/2)
+            if self.util_._zoom < 1:
+                self.util_._zoom = 1
+                self.util_.offset_x = 0
+                self.util_.offset_y = 0
+                self.util_.set_default_view_param()
                 
 
 

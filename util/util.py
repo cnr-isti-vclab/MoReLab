@@ -248,10 +248,19 @@ def export_ply_dialogue():
     
 def del_primitive_dialogue():
     msgBox = QMessageBox()
-    msgBox.setText("No 3D primitive has been selected. Please click on a 3D primitive.")
-    msgBox.setWindowTitle("Export PLY")
+    msgBox.setText("No 3D primitive has been selected. Please click on a 3D primitive with left mouse button.")
+    msgBox.setWindowTitle("Selection of 3D primitive")
     msgBox.setStandardButtons(QMessageBox.Ok)
     returnValue = msgBox.exec()
+    
+
+def label_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("The label of feature must be an integer greater than 0.")
+    msgBox.setWindowTitle("label value")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    returnValue = msgBox.exec()
+    
     
 
 

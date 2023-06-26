@@ -44,7 +44,6 @@ class Curve_Tool(QObject):
         self.Ns = []
         self.heights = []
         self.radii = []
-        self.scaling_factor = 1.1
         
         
 
@@ -58,7 +57,7 @@ class Curve_Tool(QObject):
             if self.ctrl_wdg.kf_method == "Regular":
                 self.data_val_regular.append([x,y])
                 if len(self.data_val_regular) == 4:
-                    v.curve_groups_regular[t].append(self.data_val_regular)
+                    v.curve_groups_regular[t].append(copy.deepcopy(self.data_val_regular))
                     self.data_val_regular = []
                     v.bPaint_regular[t] = False
                     v.bAssignDepth_regular[t] = True
@@ -68,7 +67,7 @@ class Curve_Tool(QObject):
             elif self.ctrl_wdg.kf_method == "Network":
                 self.data_val_network.append([x, y])
                 if len(self.data_val_network) == 4:
-                    v.curve_groups_network[t].append(self.data_val_network)
+                    v.curve_groups_network[t].append(copy.deepcopy(self.data_val_network))
                     self.data_val_network = []
                     v.bPaint_network[t] = False
                     v.bAssignDepth_network[t] = True
@@ -112,6 +111,7 @@ class Curve_Tool(QObject):
 
         all_pts = []
         all_data_val = []
+
         if self.ctrl_wdg.kf_method == "Regular":
             if len(v.curve_groups_regular) > 0:
                 all_pts = v.curve_3d_point_regular[t]
@@ -119,7 +119,8 @@ class Curve_Tool(QObject):
         if self.ctrl_wdg.kf_method == "Network":
             if len(v.curve_groups_network) > 0:
                 all_pts = v.curve_3d_point_network[t]
-                all_data_val = v.curve_groups_network[t]
+                all_data_val = v.curve_groups_network[t]        
+
 
         z_vec = M[2, 0:3]
         z_vec = z_vec/np.linalg.norm(z_vec)
@@ -454,12 +455,12 @@ class Curve_Tool(QObject):
                     self.final_cylinder_tops[idx][i][j] = pt + vec            
             
             
-    def scale_up(self):
+    def scale_up(self, scale):
         i = self.selected_curve_idx
         # print("Index : "+str(i))
         if i != -1:
             for j in range(len(self.radii[i])):
-                radius = self.radii[i][j] * self.scaling_factor
+                radius = self.radii[i][j] * scale
                 self.radii[i][j] = radius
                 # print("Radius : "+str(radius))
                 cyl_axis = 0.05*(self.final_top_centers[i][j] - self.final_base_centers[i][j])
@@ -482,12 +483,12 @@ class Curve_Tool(QObject):
                         sectorAngle) * t_vec + height * N
 
 
-    def scale_down(self):
+    def scale_down(self, scale):
         i = self.selected_curve_idx
         # print("Index : "+str(i))
         if i != -1:
             for j in range(len(self.radii[i])):
-                radius = self.radii[i][j] / self.scaling_factor
+                radius = self.radii[i][j] / scale
                 self.radii[i][j] = radius
                 # print("Radius : "+str(radius))
                 cyl_axis = 0.05*(self.final_top_centers[i][j] - self.final_base_centers[i][j])

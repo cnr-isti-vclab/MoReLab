@@ -27,6 +27,8 @@ class Util_viewer(QWidget):
         self.pick, self.move_feature_bool, self.move_pick = False, False, False
         self.clicked_once = False
         self.last_3d_pos = np.array([0.0,0.0, 0.0])
+        self.calibration_factors = []
+        self.bbCalibrate = True
 
         self.last_pos = np.array([0.0,0.0])
         self.current_pos = np.array([0.0,0.0])
@@ -46,6 +48,10 @@ class Util_viewer(QWidget):
         self.dist_label.setAlignment(Qt.AlignCenter)
         self.bRadius = False
         self.ft_dist = 10
+        self.selected_primitive_loc = np.array([0.0,0.0])
+        
+        self.bRightClick = False
+        self.contextMenuPosition = None
         
         
         
@@ -264,168 +270,59 @@ class Util_viewer(QWidget):
         ######################## Transformation of primitives ########################
             
         if ctrl_wdg.ui.bPick:
-            if self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
-                base_centers = self.parent_viewer.obj.curve_obj.final_base_centers[self.parent_viewer.obj.curve_obj.selected_curve_idx]
-                # print(np.asarray(base_centers).shape)
-                center = np.mean(np.asarray(base_centers), axis=0)
-                # print(center)
-                P1 = base_centers[0]
-                P4 = base_centers[1]
-                P3 = self.parent_viewer.obj.curve_obj.final_cylinder_bases[self.parent_viewer.obj.curve_obj.selected_curve_idx][0][0]
-                P2 = np.cross(P4 - P1 , P3 - P1) + P1
-                x_axis = (P3 - P1)/np.linalg.norm(P3 - P1)
-                y_axis = (P4 - P1)/np.linalg.norm(P4 - P1)
-                z_axis = (P2 - P1)/np.linalg.norm(P2 - P1)
+            if event.key() == Qt.Key_T:
+                self.create_translate_panel()
+            elif event.key() == Qt.Key_R:
+                self.create_rotation_panel()
+            elif event.key() == Qt.Key_S:
+                self.create_scale_panel()
+                
+                
+            if event.key() == Qt.Key_X:
+                if event.modifiers() & Qt.ControlModifier:
+                    self.rotate_x_opposite_axis()
+                else:
+                    self.rotate_x_axis()
+                    
+            elif event.key() == Qt.Key_Y:
+                if event.modifiers() & Qt.ControlModifier:
+                    self.rotate_y_opposite_axis()
+                else:
+                    self.rotate_y_axis()
+            
+            elif event.key() == Qt.Key_Z:
+                if event.modifiers() & Qt.ControlModifier:
+                    self.rotate_z_opposite_axis()
+                else:
+                    self.rotate_z_axis()
+                    
+            elif event.key() == Qt.Key_Left:
+                self.translate_along_axis(-1, 0, 0, True)
 
-                if event.key() == Qt.Key_X:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.curve_obj.rotate(-0.1, x_axis, center)
-                    else:
-                        self.parent_viewer.obj.curve_obj.rotate(0.1, x_axis, center)
+            elif event.key() == Qt.Key_Right:
+                self.translate_along_axis(1, 0, 0, True)
 
-                if event.key() == Qt.Key_Y:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.curve_obj.rotate(-0.1, y_axis, center)
-                    else:
-                        self.parent_viewer.obj.curve_obj.rotate(0.1, y_axis, center)
+            elif event.key() == Qt.Key_Up:
+                self.translate_along_axis(0, 1, 0, True)
 
-                if event.key() == Qt.Key_Z:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.curve_obj.rotate(-0.1, z_axis, center)
-                    else:
-                        self.parent_viewer.obj.curve_obj.rotate(0.1, z_axis, center)
+            elif event.key() == Qt.Key_Down:
+                self.translate_along_axis(0, -1, 0, True)
 
-                if event.key() == Qt.Key_Right:
-                    self.parent_viewer.obj.curve_obj.translate(np.array([0.005, 0, 0]), self.parent_viewer.obj.curve_obj.selected_curve_idx)
-
-                if event.key() == Qt.Key_Left:
-                    self.parent_viewer.obj.curve_obj.translate(np.array([-0.005, 0, 0]), self.parent_viewer.obj.curve_obj.selected_curve_idx)
-
-                if event.key() == Qt.Key_Up:
-                    self.parent_viewer.obj.curve_obj.translate(np.array([0, 0.005, 0]), self.parent_viewer.obj.curve_obj.selected_curve_idx)
-
-                if event.key() == Qt.Key_Down:
-                    self.parent_viewer.obj.curve_obj.translate(np.array([0, -0.005, 0]), self.parent_viewer.obj.curve_obj.selected_curve_idx)
-
-            elif self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
-                P1 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][0]
-                P2 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][1]
-                P3 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][2]
-                P4 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][3]
-                if event.key() == Qt.Key_X:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(5, P2 - P1)
-                    else:
-                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(-5, P2 - P1)
-
-                if event.key() == Qt.Key_Y:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(5, P4 - P1)
-                    else:
-                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(-5, P4 - P1)
-
-                if event.key() == Qt.Key_Z:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(5, np.cross(P2 - P1, P4 - P1))
-                    else:
-                        self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(-5, np.cross(P2 - P1, P4 - P1))
-
-                if event.key() == Qt.Key_Right:
-                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(0.01*(P2 - P1), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
-
-                if event.key() == Qt.Key_Left:
-                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(-0.01*(P2 - P1), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
-
-                if event.key() == Qt.Key_Down:
-                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(0.01*(P4-P1), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
-
-                if event.key() == Qt.Key_Up:
-                    self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(-0.01*(P4 - P1), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
-
-
-            elif self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
-                P1 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][0]
-                P2 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][1]
-                P3 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][2]
-                P4 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][3]
-                if event.key() == Qt.Key_X:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(5, P2 - P1)
-                    else:
-                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(-5, P2 - P1)
-
-                if event.key() == Qt.Key_Y:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(5, P4 - P1)
-                    else:
-                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(-5, P4 - P1)
-
-                if event.key() == Qt.Key_Z:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(5, np.cross(P2 - P1, P4 - P1))
-                    else:
-                        self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(-5, np.cross(P2 - P1, P4 - P1))
-
-                if event.key() == Qt.Key_Right:
-                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(0.01*(P2 - P1), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
-
-                if event.key() == Qt.Key_Left:
-                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(-0.01*(P2 - P1), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
-
-                if event.key() == Qt.Key_Down:
-                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(0.01*(P4-P1), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
-
-                if event.key() == Qt.Key_Up:
-                    self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(-0.01*(P4 - P1), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
-
-            elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
-                P1 = self.parent_viewer.obj.cylinder_obj.centers[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx]
-                P4 = self.parent_viewer.obj.cylinder_obj.top_centers[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx]
-                P3 = self.parent_viewer.obj.cylinder_obj.vertices_cylinder[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx][0]
-                P2 = np.cross(P4 - P1, P3 - P1) + P1
-                if event.key() == Qt.Key_X:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.cylinder_obj.rotate(5, P3 - P1)
-                    else:
-                        self.parent_viewer.obj.cylinder_obj.rotate(-5, P3 - P1)
-
-                if event.key() == Qt.Key_Y:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.cylinder_obj.rotate(5, P4 - P1)
-                    else:
-                        self.parent_viewer.obj.cylinder_obj.rotate(-5, P4 - P1)
-
-                if event.key() == Qt.Key_Z:
-                    if event.modifiers() & Qt.ControlModifier:
-                        self.parent_viewer.obj.cylinder_obj.rotate(5, P2 - P1)
-                    else:
-                        self.parent_viewer.obj.cylinder_obj.rotate(-5, P2 - P1)
-
-                if event.key() == Qt.Key_Right:
-                    self.parent_viewer.obj.cylinder_obj.translate(0.01*(P3 - P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
-
-                if event.key() == Qt.Key_Left:
-                    self.parent_viewer.obj.cylinder_obj.translate(-0.01*(P3 - P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
-
-                if event.key() == Qt.Key_Down:
-                    self.parent_viewer.obj.cylinder_obj.translate(0.01*(P4-P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
-
-                if event.key() == Qt.Key_Up:
-                    self.parent_viewer.obj.cylinder_obj.translate(-0.01*(P4 - P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
-
-
-        if ctrl_wdg.ui.cross_hair and event.key() == Qt.Key_Escape:
-            self.parent_viewer.obj.feature_panel.selected_feature_idx = -1
+                
+                    
+                    
             
         if ctrl_wdg.ui.bMeasure and event.key() == Qt.Key_L:
             if ctrl_wdg.kf_method == "Regular":
-                v.measured_pos_regular[t].pop()
-                v.measured_pos_regular[t].pop()
-                v.measured_distances_regular[t].pop()
+                if len(v.measured_pos_regular[t]) > 0:
+                    v.measured_pos_regular[t].pop()
+                    v.measured_pos_regular[t].pop()
+                    v.measured_distances_regular[t].pop()
             elif ctrl_wdg.kf_method == "Network":
-                v.measured_pos_network[t].pop()
-                v.measured_pos_network[t].pop()
-                v.measured_distances_network[t].pop()
+                if len(v.measured_pos_network) > 0:
+                    v.measured_pos_network[t].pop()
+                    v.measured_pos_network[t].pop()
+                    v.measured_distances_network[t].pop()
             
         if ctrl_wdg.ui.cross_hair and f != -1:
             if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
@@ -558,13 +455,17 @@ class Util_viewer(QWidget):
                     del_primitive_dialogue()
 
 
-            ######################## Deselect primitives ########################
+        ######################## Deselect primitives and feature ########################
 
-            if event.key() == Qt.Key_Escape:
-                ctrl_wdg.rect_obj.selected_rect_idx = -1
-                self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
-                self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
-                ctrl_wdg.quad_obj.selected_quad_idx = -1
+        if ctrl_wdg.ui.bPick and event.key() == Qt.Key_Escape:
+            ctrl_wdg.rect_obj.selected_rect_idx = -1
+            self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
+            self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
+            ctrl_wdg.quad_obj.selected_quad_idx = -1
+                
+        if ctrl_wdg.ui.cross_hair and event.key() == Qt.Key_Escape:
+            self.parent_viewer.obj.feature_panel.selected_feature_idx = -1
+                
                 
 
     def util_mouse_press(self, event, ctrl_wdg):
@@ -577,6 +478,13 @@ class Util_viewer(QWidget):
         
         if event.button() == Qt.RightButton:
             self.press_loc = (a.x(), a.y())
+            self.bRightClick = True
+            self.x = a.x()
+            self.y = a.y()
+            self.x_zoomed, self.y_zoomed = x, y
+            self.pick = True
+            # print("Pressed right button")
+            
         
         elif event.button() == Qt.LeftButton:
             if ctrl_wdg.ui.cross_hair:
@@ -586,8 +494,7 @@ class Util_viewer(QWidget):
                             if not v.hide_regular[t][i]:
                                 d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                                 if d < self.dist_thresh:
-                                    self.parent_viewer.obj.feature_panel.selected_feature_idx = i
-                                    self.parent_viewer.obj.feature_panel.select_feature()
+                                    self.parent_viewer.obj.feature_panel.select_feature(i, fc.label)
                                     self.move_feature_bool = True
     
     
@@ -597,8 +504,7 @@ class Util_viewer(QWidget):
                             if not v.hide_network[t][i]:
                                 d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                                 if d < self.dist_thresh:
-                                    self.parent_viewer.obj.feature_panel.selected_feature_idx = i
-                                    self.parent_viewer.obj.feature_panel.select_feature()
+                                    self.parent_viewer.obj.feature_panel.select_feature(i, fc.label)
                                     self.move_feature_bool = True
             
             selected_feature = False
@@ -755,6 +661,7 @@ class Util_viewer(QWidget):
             
             if len(v.curve_groups_regular) > 0 or len(v.curve_groups_network) > 0:
                 # print(v.curve_groups_regular[t])
+                # print(v.bPaint_regular[t])
                 if ctrl_wdg.kf_method == "Regular":
                     data_val = self.parent_viewer.obj.curve_obj.data_val_regular
                     original_list = v.curve_groups_regular[t]
@@ -862,13 +769,21 @@ class Util_viewer(QWidget):
 
             elif ctrl_wdg.ui.bPick:
                 ID = ctrl_wdg.rect_obj.getIfromRGB(co[0], co[1], co[2])
-                # print("ID : "+str(ID))
-                # print(self.parent_viewer.obj.curve_obj.curve_count)
+
                 if ID in ctrl_wdg.rect_obj.rect_counts:
                     ctrl_wdg.rect_obj.selected_rect_idx = ctrl_wdg.rect_obj.rect_counts.index(ID)
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
                     ctrl_wdg.quad_obj.selected_quad_idx = -1
                     self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
+                    # print( self.bRightClick)
+                    # if self.bRightClick:
+                    #     # print("Need to transform a rectangle")
+                        
+                    #     self.openContextMenu__()
+                    #     print("After the function")
+                    #     self.bRightClick = False
+
+                    
                     
                 elif ID in self.parent_viewer.obj.cylinder_obj.cylinder_count:
                     cyl_idx = self.parent_viewer.obj.cylinder_obj.cylinder_count.index(ID)
@@ -876,6 +791,7 @@ class Util_viewer(QWidget):
                     ctrl_wdg.rect_obj.selected_rect_idx = -1
                     ctrl_wdg.quad_obj.selected_quad_idx = -1
                     self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
+
                     
                     
                 elif ID in ctrl_wdg.quad_obj.group_counts:
@@ -884,6 +800,7 @@ class Util_viewer(QWidget):
                     ctrl_wdg.rect_obj.selected_rect_idx = -1
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
                     self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
+
                     
                 elif ID in self.parent_viewer.obj.curve_obj.curve_count:
                     curve_idx = self.parent_viewer.obj.curve_obj.curve_count.index(ID)
@@ -891,6 +808,7 @@ class Util_viewer(QWidget):
                     ctrl_wdg.rect_obj.selected_rect_idx = -1
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
                     ctrl_wdg.quad_obj.selected_quad_idx = -1
+
                     
                     
                     
@@ -898,6 +816,7 @@ class Util_viewer(QWidget):
                 # print(self.x_zoomed, self.y_zoomed)
                 if self.bCalibrate:
                     if self.clicked_once:
+                        # print("IFFFFFFFFFFFFFFFFFF")
                         self.bCalibrate = False
                         self.create_calibration_panel()
                         if self.cal_dialog.exec():
@@ -905,25 +824,44 @@ class Util_viewer(QWidget):
                             # print("Measured distance : "+str(measured_dist))
                             dist = np.sqrt(np.sum(np.square(np.array(px)-self.calc_last_3d_pos)))
                             
-                            self.calibration_factor = measured_dist/dist
+                            # self.calibration_factor = measured_dist/dist
+                            self.calibration_factors.append(measured_dist/dist)
+                            
+            
+
                             # print("calibration factor : "+str(self.calibration_factor))
                             self.set_distance(measured_dist)
                             if ctrl_wdg.kf_method == "Regular":
                                 v.measured_distances_regular[t].append(measured_dist)
                             elif ctrl_wdg.kf_method == "Network":
                                 v.measured_distances_network[t].append(measured_dist)
-    
+                                
+                            
+                                                        
                         self.clicked_once = not self.clicked_once
+                        self.bCalibrate = True
+                        
+                        if len(self.calibration_factors) == 3:
+                            # print("Take average")
+                            self.bCalibrate = False
+                            self.calibration_factor = (1/3)*(self.calibration_factors[0] + self.calibration_factors[1] + self.calibration_factors[2])        
+
+
+    
+
                     else:
+                        # print("In ELSE")
                         self.last_pos = np.array([self.x_zoomed, self.y_zoomed])
                         self.calc_last_3d_pos = np.array(px)
                         if ctrl_wdg.kf_method == "Regular":
                             v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
                         elif ctrl_wdg.kf_method == "Network":
                             v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))                        
+                
                     
-
-                else:                
+                             
+                else:
+                    # print("Going to measure ")
                     if self.clicked_once and self.calibration_factor != 1:
                         self.dist = self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
                         # print("Calculated distance : "+str(self.dist))
@@ -942,6 +880,9 @@ class Util_viewer(QWidget):
                         elif ctrl_wdg.kf_method == "Network":
                             v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))
                         self.last_3d_pos = np.array(px)
+                        
+                self.clicked_once = not self.clicked_once
+
                     
             
             elif ctrl_wdg.ui.bAnchor:
@@ -979,9 +920,480 @@ class Util_viewer(QWidget):
                         idx = ctrl_wdg.gl_viewer.obj.curve_obj.curve_count.index(ID)
                         # print("Index : "+str(idx))
                         ctrl_wdg.gl_viewer.obj.curve_obj.translate(vec, idx)                                       
-                
-            
-             
-            self.clicked_once = not self.clicked_once
 
         self.pick = False
+        # self.bCalibrate = True
+        
+    def openContextMenu__(self, position):
+        if self.parent_viewer.obj.ctrl_wdg.ui.bPick:
+            if (self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1) or (self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1) \
+            or (self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1) or (self.parent_viewer.obj.curve_obj.selected_curve_idx != -1):
+                menu = QMenu(self)
+                menu.setAutoFillBackground(True)
+                
+                str_ = "QMenu::item:selected{\
+                    background-color: rgb(110, 110, 120);\
+                    color: rgb(255, 255, 255);\
+                    } QMenu::item:disabled { color:rgb(150, 150, 150); }"
+                
+                menu.setStyleSheet(str_)
+                
+                new_pr = QAction("Translate", self)
+                menu.addAction(new_pr)
+                new_pr.triggered.connect(self.create_translate_panel)
+                new_pr.setShortcut("t")
+        
+                open_pr = QAction("Rotate", self)
+                menu.addAction(open_pr)
+                open_pr.triggered.connect(self.create_rotation_panel)
+                open_pr.setShortcut("r")
+                
+                scale_action = QAction("Scale", self)
+                menu.addAction(scale_action)
+                scale_action.triggered.connect(self.create_scale_panel)
+                scale_action.setShortcut("s")
+
+
+
+                tx_action = QAction("Translate along x-axis", self)
+                menu.addAction(tx_action)
+                tx_action.triggered.connect(self.translate_x_axis)
+                tx_action.setShortcut("ctrl+x")
+                
+                ty_action = QAction("Translate along y-axis", self)
+                menu.addAction(ty_action)
+                ty_action.triggered.connect(self.translate_y_axis)
+                ty_action.setShortcut("ctrl+y")
+
+                tz_action = QAction("Translate along z-axis", self)
+                menu.addAction(tz_action)
+                tz_action.triggered.connect(self.translate_z_axis)
+                tz_action.setShortcut("ctrl+z")
+
+
+                
+                rx_action = QAction("Rotate along x-axis", self)
+                menu.addAction(rx_action)
+                rx_action.triggered.connect(self.rotate_x_axis)
+                rx_action.setShortcut("x")
+
+                ry_action = QAction("Rotate along y-axis", self)
+                menu.addAction(ry_action)
+                ry_action.triggered.connect(self.rotate_y_axis)
+                ry_action.setShortcut("y")
+
+                rz_action = QAction("Rotate along z-axis", self)
+                menu.addAction(rz_action)
+                rz_action.triggered.connect(self.rotate_z_axis)
+                rz_action.setShortcut("z")
+                
+                
+    
+                
+                menu.addAction(new_pr)
+                menu.addAction(open_pr)
+                menu.addAction(scale_action)
+                menu.addAction(tx_action)
+                menu.addAction(ty_action)
+                menu.addAction(tz_action)
+                menu.addAction(rx_action)
+                menu.addAction(ry_action)
+                menu.addAction(rz_action)
+        
+                viewer = self.parent_viewer.sender()
+                self.contextMenuPosition = viewer.mapToGlobal(position)
+                action = menu.exec_(self.contextMenuPosition)
+        
+        
+                # self.bRightClick = False
+                # self.pick = False
+                
+            else:
+                del_primitive_dialogue()
+                
+                
+    def rotate_x_axis(self):
+        self.rotate_along_axis(3, 0, 0)
+
+    def rotate_y_axis(self):
+        self.rotate_along_axis(0, 3, 0)
+
+    def rotate_z_axis(self):
+        self.rotate_along_axis(0, 0, 3)
+        
+    def rotate_x_opposite_axis(self):
+        self.rotate_along_axis(-3, 0, 0)
+
+    def rotate_y_opposite_axis(self):
+        self.rotate_along_axis(0, -3, 0)
+
+    def rotate_z_opposite_axis(self):
+        self.rotate_along_axis(0, 0, -3)
+
+
+    def translate_x_axis(self):
+        self.translate_along_axis(0.5, 0, 0, True)
+
+    def translate_y_axis(self):
+        self.translate_along_axis(0, 0.5, 0, True)
+
+    def translate_z_axis(self):
+        self.translate_along_axis(0, 0, 0.5, True)                    
+
+
+    def create_translate_panel(self):
+        self.translate_dialog = QDialog()
+        self.translate_dialog.setWindowTitle("Translation panel")
+
+        QBtn = QDialogButtonBox.Ok
+
+        buttonBox = QDialogButtonBox(QBtn)
+        buttonBox.accepted.connect(self.translate_dialog.accept)
+        
+        
+        
+        check_box = QCheckBox("Relative values")
+        check_box.setChecked(True)
+        
+        
+        
+        txt = ""
+        if self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
+            self.selected_primitive_loc = self.parent_viewer.obj.ctrl_wdg.rect_obj.centers[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx]
+            txt = "Center of rectangle"
+            
+        elif self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
+            P1 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][0]
+            P2 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][1]
+            P3 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][2]
+            P4 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][3]
+            self.selected_primitive_loc = 0.25*(P1 + P2 + P3 + P4)
+            txt = "Center of quadrilateral"
+            
+        elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
+            self.selected_primitive_loc = 0.5*(self.parent_viewer.obj.cylinder_obj.centers[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx] + self.parent_viewer.obj.cylinder_obj.top_centers[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx])
+            txt = "Center of cylinder"
+        
+        elif self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
+            curve_list = self.parent_viewer.obj.curve_obj.final_bezier[self.parent_viewer.obj.curve_obj.selected_curve_idx]
+            self.selected_primitive_loc = sum(curve_list) / len(curve_list)
+            txt = "Center of curved cylinder"
+            
+        label_1 = QLabel(txt)
+        
+        label_x = QLabel(str(round(self.selected_primitive_loc[0], 3)))
+        label_x.setAlignment(Qt.AlignCenter)
+        label_x.setStyleSheet("border: 1px solid black; ")
+        label_y = QLabel(str(round(self.selected_primitive_loc[1], 3)))
+        label_y.setAlignment(Qt.AlignCenter)
+        label_y.setStyleSheet("border: 1px solid black; ")
+        label_z = QLabel(str(round(self.selected_primitive_loc[2], 3)))
+        label_z.setAlignment(Qt.AlignCenter)
+        label_z.setStyleSheet("border: 1px solid black; ")
+        
+        h_layout_1 = QHBoxLayout()
+        h_layout_1.addWidget(label_x)
+        h_layout_1.addWidget(label_y)
+        h_layout_1.addWidget(label_z)
+
+        label_top = QLabel("Enter translation values ")
+        
+        label_tx = QLabel("Tx : ")
+        label_ty = QLabel("Ty : ")
+        label_tz = QLabel("Tz : ")
+        
+
+        self.tx = QLineEdit("0")
+        self.tx.setValidator(QDoubleValidator())
+        self.tx.setMaxLength(6)
+        self.tx.setFont(QFont("Arial", 10))
+        
+        self.ty = QLineEdit("0")
+        self.ty.setValidator(QDoubleValidator())
+        self.ty.setMaxLength(6)
+        self.ty.setFont(QFont("Arial", 10))
+
+        self.tz = QLineEdit("0")
+        self.tz.setValidator(QDoubleValidator())
+        self.tz.setMaxLength(6)
+        self.tz.setFont(QFont("Arial", 10))
+        
+        h_layout = QHBoxLayout()
+        h_layout.addWidget(label_tx)
+        h_layout.addWidget(self.tx)
+        h_layout.addWidget(label_ty)
+        h_layout.addWidget(self.ty)
+        h_layout.addWidget(label_tz)
+        h_layout.addWidget(self.tz)
+
+        cal_layout = QVBoxLayout()
+        cal_layout.addWidget(label_1)
+        cal_layout.addLayout(h_layout_1)
+        cal_layout.addWidget(QLabel("\n"))
+        cal_layout.addWidget(check_box)
+        cal_layout.addWidget(label_top)
+        cal_layout.addLayout(h_layout)
+        cal_layout.addWidget(buttonBox)
+        self.translate_dialog.setLayout(cal_layout)
+        
+
+        if self.translate_dialog.exec():
+            tx = float(self.tx.text())
+            ty = float(self.ty.text())
+            tz = float(self.tz.text())
+            
+            self.translate_along_axis(tx, ty, tz, check_box.isChecked())
+            
+      
+
+    def translate_along_axis(self, tx, ty, tz, bool_cb):
+        if self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
+            P1 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][0]
+            P2 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][1]
+            P3 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][2]
+            P4 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][3]
+            if bool_cb: 
+                self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(tx*(P2 - P1), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
+                self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(ty*(P4 - P1), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
+                self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(tz*(np.cross((P2 - P1), (P4 - P1))), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
+            else:
+                self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(tx*((P2 - P1)/np.linalg.norm(P2-P1)), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
+                self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(ty*((P4 - P1)/np.linalg.norm(P4-P1)), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
+                self.parent_viewer.obj.ctrl_wdg.rect_obj.translate(tz*(np.cross((P2 - P1)/np.linalg.norm(P2-P1), (P4 - P1)/np.linalg.norm(P4-P1))), self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx)
+
+
+        elif self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
+            P1 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][0]
+            P2 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][1]
+            P3 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][2]
+            P4 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][3]
+            if bool_cb: 
+                self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(tx*(P2 - P1), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
+                self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(ty*(P4 - P1), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
+                self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(tz*(np.cross(P2 - P1, P4 - P1)), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
+            else:
+                self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(tx*((P2 - P1)/np.linalg.norm(P2-P1)), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
+                self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(ty*((P4 - P1)/np.linalg.norm(P4-P1)), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
+                self.parent_viewer.obj.ctrl_wdg.quad_obj.translate(tz*(np.cross((P2 - P1)/np.linalg.norm(P2-P1), (P4 - P1)/np.linalg.norm(P4-P1))), self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx)
+                
+            
+
+        elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
+            P1 = self.parent_viewer.obj.cylinder_obj.centers[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx]
+            P4 = self.parent_viewer.obj.cylinder_obj.top_centers[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx]
+            P3 = self.parent_viewer.obj.cylinder_obj.vertices_cylinder[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx][0]
+            P2 = np.cross(P4 - P1, P3 - P1) + P1
+            if bool_cb:
+                self.parent_viewer.obj.cylinder_obj.translate(tx*(P3 - P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
+                self.parent_viewer.obj.cylinder_obj.translate(ty*(P4 - P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
+                self.parent_viewer.obj.cylinder_obj.translate(tz*(P2 - P1), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
+                
+            else:
+                self.parent_viewer.obj.cylinder_obj.translate(tx*((P3 - P1)/np.linalg.norm(P3-P1)), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
+                self.parent_viewer.obj.cylinder_obj.translate(ty*((P4 - P1)/np.linalg.norm(P4-P1)), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
+                self.parent_viewer.obj.cylinder_obj.translate(tz*((P2 - P1)/np.linalg.norm(P2-P1)), self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx)
+
+
+
+        elif self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
+            base_centers = self.parent_viewer.obj.curve_obj.final_base_centers[self.parent_viewer.obj.curve_obj.selected_curve_idx]
+            center = np.mean(np.asarray(base_centers), axis=0)
+            P1 = base_centers[0]
+            P4 = base_centers[int(0.5*self.parent_viewer.obj.curve_obj.num_pts)]
+            P3 = self.parent_viewer.obj.curve_obj.final_cylinder_bases[self.parent_viewer.obj.curve_obj.selected_curve_idx][0][0]
+            P2 = np.cross(P4 - P1 , P3 - P1) + P1
+            if bool_cb:
+                x_axis = 2*(P3 - P1)
+                y_axis = P4 - P1
+                z_axis = P2 - P1
+            else:
+                x_axis = (P3 - P1)/np.linalg.norm(P3 - P1)
+                y_axis = (P4 - P1)/np.linalg.norm(P4 - P1)
+                z_axis = (P2 - P1)/np.linalg.norm(P2 - P1)
+            self.parent_viewer.obj.curve_obj.translate(tx*x_axis, self.parent_viewer.obj.curve_obj.selected_curve_idx)
+            self.parent_viewer.obj.curve_obj.translate(ty*y_axis, self.parent_viewer.obj.curve_obj.selected_curve_idx)
+            self.parent_viewer.obj.curve_obj.translate(tz*z_axis, self.parent_viewer.obj.curve_obj.selected_curve_idx)
+            
+            
+        else:
+            del_primitive_dialogue()
+
+
+
+        
+
+
+
+    def create_rotation_panel(self):
+        self.rotate_dialog = QDialog()
+        self.rotate_dialog.setWindowTitle("Rotation panel")
+
+        QBtn = QDialogButtonBox.Ok
+
+        buttonBox = QDialogButtonBox(QBtn)
+        buttonBox.accepted.connect(self.rotate_dialog.accept)
+
+        label_top = QLabel("Enter rotation angles in degrees ")
+        
+        label_rx = QLabel("Rx : ")
+        label_ry = QLabel("Ry : ")
+        label_rz = QLabel("Rz : ")
+
+        self.rx = QLineEdit("0")
+        self.rx.setValidator(QDoubleValidator())
+        self.rx.setMaxLength(6)
+        self.rx.setFont(QFont("Arial", 10))
+        
+        self.ry = QLineEdit("0")
+        self.ry.setValidator(QDoubleValidator())
+        self.ry.setMaxLength(6)
+        self.ry.setFont(QFont("Arial", 10))
+
+        self.rz = QLineEdit("0")
+        self.rz.setValidator(QDoubleValidator())
+        self.rz.setMaxLength(6)
+        self.rz.setFont(QFont("Arial", 10))
+        
+        h_layout = QHBoxLayout()
+        h_layout.addWidget(label_rx)
+        h_layout.addWidget(self.rx)
+        h_layout.addWidget(label_ry)
+        h_layout.addWidget(self.ry)
+        h_layout.addWidget(label_rz)
+        h_layout.addWidget(self.rz)
+
+        cal_layout = QVBoxLayout()
+        cal_layout.addWidget(label_top)
+        cal_layout.addLayout(h_layout)
+        cal_layout.addWidget(buttonBox)
+        self.rotate_dialog.setLayout(cal_layout)
+        
+        if self.rotate_dialog.exec():
+            rx = float(self.rx.text())
+            ry = float(self.ry.text())
+            rz = float(self.rz.text())
+            # print(rx, ry, rz)
+            self.rotate_along_axis(rx, ry, rz)
+            
+            
+            
+    def rotate_along_axis(self, rx, ry, rz):
+        if self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
+            P1 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][0]
+            P2 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][1]
+            P3 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][2]
+            P4 = self.parent_viewer.obj.ctrl_wdg.rect_obj.new_points[self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx][3]
+            self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(rx, (P2 - P1)/np.linalg.norm(P2-P1))
+            self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(ry, (P4 - P1)/np.linalg.norm(P4-P1))
+            self.parent_viewer.obj.ctrl_wdg.rect_obj.rotate(rz, np.cross((P2 - P1)/np.linalg.norm(P2-P1), (P4 - P1)/np.linalg.norm(P4-P1)))
+
+        elif self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
+            P1 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][0]
+            P2 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][1]
+            P3 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][2]
+            P4 = self.parent_viewer.obj.ctrl_wdg.quad_obj.all_pts[self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx][3]
+            self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(rx, (P2 - P1)/np.linalg.norm(P2-P1))
+            self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(ry, (P4 - P1)/np.linalg.norm(P4-P1))
+            self.parent_viewer.obj.ctrl_wdg.quad_obj.rotate(rz, np.cross((P2 - P1)/np.linalg.norm(P2-P1), (P4 - P1)/np.linalg.norm(P4-P1)))
+            
+        elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
+            P1 = self.parent_viewer.obj.cylinder_obj.centers[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx]
+            P4 = self.parent_viewer.obj.cylinder_obj.top_centers[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx]
+            P3 = self.parent_viewer.obj.cylinder_obj.vertices_cylinder[self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx][0]
+            P2 = np.cross(P4 - P1, P3 - P1) + P1
+            self.parent_viewer.obj.cylinder_obj.rotate(rx, (P3 - P1)/np.linalg.norm(P3-P1))
+            self.parent_viewer.obj.cylinder_obj.rotate(ry, (P4 - P1)/np.linalg.norm(P4-P1))
+            self.parent_viewer.obj.cylinder_obj.rotate(rz, (P2 - P1)/np.linalg.norm(P2-P1))
+            
+            
+        elif self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
+            base_centers = self.parent_viewer.obj.curve_obj.final_base_centers[self.parent_viewer.obj.curve_obj.selected_curve_idx]
+            center = np.mean(np.asarray(base_centers), axis=0)
+            P1 = base_centers[0]
+            P4 = base_centers[1]
+            P3 = self.parent_viewer.obj.curve_obj.final_cylinder_bases[self.parent_viewer.obj.curve_obj.selected_curve_idx][0][0]
+            P2 = np.cross(P4 - P1 , P3 - P1) + P1
+            x_axis = (P3 - P1)/np.linalg.norm(P3 - P1)
+            y_axis = (P4 - P1)/np.linalg.norm(P4 - P1)
+            z_axis = (P2 - P1)/np.linalg.norm(P2 - P1)
+            
+            self.parent_viewer.obj.curve_obj.rotate(rx, x_axis, center)
+            self.parent_viewer.obj.curve_obj.rotate(ry, y_axis, center)
+            self.parent_viewer.obj.curve_obj.rotate(rz, z_axis, center)
+
+        
+        else:
+            del_primitive_dialogue()
+                
+                
+                
+                
+                
+                
+                
+                
+    def create_scale_panel(self):
+        self.scale_dialog = QDialog()
+        self.scale_dialog.setWindowTitle("scaling panel")
+
+        QBtn = QDialogButtonBox.Ok
+
+        buttonBox = QDialogButtonBox(QBtn)
+        buttonBox.accepted.connect(self.scale_dialog.accept)
+
+        label_top = QLabel("Enter the scale ")
+        
+        label_up = QLabel("Up : ")
+        label_down = QLabel("Down : ")
+
+        self.rx = QLineEdit("1")
+        self.rx.setValidator(QDoubleValidator())
+        self.rx.setMaxLength(6)
+        self.rx.setFont(QFont("Arial", 10))
+        
+        self.ry = QLineEdit("1")
+        self.ry.setValidator(QDoubleValidator())
+        self.ry.setMaxLength(6)
+        self.ry.setFont(QFont("Arial", 10))
+        
+        h_layout = QHBoxLayout()
+        h_layout.addWidget(label_up)
+        h_layout.addWidget(self.rx)
+        h_layout.addWidget(label_down)
+        h_layout.addWidget(self.ry)
+
+        cal_layout = QVBoxLayout()
+        cal_layout.addWidget(label_top)
+        cal_layout.addLayout(h_layout)
+        cal_layout.addWidget(buttonBox)
+        self.scale_dialog.setLayout(cal_layout)
+        
+        if self.scale_dialog.exec():
+            s_up = float(self.rx.text())
+            s_down = float(self.ry.text())
+            # print(rx, ry, rz)
+            
+            if self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
+                self.parent_viewer.obj.ctrl_wdg.rect_obj.scale_up(s_up)
+                self.parent_viewer.obj.ctrl_wdg.rect_obj.scale_down(s_down)
+
+
+            elif self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
+                self.parent_viewer.obj.ctrl_wdg.quad_obj.scale_up(s_up)
+                self.parent_viewer.obj.ctrl_wdg.quad_obj.scale_down(s_down)
+                
+                
+            elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
+                self.parent_viewer.obj.cylinder_obj.scale_up(s_up)
+                self.parent_viewer.obj.cylinder_obj.scale_down(s_down)
+                
+                
+            elif self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
+                self.parent_viewer.obj.curve_obj.scale_up(s_up)
+                self.parent_viewer.obj.curve_obj.scale_down(s_down)
+
+
+            else:
+                del_primitive_dialogue()
+
+            

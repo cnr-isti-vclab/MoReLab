@@ -23,8 +23,8 @@ class Features(QWidget):
                                   """)
         self.btn_sfm.clicked.connect(self.compute_sfm)
         self.img_indices = []
-        self.ply_pts = []
         self.all_ply_pts = []
+        self.ply_pts = []
         self.camera_poses = []
         self.camera_projection_mat = []
         self.global_indices = []
@@ -32,6 +32,7 @@ class Features(QWidget):
         self.K = np.eye(3)
         self.cylinder_obj = Cylinder_Tool(self.ctrl_wdg)
         self.curve_obj = Curve_Tool(self.ctrl_wdg)
+        
         
         
     def initialize_mats(self):
@@ -51,135 +52,68 @@ class Features(QWidget):
         
         if self.ctrl_wdg.kf_method == "Regular":
             v.init_3D_regular(len(v.key_frames_regular))
-            for t in range(len(v.key_frames_regular)):
+            for t in range(len(v.features_regular)):
                 for i, fc in enumerate(v.features_regular[t]):
                     self.init_3D_feature_regular(v, t)
 
 
         elif self.ctrl_wdg.kf_method == "Network":
             v.init_3D_network(len(v.key_frames_network))
-            for t in range(len(v.key_frames_network)):
+            for t in range(len(v.features_network)):
                 for i, fc in enumerate(v.features_network[t]):
                     self.init_3D_feature_network(v, t)
 
         
     def get_correspondent_pts(self, v):
-        img_indices = []
-        all_locs = []
         final_visible_labels = []
         final_all_pts = []
         final_img_indices = []
-        visible_labels = []
-        all_pts = []
-        all_Xs = []
-        all_Ys = []
         num_labels_on_images = []
+        bReturn = False
+        tmp2, tmp3 = [], []
+        
         if self.ctrl_wdg.kf_method == "Regular":
-            if len(v.features_regular) > 0:
-                for i in range(max(v.n_objects_kf_regular)):
-                    ls, fr, Xs, Ys = [], [], [], []
-                    for j, fc_list in enumerate(v.features_regular):
-                        if len(fc_list) > 0 and len(v.hide_regular[j]) > i:
-                            if not v.hide_regular[j][i]:
-                                # print("Label : "+str(fc_list[i].label))
-                                fc = fc_list[i]
-                                ls.append(int(fc.label))
-                                fr.append(j)
-                                Xs.append(self.feature_panel.transform_x(fc.x_loc))
-                                Ys.append(self.feature_panel.transform_y(fc.y_loc))
+            for i,hr in enumerate(v.hide_regular):
+                for j,hide in enumerate(hr):
+                    fc = v.features_regular[i][j]
+                    if not hide:
+                        tmp2.append(i)
+                        tmp3.append(int(fc.label))
 
-                    visible_labels.append(ls)
-                    all_Xs.append(Xs)
-                    all_Ys.append(Ys)
-                    img_indices.append(fr)
                     
         elif self.ctrl_wdg.kf_method == "Network":
-            if len(v.features_network) > 0:
-                for i in range(max(v.n_objects_kf_network)):
-                    ls, fr, Xs, Ys = [], [], [], []
-                    for j, fc_list in enumerate(v.features_network):
-                        if len(fc_list) > 0 and len(v.hide_network[j]) > i:
-                            if not v.hide_network[j][i]:
-                                # print("Label : "+str(fc_list[i].label))
-                                fc = fc_list[i]
-                                ls.append(int(fc.label))
-                                fr.append(j)
-                                Xs.append(self.feature_panel.transform_x(fc.x_loc))
-                                Ys.append(self.feature_panel.transform_y(fc.y_loc))
-
-                    visible_labels.append(ls)
-                    all_Xs.append(Xs)
-                    all_Ys.append(Ys)
-                    img_indices.append(fr)
+            for i,hr in enumerate(v.hide_network):
+                for j,hide in enumerate(hr):
+                    if not hide:
+                        tmp2.append(i)
+                        tmp3.append(int(fc.label))
 
 
-        if len(visible_labels) > 0:
-            tmp1, tmp2, tmp3, tmp4, tmp5 = [], [], [], [], []
-            for i, labels in enumerate(visible_labels):
-                if len(labels) > 1:
-                    counts, unique_labels = self.feature_panel.find_unique_elements(labels)
-                    k_ind = 0
-                    num_ft = []
-                    frame_indices = []
-                    xs, ys = [], []
-                    l1 = []
-                    for j, count in enumerate(counts):
-                        new_frames = []
-                        new_Xs = []
-                        new_Ys = []
-                        new_l = unique_labels[j]
-                        for k in range(count):
-                            new_frames.append(img_indices[i][k_ind])
-                            new_Xs.append(all_Xs[i][k_ind])
-                            new_Ys.append(all_Ys[i][k_ind])
-                            k_ind += 1
-    
+
+        if len(tmp2) > 0:         
+            final_img_indices_set =set(tmp2)
+            final_img_indices = sorted(final_img_indices_set)
+            
+            all_labels_set = set(tmp3)            
+            all_labels = sorted(all_labels_set)
+            
+            for i, img_idx in enumerate(final_img_indices):
+                cnt_labels = 0
+                tmp6, tmp7 = [], []  
+                for j, label in enumerate(all_labels):
+                    found, idx = self.feature_panel.get_feature_index(label, img_idx)
+                    if found:
+                        tmp6.append(label)
                         
-                        if len(new_frames) > 1:
-                            frame_indices.append(new_frames)
-                            xs.append(new_Xs)
-                            ys.append(new_Ys)
-                            num_ft.append(len(new_frames))
-                            for mm in range(len(new_frames)):
-                                l1.append(new_l)
-                            tmp3.append(l1)                        
+                        if self.ctrl_wdg.kf_method == "Regular":
+                            tmp7.append([self.feature_panel.transform_x(v.features_regular[img_idx][idx].x_loc), self.feature_panel.transform_y(v.features_regular[img_idx][idx].y_loc)])
 
-                
-                
-                    if len(frame_indices) > 0:
-                        # print(frame_indices)
-                        # print(frame_indices[0])
-                        tmp2.append(frame_indices[0])
-                        tmp1.append(num_ft[0])
-
-                        tmp4.append(xs[0])
-                        tmp5.append(ys[0])
-                            
-            
-            final_img_indices = {x for l in tmp2 for x in l}
-            
-            all_labels = {x for l in tmp3 for x in l}
-
-            if len(tmp1) < 8:
-                numFeature_dialogue()
-                return np.zeros((1,1)), [], []         # Dummy return 
-            else:          
-                for i, img_idx in enumerate(final_img_indices):
-                    cnt_labels = 0
-                    tmp6, tmp7 = [], []  
-                    for j, label in enumerate(all_labels):
-                        found, idx = self.feature_panel.get_feature_index(label, img_idx)
-                        if found:
-                            tmp6.append(idx)
-                            
-                            if self.ctrl_wdg.kf_method == "Regular":
-                                tmp7.append([self.feature_panel.transform_x(v.features_regular[img_idx][idx].x_loc), self.feature_panel.transform_y(v.features_regular[img_idx][idx].y_loc)])
-
-                            elif self.ctrl_wdg.kf_method == "Network":
-                                tmp7.append([self.feature_panel.transform_x(v.features_network[img_idx][idx].x_loc), self.feature_panel.transform_y(v.features_network[img_idx][idx].y_loc)])
-                            
-                            cnt_labels += 1
-                            
+                        elif self.ctrl_wdg.kf_method == "Network":
+                            tmp7.append([self.feature_panel.transform_x(v.features_network[img_idx][idx].x_loc), self.feature_panel.transform_y(v.features_network[img_idx][idx].y_loc)])
+                        
+                        cnt_labels += 1
+                        
+                if cnt_labels > 7:                
                     num_labels_on_images.append(cnt_labels)
                     
                     a = np.asarray(tmp6)
@@ -191,37 +125,67 @@ class Features(QWidget):
                     # print(tmp_arr.shape)
                     final_all_pts.append(tmp_arr)
                     
-                    
-                    # print("=================================================")
-
-                    
-        return final_all_pts, list(final_img_indices), final_visible_labels
+            # print("Number of labels on images")
+            # print(num_labels_on_images)
+            
+            if len(num_labels_on_images) < 2:
+                bReturn = True
+                
+        if bReturn:
+            numFeature_dialogue()
+            return np.zeros((1,1)), [], [], []         # Dummy return
+        
+        else:
+            return final_all_pts, final_img_indices, final_visible_labels, num_labels_on_images
 
 
         
     def compute_sfm(self):
 
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
-        all_pts, img_indices, visible_labels = self.get_correspondent_pts(v)
+        all_pts, img_indices, visible_labels, num_labels = self.get_correspondent_pts(v)
 
         self.K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
         
         if len(img_indices) > 0:
-            if self.ctrl_wdg.kf_method == "Regular":
-                self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][0] = True
-            elif self.ctrl_wdg.kf_method == "Network":
-                self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][1] = True
-        
+            
+            self.initialize_mats()
+            
             print("Performing Bundle adjustment")
             w = Dialog()
             w.show()
         
-            opt_cameras, opt_points, all_points = bundle_adjustment(all_pts, visible_labels, self.K)
-            self.initialize_mats()
-        
-            self.all_ply_pts.append(all_points)
+            opt_cameras, all_points, opt_points = bundle_adjustment(all_pts, visible_labels, self.K, img_indices)
+
             w.done(0)
             print("Bundle adjustment has been computed.")
+            
+            self.all_ply_pts.append(all_points)
+            self.ply_pts.append(opt_points)
+            
+            if self.ctrl_wdg.kf_method == "Regular":
+                self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][0] = True
+                        
+            elif self.ctrl_wdg.kf_method == "Network":
+                self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][1] = True
+                
+            # print(all_points.shape)
+            # for i, labels in enumerate(visible_labels):
+            #     print(labels)
+            
+            for i, img_idx in enumerate(img_indices):
+                for j in range(all_points.shape[0]):
+                    for k, fc in enumerate(v.features_regular[img_idx]):
+                        if not v.hide_regular[img_idx][k]:
+                            if j == int(fc.label) - 1:
+                                # print(j, k)
+                                v.mapping_2d_3d_regular[img_idx].append(j)
+                                
+                # print(v.mapping_2d_3d_regular[img_idx])
+                                
+                                
+                    
+
         
             self.img_indices = img_indices
             self.ctrl_wdg.populate_scrollbar(self.ctrl_wdg.selected_thumbnail_index)
@@ -237,11 +201,9 @@ class Features(QWidget):
                 cam_pos_list.append([cm[0,0], cm[0,1], cm[0,2]])
         
             array_camera_poses = np.asarray(cam_pos_list)
-        
+            
             self.camera_poses.append(array_camera_poses)
-            ply_pts = np.concatenate((opt_points, array_camera_poses), axis=0)
-            # print(ply_pts)
-            self.ply_pts.append(opt_points)
+
 
 
     def init_3D_feature_regular(self, v, t):
@@ -257,34 +219,37 @@ class Features(QWidget):
 
         
     def add_feature(self,x,y,label=-1):
-        if self.ctrl_wdg.ui.cross_hair:
-            t = self.ctrl_wdg.selected_thumbnail_index
-            m_idx = self.ctrl_wdg.mv_panel.selected_movie_idx
-            v = self.ctrl_wdg.mv_panel.movie_caps[m_idx]
-            # print("===========================================")
+        t = self.ctrl_wdg.selected_thumbnail_index
+        m_idx = self.ctrl_wdg.mv_panel.selected_movie_idx
+        v = self.ctrl_wdg.mv_panel.movie_caps[m_idx]
+        # print("===========================================")
 
-            if self.ctrl_wdg.kf_method == "Regular":
-                v.n_objects_kf_regular[t] += 1
-                if label == -1:    
-                    label = v.n_objects_kf_regular[t]
-                fc = FeatureCrosshair(x, y, label)
-                v.features_regular[t].append(fc)
-                # print("-------------------------------------")
-                v.hide_regular[t].append(False)
-                self.init_3D_feature_regular(v, t)
+        if self.ctrl_wdg.kf_method == "Regular":
+            v.n_objects_kf_regular[t] += 1
+            if label == -1:    
+                label = v.n_objects_kf_regular[t]
+            fc = FeatureCrosshair(x, y, label)
+            v.features_regular[t].append(fc)
+            # print("-------------------------------------")
+            v.hide_regular[t].append(False)
+            self.init_3D_feature_regular(v, t)
 
-            elif self.ctrl_wdg.kf_method == "Network":
-                v.n_objects_kf_network[t] += 1
-                if label == -1:
-                    label = v.n_objects_kf_network[t]
-                fc = FeatureCrosshair(x, y, label)
-                v.features_network[t].append(fc)
-                v.hide_network[t].append(False)
-                self.init_3D_feature_network(v, t)
+        elif self.ctrl_wdg.kf_method == "Network":
+            v.n_objects_kf_network[t] += 1
+            if label == -1:
+                label = v.n_objects_kf_network[t]
+            fc = FeatureCrosshair(x, y, label)
+            v.features_network[t].append(fc)
+            v.hide_network[t].append(False)
+            self.init_3D_feature_network(v, t)
 
 
-            self.feature_panel.selected_feature_idx = -1
-            self.feature_panel.display_data()
+        self.feature_panel.selected_feature_idx = -1
+        self.feature_panel.display_data()
+    
+
+            
+            
             
     def count_visible_features(self, img_idx):
         m_idx = self.ctrl_wdg.mv_panel.selected_movie_idx
@@ -306,15 +271,15 @@ class Features(QWidget):
         t = self.ctrl_wdg.selected_thumbnail_index            
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         i = self.feature_panel.selected_feature_idx
-        print("Delete this feature : "+str(i))
+        # print("Delete this feature : "+str(i))
         if self.ctrl_wdg.ui.cross_hair:
             if i != -1:
                 if self.ctrl_wdg.kf_method == "Regular":
                     v.hide_regular[t][i] = True
+                    v.count_deleted_regular[t].append(i)
                     
                 elif self.ctrl_wdg.kf_method == "Network":
                     v.hide_network[t][i] = True
-                    
                     
                 self.feature_panel.selected_feature_idx = -1
                 self.feature_panel.display_data()
@@ -331,7 +296,7 @@ class Features(QWidget):
             self.feature_panel.display_data()
 
     def rename_feature(self, x, y):
-        print("Double mouse right click")
+        # print("Double mouse right click")
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         t = self.ctrl_wdg.selected_thumbnail_index
         bExit = False
@@ -360,12 +325,15 @@ class Features(QWidget):
                         self.create_renaming_panel()
                         if self.rename_dialog.exec():
                             new_label = int(self.e1.text())
-                            found, idx = self.feature_panel.get_feature_index(new_label, t)
-                            if found:
-                                duplicate_dialogue()
+                            if new_label > 0:
+                                found, idx = self.feature_panel.get_feature_index(new_label, t)
+                                if found:
+                                    duplicate_dialogue()
+                                else:
+                                    fc.label = str(new_label)
+                                bExit = True
                             else:
-                                fc.label = str(new_label)
-                            bExit = True
+                                label_dialogue()
                                 
         self.feature_panel.display_data()
 
@@ -380,7 +348,7 @@ class Features(QWidget):
         buttonBox = QDialogButtonBox(QBtn)
         buttonBox.accepted.connect(self.rename_dialog.accept)
 
-        label = QLabel("Enter the new label of the feature : ")
+        label = QLabel("Enter the new label of the feature greater than 0 : ")
 
         self.e1 = QLineEdit("1")
         self.e1.setValidator(QIntValidator())
