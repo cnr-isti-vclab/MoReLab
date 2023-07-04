@@ -195,7 +195,7 @@ class Rectangle_Tool(QObject):
             self.deleted[idx] = True
             self.selected_rect_idx = -1
                     
-    def scale_up(self, scale):
+    def scale(self, scale):
         i = self.selected_rect_idx
         if i != -1:
             # print("Scaling up "+str(i)+"st/th rect")
@@ -206,15 +206,6 @@ class Rectangle_Tool(QObject):
             self.new_points[i] = self.get_rect_points(i)
 
 
-    def scale_down(self, scale):
-        i = self.selected_rect_idx
-        if i != -1:
-            # print("Scaling down "+str(i)+"st/th rect")
-            self.max_Ts[i] /= scale
-            self.min_Ts[i] /= scale
-            self.max_Bs[i] /= scale
-            self.min_Bs[i] /= scale
-            self.new_points[i] = self.get_rect_points(i)
         
     def rotate(self, angle_degrees, rotation_axis):
         if self.selected_rect_idx != -1:

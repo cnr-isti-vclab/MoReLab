@@ -5,6 +5,7 @@ from scipy.spatial import distance
 from util.util import straight_line_dialogue
 import numpy as np
 from scipy.spatial.transform import Rotation as R
+import copy
 
 
 class Cylinder_Tool(QObject):
@@ -23,6 +24,7 @@ class Cylinder_Tool(QObject):
         self.base_circles = []
         self.sectorCount = 32
         self.cylinder_count = []
+        self.scaling_factor = 1.3
         self.colors = [(0,0,0)]
         self.b_vecs = []
         self.t_vecs = []
@@ -350,64 +352,47 @@ class Cylinder_Tool(QObject):
                     self.top_vertices[idx][i] = pt + axis
 
 
-    def scale_up(self, scale):
+    def scale(self, scale):
         i = self.selected_cylinder_idx
-        # print("Index : "+str(i))
+        # print("Scale : "+str(scale))
         if i != -1:
+            center = self.centers[i]
+            vertices = self.vertices_cylinder[i]
+            top = self.top_centers[i]
+            top_vertices = self.top_vertices[i]
+            middle = 0.5*(center + top)
+            
             radius = self.radii[i] * scale
             self.radii[i] = radius
-            # print("Radius : "+str(radius))
-            cyl_axis = (1/scale)*(self.top_centers[i] - self.centers[i])
-            self.centers[i] = self.centers[i] - cyl_axis
-            self.top_centers[i] = self.top_centers[i] + cyl_axis
+            
+            if scale < 1:
+                axis1 = (1 - scale)*(middle - center)
+                axis2 = (1 - scale)*(middle - top)
+            else:
+                axis1 = (scale-1)*(center - middle)
+                axis2 = (scale-1)*(top - middle)
+            
+            self.centers[i] = center + axis1
+            self.top_centers[i] = top + axis2
+            
             height = np.linalg.norm(self.top_centers[i] - self.centers[i])
             # print("Height : "+str(height))
-            center = self.centers[i]
+
             sectorStep = 2 * np.pi / self.sectorCount
             t_vec, b_vec, N = self.t_vecs[i], self.b_vecs[i], self.Ns[i]
 
             if self.bool_cylinder_type[i]:
                 for j in range(self.sectorCount + 1):
                     sectorAngle = j * sectorStep  # theta
-                    self.vertices_cylinder[i][self.sectorCount - j] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
-                        sectorAngle) * t_vec
-                    self.top_vertices[i][self.sectorCount - j] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
-                        sectorAngle) * t_vec + height * N
-
+                    self.vertices_cylinder[i][j] = self.centers[i] + radius * np.cos(sectorAngle) * t_vec + radius * np.sin(sectorAngle) * b_vec
+                    self.top_vertices[i][j] = self.centers[i] + radius*np.cos(sectorAngle)*t_vec + radius*np.sin(sectorAngle)*b_vec + height*N
+                    
             else:
+                # print("else")
                 for j in range(self.sectorCount + 1):
                     sectorAngle = j * sectorStep  # theta
-                    self.vertices_cylinder[i][j] = center + radius * np.cos(sectorAngle) * b_vec + radius*np.sin(sectorAngle) * t_vec
-                    self.top_vertices[i][j] = center + radius * np.cos(sectorAngle) * b_vec + radius*np.sin(sectorAngle) * t_vec - height * N
-
-
-    def scale_down(self, scale):
-        i = self.selected_cylinder_idx
-        if i != -1:
-            radius = self.radii[i] / scale
-            self.radii[i] = radius
-
-            cyl_axis = (1/scale)*(self.top_centers[i] - self.centers[i])
-            self.centers[i] = self.centers[i] + cyl_axis
-            self.top_centers[i] = self.top_centers[i] - cyl_axis
-
-            height = np.linalg.norm(self.top_centers[i] - self.centers[i])
-            # print(height)
-            center = self.centers[i]
-            sectorStep = 2 * np.pi / self.sectorCount
-            t_vec, b_vec, N = self.t_vecs[i], self.b_vecs[i], self.Ns[i]
-
-            if self.bool_cylinder_type[i]:
-                for j in range(self.sectorCount + 1):
-                    sectorAngle = j * sectorStep  # theta
-                    self.vertices_cylinder[i][self.sectorCount - j] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
-                        sectorAngle) * t_vec
-                    self.top_vertices[i][self.sectorCount - j] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
-                        sectorAngle) * t_vec + height * N
-
-            else:
-                for j in range(self.sectorCount + 1):
-                    sectorAngle = j * sectorStep  # theta
-                    self.vertices_cylinder[i][j] = center + radius * np.cos(sectorAngle) * b_vec + radius*np.sin(sectorAngle) * t_vec
-                    self.top_vertices[i][j] = center + radius * np.cos(sectorAngle) * b_vec + radius*np.sin(sectorAngle) * t_vec - height * N
-
+                    self.vertices_cylinder[i][j] = self.centers[i] + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(sectorAngle) * t_vec
+                    self.top_vertices[i][j] = self.centers[i] + radius*np.cos(sectorAngle)*b_vec + radius*np.sin(sectorAngle)*t_vec - height*N                
+                
+                
+                

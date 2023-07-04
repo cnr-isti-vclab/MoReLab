@@ -295,20 +295,30 @@ class Util_viewer(QWidget):
                     self.rotate_z_opposite_axis()
                 else:
                     self.rotate_z_axis()
-                    
-            elif event.key() == Qt.Key_Left:
-                self.translate_along_axis(-1, 0, 0, True)
 
             elif event.key() == Qt.Key_Right:
-                self.translate_along_axis(1, 0, 0, True)
+                self.translate_x_axis()
+
+            elif event.key() == Qt.Key_Left:
+                self.translate_negative_x_axis()
 
             elif event.key() == Qt.Key_Up:
-                self.translate_along_axis(0, 1, 0, True)
+                self.translate_y_axis()
 
             elif event.key() == Qt.Key_Down:
-                self.translate_along_axis(0, -1, 0, True)
+                self.translate_negative_y_axis()
 
-                
+            elif event.key() == Qt.Key_W:
+                self.translate_z_axis()
+
+            elif event.key() == Qt.Key_E:
+                self.translate_negative_z_axis()
+
+            elif event.key() == Qt.Key_Plus:
+                self.scale_up()
+
+            elif event.key() == Qt.Key_Minus:
+                self.scale_down()                
                     
                     
             
@@ -559,10 +569,6 @@ class Util_viewer(QWidget):
                 # print(len(v.features_regular))
                 if len(v.features_regular) > 0:
                     for i, fc in enumerate(v.features_regular[t]):
-                        # print(i)
-                        #
-                        # print(v.hide_regular[t][i])
-                        # print("------------------------------------------")
                         if not v.hide_regular[t][i]:
                             painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2 , fc.y_loc , fc.x_loc + self.ft_dist/2 , fc.y_loc))
                             painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
@@ -712,7 +718,6 @@ class Util_viewer(QWidget):
                     assign_depth = v.bAssignDepth_network[t]
 
                 if assign_depth:
-                    # print("Assign depth")
                     if ctrl_wdg.kf_method == "Regular":
                         v.curve_3d_point_regular[t].append(np.array(px))
 
@@ -824,8 +829,8 @@ class Util_viewer(QWidget):
                             # print("Measured distance : "+str(measured_dist))
                             dist = np.sqrt(np.sum(np.square(np.array(px)-self.calc_last_3d_pos)))
                             
-                            # self.calibration_factor = measured_dist/dist
-                            self.calibration_factors.append(measured_dist/dist)
+                            self.calibration_factor = measured_dist/dist
+                            # self.calibration_factors.append(measured_dist/dist)
                             
             
 
@@ -839,12 +844,12 @@ class Util_viewer(QWidget):
                             
                                                         
                         self.clicked_once = not self.clicked_once
-                        self.bCalibrate = True
+                        # self.bCalibrate = True
                         
-                        if len(self.calibration_factors) == 3:
-                            # print("Take average")
-                            self.bCalibrate = False
-                            self.calibration_factor = (1/3)*(self.calibration_factors[0] + self.calibration_factors[1] + self.calibration_factors[2])        
+                        # if len(self.calibration_factors) == 3:
+                        #     # print("Take average")
+                        #     self.bCalibrate = False
+                        #     self.calibration_factor = (1/3)*(self.calibration_factors[0] + self.calibration_factors[1] + self.calibration_factors[2])        
 
 
     
@@ -958,36 +963,76 @@ class Util_viewer(QWidget):
                 tx_action = QAction("Translate along x-axis", self)
                 menu.addAction(tx_action)
                 tx_action.triggered.connect(self.translate_x_axis)
-                tx_action.setShortcut("ctrl+x")
+                tx_action.setShortcut("Right")
+                                
+                tx_opposite_action = QAction("Translate along negative x-axis", self)
+                menu.addAction(tx_opposite_action)
+                tx_opposite_action.triggered.connect(self.translate_negative_x_axis)
+                tx_opposite_action.setShortcut("Left")
                 
                 ty_action = QAction("Translate along y-axis", self)
                 menu.addAction(ty_action)
                 ty_action.triggered.connect(self.translate_y_axis)
-                ty_action.setShortcut("ctrl+y")
+                ty_action.setShortcut("Up")
+
+                ty_opposite_action = QAction("Translate along negative y-axis", self)
+                menu.addAction(ty_opposite_action)
+                ty_opposite_action.triggered.connect(self.translate_negative_y_axis)
+                ty_opposite_action.setShortcut("Down")
 
                 tz_action = QAction("Translate along z-axis", self)
                 menu.addAction(tz_action)
                 tz_action.triggered.connect(self.translate_z_axis)
-                tz_action.setShortcut("ctrl+z")
+                tz_action.setShortcut("w")
+
+                tz_opposite_action = QAction("Translate along negative z-axis", self)
+                menu.addAction(tz_opposite_action)
+                tz_opposite_action.triggered.connect(self.translate_negative_z_axis)
+                tz_opposite_action.setShortcut("e")
 
 
                 
-                rx_action = QAction("Rotate along x-axis", self)
+                rx_action = QAction("Rotate around x-axis", self)
                 menu.addAction(rx_action)
                 rx_action.triggered.connect(self.rotate_x_axis)
                 rx_action.setShortcut("x")
 
-                ry_action = QAction("Rotate along y-axis", self)
+                rx_opposite_action = QAction("Rotate around negative x-axis", self)
+                menu.addAction(rx_opposite_action)
+                rx_opposite_action.triggered.connect(self.rotate_x_opposite_axis)
+                rx_opposite_action.setShortcut("ctrl+x")
+
+
+                ry_action = QAction("Rotate around y-axis", self)
                 menu.addAction(ry_action)
                 ry_action.triggered.connect(self.rotate_y_axis)
                 ry_action.setShortcut("y")
 
-                rz_action = QAction("Rotate along z-axis", self)
+                ry_opposite_action = QAction("Rotate around negative y-axis", self)
+                menu.addAction(ry_opposite_action)
+                ry_opposite_action.triggered.connect(self.rotate_y_opposite_axis)
+                ry_opposite_action.setShortcut("ctrl+y")
+
+
+                rz_action = QAction("Rotate around z-axis", self)
                 menu.addAction(rz_action)
                 rz_action.triggered.connect(self.rotate_z_axis)
                 rz_action.setShortcut("z")
                 
+                rz_opposite_action = QAction("Rotate around negative z-axis", self)
+                menu.addAction(rz_opposite_action)
+                rz_opposite_action.triggered.connect(self.rotate_z_opposite_axis)
+                rz_opposite_action.setShortcut("ctrl+z")
                 
+                s_up_action = QAction("Scale Up", self)
+                menu.addAction(s_up_action)
+                s_up_action.triggered.connect(self.scale_up)
+                s_up_action.setShortcut("+")
+                
+                s_down_action = QAction("Scale Down", self)
+                menu.addAction(s_down_action)
+                s_down_action.triggered.connect(self.scale_down)
+                s_down_action.setShortcut("-")
     
                 
                 menu.addAction(new_pr)
@@ -996,9 +1041,19 @@ class Util_viewer(QWidget):
                 menu.addAction(tx_action)
                 menu.addAction(ty_action)
                 menu.addAction(tz_action)
+                menu.addAction(tx_opposite_action)
+                menu.addAction(ty_opposite_action)
+                menu.addAction(tz_opposite_action)
+                
                 menu.addAction(rx_action)
                 menu.addAction(ry_action)
                 menu.addAction(rz_action)
+                menu.addAction(rx_opposite_action)
+                menu.addAction(ry_opposite_action)
+                menu.addAction(rz_opposite_action)
+                
+                menu.addAction(s_up_action)
+                menu.addAction(s_down_action)
         
                 viewer = self.parent_viewer.sender()
                 self.contextMenuPosition = viewer.mapToGlobal(position)
@@ -1011,6 +1066,27 @@ class Util_viewer(QWidget):
             else:
                 del_primitive_dialogue()
                 
+
+
+
+    def translate_x_axis(self):
+        self.translate_along_axis(0.5, 0, 0, True)
+
+    def translate_y_axis(self):
+        self.translate_along_axis(0, 0.5, 0, True)
+
+    def translate_z_axis(self):
+        self.translate_along_axis(0, 0, 0.5, True)                    
+
+    def translate_negative_x_axis(self):
+        self.translate_along_axis(-0.5, 0, 0, True)
+
+    def translate_negative_y_axis(self):
+        self.translate_along_axis(0, -0.5, 0, True)
+
+    def translate_negative_z_axis(self):
+        self.translate_along_axis(0, 0, -0.5, True) 
+
                 
     def rotate_x_axis(self):
         self.rotate_along_axis(3, 0, 0)
@@ -1031,15 +1107,11 @@ class Util_viewer(QWidget):
         self.rotate_along_axis(0, 0, -3)
 
 
-    def translate_x_axis(self):
-        self.translate_along_axis(0.5, 0, 0, True)
+    def scale_up(self):
+        self.scale_primitive(1.05)
 
-    def translate_y_axis(self):
-        self.translate_along_axis(0, 0.5, 0, True)
-
-    def translate_z_axis(self):
-        self.translate_along_axis(0, 0, 0.5, True)                    
-
+    def scale_down(self):
+        self.scale_primitive(0.95)
 
     def create_translate_panel(self):
         self.translate_dialog = QDialog()
@@ -1325,9 +1397,7 @@ class Util_viewer(QWidget):
         else:
             del_primitive_dialogue()
                 
-                
-                
-                
+ 
                 
                 
                 
@@ -1342,58 +1412,49 @@ class Util_viewer(QWidget):
         buttonBox.accepted.connect(self.scale_dialog.accept)
 
         label_top = QLabel("Enter the scale ")
-        
-        label_up = QLabel("Up : ")
-        label_down = QLabel("Down : ")
 
         self.rx = QLineEdit("1")
-        self.rx.setValidator(QDoubleValidator())
-        self.rx.setMaxLength(6)
+        self.rx.setValidator(QDoubleValidator(
+                0.0000001, # bottom
+                100.0, # top
+                6, # decimals 
+                notation=QDoubleValidator.StandardNotation
+            ))
         self.rx.setFont(QFont("Arial", 10))
         
-        self.ry = QLineEdit("1")
-        self.ry.setValidator(QDoubleValidator())
-        self.ry.setMaxLength(6)
-        self.ry.setFont(QFont("Arial", 10))
         
-        h_layout = QHBoxLayout()
-        h_layout.addWidget(label_up)
-        h_layout.addWidget(self.rx)
-        h_layout.addWidget(label_down)
-        h_layout.addWidget(self.ry)
+
 
         cal_layout = QVBoxLayout()
         cal_layout.addWidget(label_top)
-        cal_layout.addLayout(h_layout)
+        cal_layout.addWidget(self.rx)
         cal_layout.addWidget(buttonBox)
         self.scale_dialog.setLayout(cal_layout)
         
         if self.scale_dialog.exec():
             s_up = float(self.rx.text())
-            s_down = float(self.ry.text())
-            # print(rx, ry, rz)
+            self.scale_primitive(s_up)
             
-            if self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
-                self.parent_viewer.obj.ctrl_wdg.rect_obj.scale_up(s_up)
-                self.parent_viewer.obj.ctrl_wdg.rect_obj.scale_down(s_down)
-
-
-            elif self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
-                self.parent_viewer.obj.ctrl_wdg.quad_obj.scale_up(s_up)
-                self.parent_viewer.obj.ctrl_wdg.quad_obj.scale_down(s_down)
-                
-                
-            elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
-                self.parent_viewer.obj.cylinder_obj.scale_up(s_up)
-                self.parent_viewer.obj.cylinder_obj.scale_down(s_down)
-                
-                
-            elif self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
-                self.parent_viewer.obj.curve_obj.scale_up(s_up)
-                self.parent_viewer.obj.curve_obj.scale_down(s_down)
-
-
-            else:
-                del_primitive_dialogue()
-
+            
+    
+    def scale_primitive(self, s_up):
+        # print("Scale : "+str(s_up))
+        if self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
+            self.parent_viewer.obj.ctrl_wdg.rect_obj.scale(s_up)
+    
+    
+        elif self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
+            self.parent_viewer.obj.ctrl_wdg.quad_obj.scale(s_up)
+            
+            
+        elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
+            self.parent_viewer.obj.cylinder_obj.scale(s_up)
+            
+            
+        elif self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
+            self.parent_viewer.obj.curve_obj.scale(s_up)
+    
+        else:
+            del_primitive_dialogue()
+    
             

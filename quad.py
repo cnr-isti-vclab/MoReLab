@@ -127,7 +127,7 @@ class Quad_Tool(QObject):
                 self.all_pts[idx][i] = axis + pt
 
 
-    def scale_up(self, scale):
+    def scale(self, scale):
         i = self.selected_quad_idx
         if i != -1:
             pts_list = self.all_pts[i]
@@ -145,20 +145,4 @@ class Quad_Tool(QObject):
             self.all_pts[i][1] = self.all_pts[i][1] + scale*vec6
 
 
-    def scale_down(self, scale):
-        i = self.selected_quad_idx
-        if i != -1:
-            pts_list = self.all_pts[i]
-
-            vec1, vec2, vec3, vec4 = self.vector1s[i][0], self.vector1s[i][1], self.vector1s[i][2], self.vector1s[i][3]
-            self.all_pts[i][3] = pts_list[3] - scale*vec3
-            self.all_pts[i][2] = pts_list[2] - scale*vec4
-            self.all_pts[i][0] = pts_list[0] - scale*vec1
-            self.all_pts[i][1] = pts_list[1] - scale*vec2
-
-            vec5, vec6, vec7, vec8 = self.vector1s[i][4], self.vector1s[i][5], self.vector1s[i][6], self.vector1s[i][7]
-            self.all_pts[i][3] = self.all_pts[i][3] - scale*vec7
-            self.all_pts[i][2] = self.all_pts[i][2] - scale*vec8
-            self.all_pts[i][0] = self.all_pts[i][0] - scale*vec5
-            self.all_pts[i][1] = self.all_pts[i][1] - scale*vec6
             

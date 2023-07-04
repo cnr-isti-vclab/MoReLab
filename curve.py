@@ -455,20 +455,33 @@ class Curve_Tool(QObject):
                     self.final_cylinder_tops[idx][i][j] = pt + vec            
             
             
-    def scale_up(self, scale):
+    def scale(self, scale):
         i = self.selected_curve_idx
         # print("Index : "+str(i))
         if i != -1:
             for j in range(len(self.radii[i])):
                 radius = self.radii[i][j] * scale
                 self.radii[i][j] = radius
-                # print("Radius : "+str(radius))
-                cyl_axis = 0.05*(self.final_top_centers[i][j] - self.final_base_centers[i][j])
-                self.final_base_centers[i][j] = self.final_base_centers[i][j] - cyl_axis
-                self.final_top_centers[i][j] = self.final_top_centers[i][j] + cyl_axis
-                height = np.linalg.norm(self.final_top_centers[i][j] - self.final_base_centers[i][j])
-                # print("Height : "+str(height))
+                
                 center = self.final_base_centers[i][j]
+                top = self.final_top_centers[i][j]
+                vertices = self.final_cylinder_bases[i][j]
+                top_vertices = self.final_cylinder_tops[i][j]
+                
+                middle = 0.5*(center + top)
+                
+                if scale < 1:
+                    axis1 = (1 - scale)*(middle - center)
+                    axis2 = (1 - scale)*(middle - top)
+                        
+                else:
+                    axis1 = scale*(center - middle)
+                    axis2 = scale*(top - middle)
+                    
+                self.final_base_centers[i][j] = self.final_base_centers[i][j] + axis1
+                self.final_top_centers[i][j] = self.final_top_centers[i][j] + axis2
+                height = np.linalg.norm(self.final_top_centers[i][j] - self.final_base_centers[i][j])
+
                 sectorCount = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.sectorCount
                 sectorStep = 2 * np.pi / sectorCount
                 t_vec, b_vec, N = self.t_vecs[i][j], self.b_vecs[i][j], self.Ns[i][j]
@@ -477,35 +490,7 @@ class Curve_Tool(QObject):
                 for k in range(sectorCount + 1):
                     # print(self.final_cylinder_bases[i][j][sectorCount - k])
                     sectorAngle = k * sectorStep  # theta
-                    self.final_cylinder_bases[i][j][sectorCount - k] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
-                        sectorAngle) * t_vec
-                    self.final_cylinder_tops[i][j][sectorCount - k] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
-                        sectorAngle) * t_vec + height * N
-
-
-    def scale_down(self, scale):
-        i = self.selected_curve_idx
-        # print("Index : "+str(i))
-        if i != -1:
-            for j in range(len(self.radii[i])):
-                radius = self.radii[i][j] / scale
-                self.radii[i][j] = radius
-                # print("Radius : "+str(radius))
-                cyl_axis = 0.05*(self.final_top_centers[i][j] - self.final_base_centers[i][j])
-                self.final_base_centers[i][j] = self.final_base_centers[i][j] + cyl_axis
-                self.final_top_centers[i][j] = self.final_top_centers[i][j] - cyl_axis
-                height = np.linalg.norm(self.final_top_centers[i][j] - self.final_base_centers[i][j])
-                # print("Height : "+str(height))
-                center = self.final_base_centers[i][j]
-                sectorCount = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.sectorCount
-                sectorStep = 2 * np.pi / sectorCount
-                t_vec, b_vec, N = self.t_vecs[i][j], self.b_vecs[i][j], self.Ns[i][j]
-    
-                # print(t_vec)
-                for k in range(sectorCount + 1):
-                    # print(self.final_cylinder_bases[i][j][sectorCount - k])
-                    sectorAngle = k * sectorStep  # theta
-                    self.final_cylinder_bases[i][j][sectorCount - k] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
-                        sectorAngle) * t_vec
-                    self.final_cylinder_tops[i][j][sectorCount - k] = center + radius * np.cos(sectorAngle) * b_vec + radius * np.sin(
-                        sectorAngle) * t_vec + height * N
+                    self.final_cylinder_bases[i][j][k] = self.final_base_centers[i][j] + radius * np.cos(sectorAngle) * t_vec + radius * np.sin(
+                        sectorAngle) * b_vec
+                    self.final_cylinder_tops[i][j][k] = self.final_base_centers[i][j] + radius * np.cos(sectorAngle) * t_vec + radius * np.sin(
+                        sectorAngle) * b_vec + height * N
