@@ -779,16 +779,7 @@ class Util_viewer(QWidget):
                     ctrl_wdg.rect_obj.selected_rect_idx = ctrl_wdg.rect_obj.rect_counts.index(ID)
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
                     ctrl_wdg.quad_obj.selected_quad_idx = -1
-                    self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
-                    # print( self.bRightClick)
-                    # if self.bRightClick:
-                    #     # print("Need to transform a rectangle")
-                        
-                    #     self.openContextMenu__()
-                    #     print("After the function")
-                    #     self.bRightClick = False
-
-                    
+                    self.parent_viewer.obj.curve_obj.selected_curve_idx = -1  
                     
                 elif ID in self.parent_viewer.obj.cylinder_obj.cylinder_count:
                     cyl_idx = self.parent_viewer.obj.cylinder_obj.cylinder_count.index(ID)
@@ -797,8 +788,6 @@ class Util_viewer(QWidget):
                     ctrl_wdg.quad_obj.selected_quad_idx = -1
                     self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
 
-                    
-                    
                 elif ID in ctrl_wdg.quad_obj.group_counts:
                     quad_idx = ctrl_wdg.quad_obj.group_counts.index(ID)
                     ctrl_wdg.quad_obj.selected_quad_idx = quad_idx
@@ -806,7 +795,6 @@ class Util_viewer(QWidget):
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
                     self.parent_viewer.obj.curve_obj.selected_curve_idx = -1
 
-                    
                 elif ID in self.parent_viewer.obj.curve_obj.curve_count:
                     curve_idx = self.parent_viewer.obj.curve_obj.curve_count.index(ID)
                     self.parent_viewer.obj.curve_obj.selected_curve_idx = curve_idx
@@ -814,8 +802,7 @@ class Util_viewer(QWidget):
                     self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = -1
                     ctrl_wdg.quad_obj.selected_quad_idx = -1
 
-                    
-                    
+
                     
             elif ctrl_wdg.ui.bMeasure:
                 # print(self.x_zoomed, self.y_zoomed)
@@ -908,22 +895,18 @@ class Util_viewer(QWidget):
 
                     if ID in ctrl_wdg.rect_obj.rect_counts:
                         idx = ctrl_wdg.rect_obj.rect_counts.index(ID)
-                        # print("Index : "+str(idx))
                         ctrl_wdg.rect_obj.translate(vec, idx)
                         
                     elif ID in ctrl_wdg.quad_obj.group_counts:
                         idx = ctrl_wdg.quad_obj.group_counts.index(ID)
-                        # print("Index : "+str(idx))
                         ctrl_wdg.quad_obj.translate(vec, idx)   
                         
                     elif ID in ctrl_wdg.gl_viewer.obj.cylinder_obj.cylinder_count:
                         idx = ctrl_wdg.gl_viewer.obj.cylinder_obj.cylinder_count.index(ID)
-                        # print("Index : "+str(idx))
                         ctrl_wdg.gl_viewer.obj.cylinder_obj.translate(vec, idx)   
 
                     elif ID in ctrl_wdg.gl_viewer.obj.curve_obj.curve_count:
                         idx = ctrl_wdg.gl_viewer.obj.curve_obj.curve_count.index(ID)
-                        # print("Index : "+str(idx))
                         ctrl_wdg.gl_viewer.obj.curve_obj.translate(vec, idx)                                       
 
         self.pick = False
@@ -1108,10 +1091,10 @@ class Util_viewer(QWidget):
 
 
     def scale_up(self):
-        self.scale_primitive(1.05)
+        self.scale_primitive(1.05, True)
 
     def scale_down(self):
-        self.scale_primitive(0.95)
+        self.scale_primitive(0.95, True)
 
     def create_translate_panel(self):
         self.translate_dialog = QDialog()
@@ -1437,14 +1420,14 @@ class Util_viewer(QWidget):
             
             
     
-    def scale_primitive(self, s_up):
+    def scale_primitive(self, s_up, bPressed = False):
         # print("Scale : "+str(s_up))
         if self.parent_viewer.obj.ctrl_wdg.rect_obj.selected_rect_idx != -1:
             self.parent_viewer.obj.ctrl_wdg.rect_obj.scale(s_up)
     
     
         elif self.parent_viewer.obj.ctrl_wdg.quad_obj.selected_quad_idx != -1:
-            self.parent_viewer.obj.ctrl_wdg.quad_obj.scale(s_up)
+            self.parent_viewer.obj.ctrl_wdg.quad_obj.scale(s_up, bPressed)
             
             
         elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
