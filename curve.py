@@ -459,38 +459,21 @@ class Curve_Tool(QObject):
         i = self.selected_curve_idx
         # print("Index : "+str(i))
         if i != -1:
+            # print("Number of radii : "+str(len(self.radii[i])))
             for j in range(len(self.radii[i])):
                 radius = self.radii[i][j] * scale
                 self.radii[i][j] = radius
-                
-                center = self.final_base_centers[i][j]
-                top = self.final_top_centers[i][j]
-                vertices = self.final_cylinder_bases[i][j]
-                top_vertices = self.final_cylinder_tops[i][j]
-                
-                middle = 0.5*(center + top)
-                
-                if scale < 1:
-                    axis1 = (1 - scale)*(middle - center)
-                    axis2 = (1 - scale)*(middle - top)
-                        
-                else:
-                    axis1 = scale*(center - middle)
-                    axis2 = scale*(top - middle)
-                    
-                self.final_base_centers[i][j] = self.final_base_centers[i][j] + axis1
-                self.final_top_centers[i][j] = self.final_top_centers[i][j] + axis2
                 height = np.linalg.norm(self.final_top_centers[i][j] - self.final_base_centers[i][j])
 
                 sectorCount = self.ctrl_wdg.gl_viewer.obj.cylinder_obj.sectorCount
                 sectorStep = 2 * np.pi / sectorCount
                 t_vec, b_vec, N = self.t_vecs[i][j], self.b_vecs[i][j], self.Ns[i][j]
-    
-                # print(t_vec)
+
                 for k in range(sectorCount + 1):
-                    # print(self.final_cylinder_bases[i][j][sectorCount - k])
                     sectorAngle = k * sectorStep  # theta
                     self.final_cylinder_bases[i][j][k] = self.final_base_centers[i][j] + radius * np.cos(sectorAngle) * t_vec + radius * np.sin(
                         sectorAngle) * b_vec
                     self.final_cylinder_tops[i][j][k] = self.final_base_centers[i][j] + radius * np.cos(sectorAngle) * t_vec + radius * np.sin(
                         sectorAngle) * b_vec + height * N
+         
+            
