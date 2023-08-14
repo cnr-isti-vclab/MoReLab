@@ -38,6 +38,8 @@ class Window(QMainWindow):
         self.vboxLayout3.addWidget(self.widget.gl_viewer.obj.feature_panel)
         self.vboxLayout3.addWidget(self.widget.gl_viewer.util_.dist_label)
         self.vboxLayout3.addWidget(self.widget.gl_viewer.obj.btn_sfm)
+        self.vboxLayout3.addWidget(self.widget.gl_viewer.obj.cb_lc)
+        self.vboxLayout3.addWidget(self.widget.gl_viewer.obj.btn_lc)
 
         self.hboxLayout = QHBoxLayout()
 
@@ -182,6 +184,7 @@ class Window(QMainWindow):
         self.toolbar.addWidget(self.widget.ui.mv_tool)
         self.toolbar.addWidget(self.widget.ui.ft_tool)
         self.toolbar.addWidget(self.widget.ui.ft_plus_tool)
+        self.toolbar.addWidget(self.widget.ui.constraint_tool)
         self.toolbar.addWidget(self.widget.ui.rect_tool)
         self.toolbar.addWidget(self.widget.ui.quad_tool)
         self.toolbar.addWidget(self.widget.ui.cyl_tool)

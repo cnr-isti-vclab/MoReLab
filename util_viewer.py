@@ -582,6 +582,29 @@ class Util_viewer(QWidget):
                             painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
                             painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                                    
+            
+            
+            
+            
+            pen = QPen(QColor(255, 0, 0))
+            pen.setWidth(2)
+            painter.setPen(pen)            
+            
+            
+            # Painting for constraints
+            if (len(v.constrained_features_regular) > 0 or len(v.constrained_features_network) > 0) :
+                if ctrl_wdg.kf_method == "Regular":
+                    for tup in v.constrained_features_regular[t]:
+                        fc1, fc2 = v.features_regular[t][tup[0]], v.features_regular[t][tup[1]]
+                        painter.drawLine(QLineF(fc1.x_loc, fc1.y_loc, fc2.x_loc, fc2.y_loc))
+                  
+                elif ctrl_wdg.kf_method == "Network":
+                    for tup in v.constrained_features_network[t]:
+                        fc1, fc2 = v.features_network[t][tup[0]], v.features_network[t][tup[1]]
+                        painter.drawLine(QLineF(fc1.x_loc, fc1.y_loc, fc2.x_loc, fc2.y_loc))
+            
+            
+            
             pen = QPen(QColor(0, 255, 0))
             pen.setWidth(2)
             painter.setPen(pen)

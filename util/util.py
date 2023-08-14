@@ -261,6 +261,20 @@ def label_dialogue():
     msgBox.setStandardButtons(QMessageBox.Ok)
     returnValue = msgBox.exec()
     
+def lc_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Please compute SfM first before applying linear constraints optimization.")
+    msgBox.setWindowTitle("Linear constraints optimization")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    returnValue = msgBox.exec()
+    
+
+def lc_add_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Please add linear constraints first")
+    msgBox.setWindowTitle("Linear constraints optimization")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    returnValue = msgBox.exec()
     
 
 

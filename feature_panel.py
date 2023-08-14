@@ -12,7 +12,7 @@ class FeaturePanel(QTreeWidget):
         self.selected_feature_idx = -1
         self.ctrl_wdg = parent
         self.items = []
-        self.setMinimumSize(self.ctrl_wdg.monitor_width*0.2, self.ctrl_wdg.monitor_height*0.73)
+        self.setMinimumSize(self.ctrl_wdg.monitor_width*0.2, self.ctrl_wdg.monitor_height*0.67)
         self.itemClicked.connect(self.select_feature_child)
         self.factor_x = 1
         self.factor_y = 1
@@ -47,6 +47,7 @@ class FeaturePanel(QTreeWidget):
             elif self.ctrl_wdg.kf_method == "Network":
                 for i,hr in enumerate(v.hide_network):
                     for j,hide in enumerate(hr):
+                        fc = v.features_network[i][j]
                         if not hide:
                             tmp2.append(i)
                             tmp3.append(int(fc.label))

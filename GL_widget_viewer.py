@@ -165,6 +165,9 @@ class GL_Widget(QOpenGLWidget):
         glCullFace(GL_BACK) 
         glFrontFace(GL_CCW)
         
+
+        
+        
         
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
             for j, tup in enumerate(self.obj.camera_projection_mat):
@@ -564,7 +567,6 @@ class GL_Widget(QOpenGLWidget):
                 glEnd()
 
 
-                
                 glLineWidth(2.0)
                 glColor3f(self.boundary_color[0], self.boundary_color[1], self.boundary_color[2])
                 glBegin(GL_LINE_LOOP)
@@ -606,7 +608,7 @@ class GL_Widget(QOpenGLWidget):
                 glEnd()
 
         for k in range(len(self.obj.curve_obj.final_bezier), 0, -1):
-            if k > len(self.obj.curve_obj.final_cylinder_bases):   
+            if k > len(self.obj.curve_obj.ctrl_pts_final) - 1 and self.util_.bRadius:
                 ctrl_pts = self.obj.curve_obj.ctrl_pts_final[k-1]
                 glColor3f(1.0, 0.0, 0.0)
                 glPointSize(5*self.util_._zoom)
@@ -622,7 +624,7 @@ class GL_Widget(QOpenGLWidget):
                 for i in range(points.shape[0]):
                     glVertex3f(points[i,0], points[i,1], points[i,2])
                 glEnd()
-
+    
         
     def render_general_cylinder(self, offscreen_bool = False, fill_flag=False):
         ##### Draw initial base of the cylinder

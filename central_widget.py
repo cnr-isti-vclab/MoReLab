@@ -71,7 +71,8 @@ class Widget(QWidget):
                 b = show_dialogue()
             if b:
                 v1 = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
-                # print(v1.n_frames)
+                w = Dialog()
+                w.show()
                 if self.kf_method == "Regular":
                     rate_str = dlg.e1.text()
                     sampling_rate = int(rate_str)
@@ -83,7 +84,8 @@ class Widget(QWidget):
                     v1.cleanSequence()
                     # print(len(v1.key_frames_network))
                     self.ui.radiobutton2.setChecked(True)
-                    
+                
+                w.done(0)
                 self.selected_thumbnail_index = -1
                 self.populate_scrollbar()
 
@@ -190,6 +192,8 @@ class Widget(QWidget):
             old_kf = self.copied_data["old_kf_method"]
             old_mv = self.copied_data["old_movie_idx"]
             
+
+            
             if old_mv != self.mv_panel.selected_movie_idx:
                 switch_movie_dialogue()
             else:
@@ -208,9 +212,15 @@ class Widget(QWidget):
                         
                 elif old_kf == "Network" and self.kf_method == "Network":
                     if v.n_objects_kf_network[self.selected_thumbnail_index] == 0:
+                        diff_idx = self.selected_thumbnail_index - t
+                        x_shift, y_shift = 0, 0
+                        for j in range(diff_idx):
+                            # print(t + j + 1)
+                            x_shift += v.x_shifts[t + j + 1]
+                            y_shift += v.y_shifts[t + j + 1]
                         for i, fc in enumerate(v.features_network[t]):
                             if not v.hide_network[t][i]:
-                                self.gl_viewer.obj.add_feature(fc.x_loc, fc.y_loc)
+                                self.gl_viewer.obj.add_feature(fc.x_loc - x_shift, fc.y_loc - y_shift)
                             else:
                                 self.gl_viewer.obj.add_feature(fc.x_loc, fc.y_loc)
                                 self.gl_viewer.obj.feature_panel.selected_feature_idx = i

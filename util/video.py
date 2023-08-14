@@ -31,6 +31,8 @@ class Video:
         self.key_frame_indices_regular = []
         self.key_frames_network = []
         self.key_frame_indices_network = []
+        self.x_shifts = []
+        self.y_shifts = []
         self.init_features_regular()
         self.init_3D_regular()
         self.init_features_network()
@@ -71,6 +73,7 @@ class Video:
     def init_features_regular(self, n = -1):
         self.measured_pos_regular = []
         self.measured_distances_regular = []
+        self.constrained_features_regular = []
         self.n_objects_kf_regular = []
         self.features_regular = []
         self.hide_regular = []
@@ -81,6 +84,7 @@ class Video:
                 self.n_objects_kf_regular.append(0)
                 self.measured_pos_regular.append([])
                 self.measured_distances_regular.append([])
+                self.constrained_features_regular.append([])
                 self.features_regular.append([])
                 self.hide_regular.append([])
                 self.count_deleted_regular.append([])
@@ -161,7 +165,7 @@ class Video:
         mtb = cv2.createAlignMTB()
         shift = mtb.calculateShift(gray1_u8, gray2_u8)
         len = np.sqrt(shift[0] * shift[0] + shift[1] * shift[1])
-        return len < thr, len
+        return len < thr, len, shift[0], shift[1]
     
     def setFrame(self, frame):
                     
@@ -200,6 +204,8 @@ class Video:
         # print("n : "+str(n))
         self.key_frames_network = []
         self.key_frame_indices_network = []
+        self.x_shifts = []
+        self.y_shifts = []
 
         c = 0
         id_list = []
@@ -242,12 +248,18 @@ class Video:
                 
                 if(bTest1 == False):
             
-                    bTest2, shift = self.checkMTB(img, img_n, shift_threshold, bBGR)
+                    bTest2, shift, x_shift, y_shift = self.checkMTB(img, img_n, shift_threshold, bBGR)
                     tmp += "Shift: " + str(shift) + " "
     
                     if(bTest2 == False):
                         img = img_n
                         j = k
+                        # print("Frame number : "+str(j-1))
+                        # print(x_shift, y_shift)
+                        # print(shift)
+                        self.x_shifts.append(int(x_shift))
+                        self.y_shifts.append(int(y_shift))
+                            
                         self.key_frame_indices_network.append(str(j-1).zfill(6))
                         self.key_frames_network.append(img_n_cv)
     
@@ -263,6 +275,7 @@ class Video:
     def init_features_network(self, n=-1):
         self.measured_pos_network = []
         self.measured_distances_network = []
+        self.constrained_features_network = []
         self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
@@ -271,12 +284,15 @@ class Video:
             for i in range(n):
                 self.n_objects_kf_network.append(0)
                 self.measured_pos_network.append([])
+                self.constrained_features_network.append([])
                 self.measured_distances_network.append([])
+                self.constrained_features_network.append([])
                 self.features_network.append([])
                 self.hide_network.append([])
 
 
     def init_3D_network(self, n=-1):
+        self.mapping_2d_3d_network = []
         self.rect_groups_network = []
         self.quad_groups_network = []
         self.cylinder_groups_network = []
@@ -289,10 +305,10 @@ class Video:
 
         if n!=-1:
             for i in range(n):
+                self.mapping_2d_3d_network.append([])
                 self.rect_groups_network.append([])
                 self.quad_groups_network.append([])
                 self.cylinder_groups_network.append([])
-                self.curve_groups_network.append([])
                 self.curve_pts_network.append([])
                 self.temp_pts_network.append([])
                 self.bPaint_network.append(True)

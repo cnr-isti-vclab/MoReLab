@@ -124,6 +124,12 @@ class Document(QWidget):
                 bCyl = True
                 cyl_type_temp.append(self.ctrl_wdg.gl_viewer.obj.cylinder_obj.bool_cylinder_type[i])
 
+        number_curved_cylinders = 0
+        for i, cylinder_bases in enumerate(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases):
+            if not self.ctrl_wdg.gl_viewer.obj.curve_obj.deleted[i]:
+                number_curved_cylinders += 1
+                
+
 
         bCurvedCyl = False
         n_curved_cyl = 0
@@ -149,9 +155,10 @@ class Document(QWidget):
             "bool_rect" : bRect,
             "bool_cyl" : bCyl,
             "bool_cylinder_type" : cyl_type_temp,
-            "n_cyl" : num_cyl,
+            "n_pts_curve" : num_cyl,
             "bool_curved_cyl" : bCurvedCyl,
             "n_curved" : n_curved_cyl,
+            "number_curved_cylinder" : number_curved_cylinders,
             "bool_quad" : bQuad,
             }
         
@@ -283,24 +290,49 @@ class Document(QWidget):
                     ccyl_path = os.path.join(out_dir, 'curved_cylinder')
                     if not os.path.exists(ccyl_path):
                         os.makedirs(ccyl_path)
-
+                        
+                    t_vec_temp = []
+                    b_vec_temp = []
+                    N_vec_temp = []
+                    radius_temp = []
+                    
                     for i, cylinder_bases in enumerate(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases):
                         if not self.ctrl_wdg.gl_viewer.obj.curve_obj.deleted[i]:
-                            # print("Data for cylinder # "+str(i+1))
                             general_bases = []
                             base_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_base_centers[i])
                             for j, bases in enumerate(cylinder_bases):
                                 general_bases.append(np.vstack(bases))
-
-                            tops = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops[i][-1])
-                            top_center = self.ctrl_wdg.gl_viewer.obj.curve_obj.final_top_centers[i][-1].reshape((1,3))
-
+                                
+                            general_tops = []
+                            top_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_top_centers[i])
+                            for j, tops in enumerate(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops[i]):
+                                general_tops.append(np.vstack(tops))
+                            
+                            print(np.vstack(general_bases).shape)
+                            print(np.vstack(general_tops).shape)
                             num_bases = base_centers.shape[0]
-                            # print("Number of bases : "+str(num_bases))
-                            general_cylinder = np.concatenate((base_centers, np.vstack(general_bases), tops, top_center))
-                            # print(general_cylinder.shape)
+                            general_cylinder = np.concatenate((base_centers, np.vstack(general_bases), top_centers, np.vstack(general_tops)))
                             np.savetxt(os.path.join(ccyl_path, 'curved_cyl_'+str(i)+'.csv'), general_cylinder, delimiter=',')
-
+                            
+                            
+                            radius_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.radii[i])
+                            t_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.t_vecs[i])
+                            b_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.b_vecs[i])
+                            N_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.Ns[i])
+                            
+                            
+                    if len(radius_temp) > 0:
+                        
+                        t_vec_data = np.vstack(t_vec_temp)
+                        b_vec_data = np.vstack(b_vec_temp)
+                        N_data = np.vstack(N_vec_temp)
+                        radius_data = np.asarray(radius_temp).reshape((len(radius_temp), self.ctrl_wdg.gl_viewer.obj.curve_obj.num_pts - 1))
+                        
+                        np.savetxt(os.path.join(ccyl_path, 't_vec.csv'), t_vec_data, delimiter=',')
+                        np.savetxt(os.path.join(ccyl_path, 'b_vec.csv'), b_vec_data, delimiter=',')
+                        np.savetxt(os.path.join(ccyl_path, 'N.csv'), N_data, delimiter=',')
+                        np.savetxt(os.path.join(ccyl_path, 'radii.csv'), radius_data, delimiter=',')
+                        
             
             
             
@@ -538,7 +570,7 @@ class Document(QWidget):
             if data["bool_cyl"]:
                 c = os.path.join(a, 'cylinders')
                 n_cyl = int(data["n_cyl"])
-
+                
                 height_mat = np.loadtxt(os.path.join(c, 'heights.csv'), delimiter=',')
                 radii_mat = np.loadtxt(os.path.join(c, 'radii.csv'), delimiter=',')
                 t_vec_mat = np.loadtxt(os.path.join(c, 't_vec.csv'), delimiter=',')
@@ -592,50 +624,94 @@ class Document(QWidget):
 
             ############### Load Curved Cylinder ###############
             if data["bool_curved_cyl"]:
+                
+                n_cyl = data["number_curved_cylinder"]
                 c = os.path.join(a, 'curved_cylinder')
-                ext_p = sorted(glob.glob(c+'/*.csv'))
-                if len(ext_p) > 0:
-                    n_cyl = data["n_curved"]
-                    # print(n_cyl)
+                n_pts_curve = data["n_curved"]
+                
+                radii_mat = np.loadtxt(os.path.join(c, 'radii.csv'), delimiter=',').astype(float)
+                t_vec_mat = np.loadtxt(os.path.join(c, 't_vec.csv'), delimiter=',').astype(float)
+                b_vec_mat = np.loadtxt(os.path.join(c, 'b_vec.csv'), delimiter=',').astype(float)
+                N_mat = np.loadtxt(os.path.join(c, 'N.csv'), delimiter=',').astype(float)
+                
+                # print(radii_mat.shape)
+                # print(t_vec_mat.shape)
+                
 
-                    for i, path in enumerate(ext_p):
-                        # print("Data for cylinder # "+str(i))
-                        general_cyl = np.loadtxt(path, delimiter=',').astype(float)
-                        base_centers = general_cyl[0:n_cyl, :]
-                        bases = general_cyl[n_cyl : n_cyl + n_cyl*(sectorCount+1), :]
-                        tops = general_cyl[ n_cyl + n_cyl*(sectorCount+1) :  n_cyl + n_cyl*(sectorCount+1) + sectorCount+1, :]
+                for i in range(n_cyl):
+                    # print(i)
+                    name = 'curved_cyl_'+str(i)+'.csv'
+                    # print(name)
+                    path = os.path.join(c, name)
+                    general_cyl = np.loadtxt(path, delimiter=',').astype(float)
+                    base_centers = general_cyl[0:n_pts_curve, :]
+                    bases = general_cyl[n_pts_curve : n_pts_curve + n_pts_curve*(sectorCount+1), :]
+                    top_centers = general_cyl[ n_pts_curve + n_pts_curve*(sectorCount+1) :  2*n_pts_curve + n_pts_curve*(sectorCount+1) , :]
 
-                        top_center = general_cyl[general_cyl.shape[0] - 1, :]
+                    tops = general_cyl[2*n_pts_curve + n_pts_curve*(sectorCount+1):, :]
 
+                    BC = []
+                    for j in range(n_pts_curve):
+                        # print(base_centers[j, :])
+                        BC.append(base_centers[j, :])
+                    self.ctrl_wdg.gl_viewer.obj.curve_obj.final_base_centers.append(BC)
+
+                    BC_all = []
+                    for j in range(n_pts_curve):
+                        bases_arr = bases[j*(sectorCount+1) : (j+1)*(sectorCount+1), :]
+                        # print(bases_arr.shape)
                         BC = []
-                        for j in range(n_cyl):
-                            # print(base_centers[j, :])
-                            BC.append(base_centers[j, :])
-                        self.ctrl_wdg.gl_viewer.obj.curve_obj.final_base_centers.append(BC)
+                        for k in range(bases_arr.shape[0]):
+                            # print(bases_arr[k, :])
+                            BC.append(bases_arr[k, :])
+                        BC_all.append(BC)
+                    self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases.append(BC_all)
 
-                        BC_all = []
-                        for j in range(n_cyl):
-                            bases_arr = bases[j*(sectorCount+1) : (j+1)*(sectorCount+1), :]
-                            # print(bases_arr.shape)
-                            BC = []
-                            for k in range(bases_arr.shape[0]):
-                                # print(bases_arr[k, :])
-                                BC.append(bases_arr[k, :])
-                            BC_all.append(BC)
-                        self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases.append(BC_all)
 
-                        TP = []
-                        for k in range(tops.shape[0]):
-                            TP.append(tops[k, :])
+                    TC = []
+                    for j in range(n_pts_curve):
+                        # print(base_centers[j, :])
+                        TC.append(top_centers[j, :])
+                    self.ctrl_wdg.gl_viewer.obj.curve_obj.final_top_centers.append(TC)
 
-                        self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops.append([TP])
-                        self.ctrl_wdg.gl_viewer.obj.curve_obj.final_top_centers.append([top_center])
+                    TC_all = []
+                    for j in range(n_pts_curve):
+                        tops_arr = tops[j*(sectorCount+1) : (j+1)*(sectorCount+1), :]
+                        # print(bases_arr.shape)
+                        TC = []
+                        for k in range(tops_arr.shape[0]):
+                            # print(bases_arr[k, :])
+                            TC.append(tops_arr[k, :])
+                        TC_all.append(TC)
+                    self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops.append(TC_all)
 
-                        self.ctrl_wdg.gl_viewer.obj.curve_obj.curve_count.append(self.ctrl_wdg.rect_obj.primitive_count)
-                        c = self.ctrl_wdg.rect_obj.getRGBfromI(self.ctrl_wdg.rect_obj.primitive_count)
-                        self.ctrl_wdg.gl_viewer.obj.curve_obj.colors.append(c)
-                        self.ctrl_wdg.rect_obj.primitive_count += 1
-                        self.ctrl_wdg.gl_viewer.obj.curve_obj.deleted.append(False)
+
+                    self.ctrl_wdg.gl_viewer.obj.curve_obj.curve_count.append(self.ctrl_wdg.rect_obj.primitive_count)
+                    col = self.ctrl_wdg.rect_obj.getRGBfromI(self.ctrl_wdg.rect_obj.primitive_count)
+                    self.ctrl_wdg.gl_viewer.obj.curve_obj.colors.append(col)
+                    self.ctrl_wdg.rect_obj.primitive_count += 1
+                    self.ctrl_wdg.gl_viewer.obj.curve_obj.deleted.append(False)
+                    
+                    start = i*n_pts_curve
+                    t_vecs_list = []
+                    b_vecs_list = []
+                    N_vecs_list = []
+                    radii_list = []
+                    for j in range(n_pts_curve):
+                        t_vecs_list.append(t_vec_mat[start + j, :])
+                        b_vecs_list.append(b_vec_mat[start + j, :])
+                        N_vecs_list.append(N_mat[start + j, :])
+                        radii_list.append(radii_mat[i,j])
+                        
+                    self.ctrl_wdg.gl_viewer.obj.curve_obj.t_vecs.append(t_vecs_list)
+                    self.ctrl_wdg.gl_viewer.obj.curve_obj.b_vecs.append(b_vecs_list)
+                    self.ctrl_wdg.gl_viewer.obj.curve_obj.Ns.append(N_vecs_list)
+                    
+                    self.ctrl_wdg.gl_viewer.obj.curve_obj.radii.append(radii_list)
+                    
+                    
+                    
+                    
 
 
 
