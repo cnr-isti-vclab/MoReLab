@@ -4,7 +4,7 @@ from PyQt5.QtGui import *
 import platform, struct
 import numpy as np
 from scipy.spatial import distance
-from plyfile import PlyData, PlyElement
+# from plyfile import PlyData, PlyElement
 import cv2
 
 
@@ -114,10 +114,44 @@ def feature_absent_dialogue():
     returnValue = msgBox.exec()
     
     
+def no_keyframe_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Please extract key-frames first")
+    msgBox.setWindowTitle("No KeyFrames")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+    returnValue = msgBox.exec()
+    
+def no_feature_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("SuperGlue detection has already been done on both images")
+    msgBox.setWindowTitle("No Feature")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+    returnValue = msgBox.exec()
+    
+def models_folder_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("models folder not found for automatic feature detection. Please download models folder from SuperGlue Github repository and place it in the current working directory.")
+    msgBox.setWindowTitle("Pretrained feature detection model missing")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+    returnValue = msgBox.exec()
+    
+    
 def exportPLY_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("Please compute 3D data points and then export 3D data. ")
     msgBox.setWindowTitle("3D data")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+    returnValue = msgBox.exec()
+    
+    
+def not_extractKF_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("This video does not exist. Hence, frames cannot be extracted.")
+    msgBox.setWindowTitle("Extact keyframes")
     msgBox.setStandardButtons(QMessageBox.Ok)
     # msgBox.buttonClicked.connect(msgButtonClick)
     returnValue = msgBox.exec()
@@ -198,16 +232,31 @@ def after_BA_dialogue():
     msgBox.setText("3D structure has been computed.")
     msgBox.setWindowTitle("3D structure")
     msgBox.setStandardButtons(QMessageBox.Ok)
-    returnValue = msgBox.exec()    
-
-    
+    returnValue = msgBox.exec()        
 
 def numFeature_dialogue():
     msgBox = QMessageBox()
-    msgBox.setText("Atleast two frames must have atleast 8 features.")
+    msgBox.setText("SfM cannot be computed because a minimum of two frames must have atleast 8 features each.")
     msgBox.setWindowTitle("Number of Features")
     msgBox.setStandardButtons(QMessageBox.Ok)                 
     returnValue = msgBox.exec()
+    
+
+def constraint_labels():
+    msgBox = QMessageBox()
+    msgBox.setText("Some feature is not present on the image. Please make sure that all features are present on the image.")
+    msgBox.setWindowTitle("Constraint features")
+    msgBox.setStandardButtons(QMessageBox.Ok)                 
+    returnValue = msgBox.exec()
+    
+def constraint_labels_different():
+    msgBox = QMessageBox()
+    msgBox.setText("Feature 1 and 2 must be different. Similarly feature 3 and 4 must also be different.")
+    msgBox.setWindowTitle("Different constraint features")
+    msgBox.setStandardButtons(QMessageBox.Ok)                 
+    returnValue = msgBox.exec()
+    
+    
     
 def straight_line_dialogue():
     msgBox = QMessageBox()
@@ -268,11 +317,42 @@ def lc_dialogue():
     msgBox.setStandardButtons(QMessageBox.Ok)
     returnValue = msgBox.exec()
     
+    
+def epipolar_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Guiding lines cannot be computed because selected frame and last feature-marked frame should have a minimum of 8 features each.")
+    msgBox.setWindowTitle("Guiding lines computation")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    returnValue = msgBox.exec()
+    
 
 def lc_add_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("Please add linear constraints first")
     msgBox.setWindowTitle("Linear constraints optimization")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    returnValue = msgBox.exec()
+    
+    
+def fundamental_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Fundamental matrix has been computed")
+    msgBox.setWindowTitle("Fundamental matrix")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    returnValue = msgBox.exec()
+    
+    
+def save_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Project has been saved.")
+    msgBox.setWindowTitle("Save Project")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    returnValue = msgBox.exec()
+    
+def load_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Project has been loaded.")
+    msgBox.setWindowTitle("Load Project")
     msgBox.setStandardButtons(QMessageBox.Ok)
     returnValue = msgBox.exec()
     

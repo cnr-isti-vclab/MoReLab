@@ -26,7 +26,12 @@ from skimage.metrics import structural_similarity as ssim
 class Video:
     def __init__(self, video_path):
         self.video_path = video_path
-        self.cap = cv2.VideoCapture(self.video_path)
+        self.cap_exist = False
+        supported_video_types = ('.mp4', '.MP4', '.asf', '.ASF', '.mov', '.MOV')
+        
+        if os.path.exists(self.video_path) and self.video_path.endswith(supported_video_types):
+            self.cap = cv2.VideoCapture(self.video_path)
+            self.cap_exist = True
         self.key_frames_regular = []
         self.key_frame_indices_regular = []
         self.key_frames_network = []
@@ -78,6 +83,7 @@ class Video:
         self.features_regular = []
         self.hide_regular = []
         self.count_deleted_regular = []
+        self.bool_superglue_regular = []
 
         if n!=-1:
             for i in range(n):
@@ -88,6 +94,7 @@ class Video:
                 self.features_regular.append([])
                 self.hide_regular.append([])
                 self.count_deleted_regular.append([])
+                self.bool_superglue_regular.append(False)
 
 
 
@@ -254,11 +261,6 @@ class Video:
                     if(bTest2 == False):
                         img = img_n
                         j = k
-                        # print("Frame number : "+str(j-1))
-                        # print(x_shift, y_shift)
-                        # print(shift)
-                        self.x_shifts.append(int(x_shift))
-                        self.y_shifts.append(int(y_shift))
                             
                         self.key_frame_indices_network.append(str(j-1).zfill(6))
                         self.key_frames_network.append(img_n_cv)
@@ -310,6 +312,9 @@ class Video:
                 self.quad_groups_network.append([])
                 self.cylinder_groups_network.append([])
                 self.curve_pts_network.append([])
+                self.curve_groups_network.append([])
+                self.curve_3d_point_network.append([])
+                self.temp_pts_network.append([])
                 self.temp_pts_network.append([])
                 self.bPaint_network.append(True)
                 self.bAssignDepth_network.append(False)

@@ -6,6 +6,7 @@ from PyQt5.QtGui import *
 from central_widget import Widget
 import sys, os, json
 from util.util import *
+import pymeshlab
 
 
 class Window(QMainWindow):
@@ -19,8 +20,7 @@ class Window(QMainWindow):
         self.create_toolbar()
         self.bLoad = False
         
-        
-        
+
         
     def create_layout(self):
         self.vboxLayout1 = QVBoxLayout()
@@ -85,7 +85,7 @@ class Window(QMainWindow):
                 movie_name = split_path(movie_path)
                 display_msg = "Opened "+movie_name
                 self.statusBar.showMessage(display_msg, 2000)
-                self.widget.mv_panel.add_movie(movie_path)
+                v = self.widget.mv_panel.add_movie(movie_path)
                 
                 if len(self.widget.mv_panel.movie_paths) == 1:
                     self.create_layout()
@@ -120,6 +120,10 @@ class Window(QMainWindow):
 
 
     def implement_save(self, p):
+
+        w = Dialog()
+        w.show()
+        
         name_project = os.path.relpath(p, os.getcwd())
         disp_name_project = split_path(name_project)
         display_msg = "Saving "+disp_name_project
@@ -137,6 +141,43 @@ class Window(QMainWindow):
             outfile.write(json_object)
             
             
+        w.done(0)
+        
+        save_dialogue()
+        
+        
+    def implement_open_folder(self):
+        # print("Open the folder containing images")
+        folderpath = QFileDialog.getExistingDirectory(self, 'Select Folder')
+        supported_image_types = ('.png', 'jpg', 'jpeg', '.PNG', '.JPG', '.JPEG')
+
+        if folderpath != '':
+            file_paths = []
+            for f in os.listdir(folderpath):
+                if f.endswith(supported_image_types):
+                    if os.path.isfile(os.path.join(folderpath, f)):
+                        file_paths.append(os.path.join(folderpath, f))
+            # print(file_paths)
+            if len(file_paths) > 0:
+                num_frames = len(file_paths)
+                img_0 = cv2.imread(file_paths[0])
+                (h, w, c) = img_0.shape
+                v = self.widget.mv_panel.add_movie(folderpath, fps=30, n_frames=num_frames, duration=num_frames/30, width=w, height=h)
+
+                v.key_frames_regular = [cv2.imread(x) for x in file_paths]
+                v.init_features_regular(len(v.key_frames_regular))
+                v.init_3D_regular(len(v.key_frames_regular))
+                self.widget.kf_method = "Regular"
+
+                if len(self.widget.mv_panel.movie_paths) == 1:
+                    self.create_layout()
+                    
+                self.widget.populate_scrollbar()
+                
+
+
+            
+            
     def open_project(self):
         file_types = "json (*.json)"
         response = QFileDialog.getOpenFileName(
@@ -146,6 +187,10 @@ class Window(QMainWindow):
             filter=file_types
         )
         if response[0] != '':
+            
+            w = Dialog()
+            w.show()
+            
             self.save_response = response
             
             self.widget = Widget(self)
@@ -163,7 +208,10 @@ class Window(QMainWindow):
             self.project_name_label.setText(disp_name_project)
 
             self.widget.doc.load_data(project_path)
-            # self.create_layout()
+            
+            
+            w.done(0)
+            
         
     def implement_exit_project(self):
         if confirm_exit():
@@ -173,11 +221,10 @@ class Window(QMainWindow):
     def create_toolbar(self):
         self.toolbar = QToolBar("&ToolBar", self)
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
-
-
         self.toolbar.addWidget(self.widget.ui.np_tool)
         self.toolbar.addWidget(self.widget.ui.op_tool)
         self.toolbar.addWidget(self.widget.ui.om_tool)
+        self.toolbar.addWidget(self.widget.ui.of_tool)
         self.toolbar.addWidget(self.widget.ui.sp_tool)
         self.toolbar.addWidget(self.widget.ui.sp_as_tool)
         self.toolbar.addWidget(self.widget.ui.ep_tool)
@@ -193,9 +240,7 @@ class Window(QMainWindow):
         self.toolbar.addWidget(self.widget.ui.pick_tool)
         self.toolbar.addWidget(self.widget.ui.measure_tool)
         self.toolbar.addWidget(self.widget.ui.anchor_tool)
-
-
-
+        self.toolbar.addWidget(self.widget.ui.epipolar_tool)
         self.addToolBarBreak(Qt.TopToolBarArea)
 
         left_spacer = QWidget()
@@ -220,14 +265,13 @@ class Window(QMainWindow):
             bundle_adjustment_ply_data = self.widget.gl_viewer.obj.all_ply_pts[-1]
             col_bundle = np.zeros(bundle_adjustment_ply_data.shape).astype(np.uint8)
             col_bundle[:, 1] = 255
-            
+
             cam_data = self.widget.gl_viewer.obj.camera_poses[-1]
             col_cam = np.ones(cam_data.shape).astype(np.uint8)*255
 
             write_vertices_ply('vertex_data.ply', np.concatenate((bundle_adjustment_ply_data, cam_data), axis=0), np.concatenate((col_bundle, col_cam), axis=0))
             
             ###### PLY Date for General curved cylinder
-
             curve_data_list = []
             num_bases_list = []
             sectorCount = self.widget.gl_viewer.obj.cylinder_obj.sectorCount
@@ -464,7 +508,18 @@ class Window(QMainWindow):
             #     print(all_faces[i, :])
             
             if all_faces.shape[0] > 0:
-                write_faces_ply('face_data.ply', ply_data_all, all_faces)
+                # write_faces_ply('face_data.ply', ply_data_all, all_faces)
+                                # create a new Mesh with the two arrays
+                m = pymeshlab.Mesh(ply_data_all, all_faces)
+
+                # create a new MeshSet
+                ms = pymeshlab.MeshSet()
+                
+                # add the mesh to the MeshSet
+                ms.add_mesh(m, "cube_mesh")
+                
+                # save the current mesh
+                ms.save_current_mesh("mesh.ply")
                 export_ply_dialogue()
             else:
                 export_ply_dialogue()

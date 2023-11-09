@@ -41,20 +41,21 @@ class Quad_Tool(QObject):
                     if not v.hide_regular[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
-                            self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt] , :])
-                            self.order.append(i)
-                            # self.data_val.append(data[i,:])
-
-                            v.quad_groups_regular[t][i] = self.group_num                         
-                            feature_selected = True
-                            if len(self.data_val) == 4:
-                                if self.ctrl_wdg.kf_method == "Regular":        
-                                    for order in self.order:
-                                        v.quad_groups_regular[t][order] = -1
-                                elif self.ctrl_wdg.kf_method == "Network":        
-                                    for order in self.order:
-                                        v.quad_groups_network[t][order] = -1
-                                self.add_quad()
+                            if len(v.mapping_2d_3d_regular[t]) > cnt:
+                                self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt] , :])
+                                self.order.append(i)
+                                # self.data_val.append(data[i,:])
+    
+                                v.quad_groups_regular[t][i] = self.group_num                         
+                                feature_selected = True
+                                if len(self.data_val) == 4:
+                                    if self.ctrl_wdg.kf_method == "Regular":        
+                                        for order in self.order:
+                                            v.quad_groups_regular[t][order] = -1
+                                    elif self.ctrl_wdg.kf_method == "Network":        
+                                        for order in self.order:
+                                            v.quad_groups_network[t][order] = -1
+                                    self.add_quad()
                         cnt += 1
                         
             elif self.ctrl_wdg.kf_method == "Network":
@@ -62,20 +63,21 @@ class Quad_Tool(QObject):
                     if not v.hide_network[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
-                            self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt] , :])
-                            self.order.append(i)
-                            # self.data_val.append(data[i,:])
-                            v.quad_groups_network[t][i] = self.group_num
-
-                            feature_selected = True
-                            if len(self.data_val) == 4:
-                                if self.ctrl_wdg.kf_method == "Regular":        
-                                    for order in self.order:
-                                        v.quad_groups_regular[t][order] = -1
-                                elif self.ctrl_wdg.kf_method == "Network":        
-                                    for order in self.order:
-                                        v.quad_groups_network[t][order] = -1
-                                self.add_quad()
+                            if len(v.mapping_2d_3d_network[t]) > cnt:
+                                self.data_val.append(data[v.mapping_2d_3d_network[t][cnt] , :])
+                                self.order.append(i)
+                                # self.data_val.append(data[i,:])
+                                v.quad_groups_network[t][i] = self.group_num
+    
+                                feature_selected = True
+                                if len(self.data_val) == 4:
+                                    if self.ctrl_wdg.kf_method == "Regular":        
+                                        for order in self.order:
+                                            v.quad_groups_regular[t][order] = -1
+                                    elif self.ctrl_wdg.kf_method == "Network":        
+                                        for order in self.order:
+                                            v.quad_groups_network[t][order] = -1
+                                    self.add_quad()
                                 
                         cnt += 1
 

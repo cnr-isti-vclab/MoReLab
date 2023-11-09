@@ -5,6 +5,7 @@ from scipy.spatial import distance
 from scipy.optimize import minimize, least_squares
 from scipy.spatial.transform import Rotation as R
 from scipy import linalg
+from util.util import *
 import copy
 
 import numpy as np
@@ -36,47 +37,39 @@ class Constraint_Tool(QObject):
             
             if found1 and found2 and found3 and found4:
                 if self.ctrl_wdg.kf_method == "Regular":
-                    if len(v.features_regular) > 0:
-                        fc1 = v.features_regular[t][idx1]
-                        fc2 = v.features_regular[t][idx2]
-                        x_diff_1 = self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc1.x_loc) - self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc2.x_loc)
-                        y_diff_1 = self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(fc1.y_loc) - self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(fc2.y_loc)
-                        dist1 = distance.euclidean((self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc1.x_loc), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(fc1.y_loc)), (self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc2.x_loc), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(fc2.y_loc)))
-
-                        fc3 = v.features_regular[t][idx3]
-                        fc4 = v.features_regular[t][idx4]
-                        x_diff_2 = self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc3.x_loc) - self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc4.x_loc)
-                        y_diff_2 = self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(fc3.y_loc) - self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(fc4.y_loc)
-                        dist2 = distance.euclidean((self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc3.x_loc), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(fc3.y_loc)), (self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc4.x_loc), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(fc4.y_loc)))
-
-
-                        # print(x_diff_1, y_diff_1)
-                        # print(x_diff_2, y_diff_2)
-                        
-                        # print(dist1, dist2)
-
-                        if dist1 > 0 and dist2 > 0:
-
-                            v.constrained_features_regular[t].append((idx1, idx2))
-                            v.constrained_features_regular[t].append((idx3, idx4))
-                            
-                            print(v.constrained_features_regular[t])
-                            
-                        else:
-                            print("Either distance is zero")
-    
-    
+                    fc1 = v.features_regular[t][idx1]
+                    fc2 = v.features_regular[t][idx2]
+                    fc3 = v.features_regular[t][idx3]
+                    fc4 = v.features_regular[t][idx4]
+                                                
                 elif ctrl_wdg.kf_method == "Network":
-                    if len(v.features_network) > 0:
-                        for i, fc in enumerate(v.features_network[t]):
-                            if not v.hide_network[t][i]:
-                                d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
-                                if d < self.dist_thresh:
-                                    self.parent_viewer.obj.feature_panel.select_feature(i, fc.label)
-                                    self.move_feature_bool = True
-                                    
+                    fc1 = v.features_network[t][idx1]
+                    fc2 = v.features_network[t][idx2]
+                    fc3 = v.features_network[t][idx3]
+                    fc4 = v.features_network[t][idx4]
+
+                x1_transformed, x2_transformed = self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc1.x_loc), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc2.x_loc)
+                y1_transformed, y2_transformed = self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc1.y_loc), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc2.y_loc)
+                dist1 = distance.euclidean((x1_transformed, y1_transformed), (x2_transformed, y2_transformed))
+                    
+                x3_transformed, x4_transformed = self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc3.x_loc), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc4.x_loc)
+                y3_transformed, y4_transformed = self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc3.y_loc), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(fc4.y_loc)
+                dist2 = distance.euclidean((x3_transformed, y3_transformed), (x4_transformed, y4_transformed))
+
+                if dist1 > 0 and dist2 > 0:
+                    if self.ctrl_wdg.kf_method == "Regular":
+                        v.constrained_features_regular[t].append((idx1, idx2))
+                        v.constrained_features_regular[t].append((idx3, idx4))
+                    elif self.ctrl_wdg.kf_method == "Network":
+                        v.constrained_features_network[t].append((idx1, idx2))
+                        v.constrained_features_network[t].append((idx3, idx4))
+                        
+                    
+                else:
+                    constraint_labels_different()
+                    
             else:
-                print("Please make sure that all features are present on the image.")
+                constraint_labels()
                     
     
         

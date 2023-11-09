@@ -19,14 +19,17 @@ class MoviePanel(QTreeWidget):
         self.setMinimumSize(self.ctrl_wdg.monitor_width*0.15, self.ctrl_wdg.monitor_height*0.7)
         self.itemClicked.connect(self.select_movie_child)
         
-    def add_movie(self, movie_path):
+    def add_movie(self, movie_path, fps=0, n_frames=0, duration=0, width=0, height=0):
         self.movie_paths.append(movie_path)
         v = Video(movie_path)
         self.movie_caps.append(v)
         self.global_display_bool.append([False, False])
-        v.video_summary()
+        if v.cap_exist:
+            v.video_summary()
+        else:
+            v.fps, v.n_frames, v.duration, v.width, v.height = fps, n_frames, duration, width, height
+            
         movie_name = split_path(movie_path)
-        
         item = QTreeWidgetItem([str(movie_name)])
         item.addChild(QTreeWidgetItem(["FPS", str(v.fps)]))
         item.addChild(QTreeWidgetItem(["Total frames", str(v.n_frames)]))
@@ -37,6 +40,9 @@ class MoviePanel(QTreeWidget):
         
         self.insertTopLevelItems(len(self.movie_paths) - 1, [item])
         self.select_movie_child(item)
+            
+        return v
+        
         
         
     def deselect_movies(self):

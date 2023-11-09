@@ -12,7 +12,7 @@ class FeaturePanel(QTreeWidget):
         self.selected_feature_idx = -1
         self.ctrl_wdg = parent
         self.items = []
-        self.setMinimumSize(self.ctrl_wdg.monitor_width*0.2, self.ctrl_wdg.monitor_height*0.67)
+        self.setMinimumSize(self.ctrl_wdg.monitor_width*0.2, self.ctrl_wdg.monitor_height*0.65)
         self.itemClicked.connect(self.select_feature_child)
         self.factor_x = 1
         self.factor_y = 1
@@ -73,7 +73,7 @@ class FeaturePanel(QTreeWidget):
                             elif self.ctrl_wdg.kf_method == "Network":
                                 tmp7.append([self.transform_x(v.features_network[img_idx][idx].x_loc), self.transform_y(v.features_network[img_idx][idx].y_loc)])
        
-    
+                    
                     item = QTreeWidgetItem(["Feature "+str(label)])
                     child1 = QTreeWidgetItem(["Label", str(label)])
                     str_vf = ""
@@ -85,7 +85,7 @@ class FeaturePanel(QTreeWidget):
                             str_loc = str_loc + '('+str(tmp7[h][0])+ ',' + str(tmp7[h][1])+')'
                         else:
                             str_vf = str_vf + ', ' +str(ff)
-                            str_loc = str_loc + ', ('+str(tmp7[h][0])+ ',' + str(tmp7[h][0])+')'
+                            str_loc = str_loc + ', ('+str(tmp7[h][0])+ ',' + str(tmp7[h][1])+')'
     
     
                     child2 = QTreeWidgetItem(["Images", str_vf])
@@ -155,6 +155,9 @@ class FeaturePanel(QTreeWidget):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         self.factor_x = v.width/(w2-w1)
         self.factor_y = v.height/(h2-h1)
+        # print(h1)
+        # print("X factor : "+str(self.factor_x))
+        # print("Y factor : "+str(self.factor_y))
 
     def transform_x(self, x):
         x2 = (x - self.ctrl_wdg.gl_viewer.util_.w1)*self.factor_x

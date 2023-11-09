@@ -10,6 +10,10 @@ from rectangle import Rectangle_Tool
 from quad import Quad_Tool
 from constraints import Constraint_Tool
 from util.bundle_adjustment import BA_class
+from scipy.spatial.transform import Rotation
+
+# import matplotlib.pyplot as plt
+
 import numpy as np
 
 class Features(QWidget):
@@ -41,15 +45,22 @@ class Features(QWidget):
         self.img_indices = []
         self.all_ply_pts = []
         self.ply_pts = []
+        self.planar_pts = []
         self.camera_poses = []
         self.camera_projection_mat = []
         self.global_indices = []
+        self.epipolar_last = []
+        self.epipolar_current = []
+        self.last_img_idx = -1
+        self.current_img_epipolar = -1
+        self.fundamental_mat = None
         self.dist_thresh = 20
         self.K = np.eye(3)
         self.BA_obj = BA_class()
         self.cylinder_obj = Cylinder_Tool(self.ctrl_wdg)
         self.curve_obj = Curve_Tool(self.ctrl_wdg)
         self.constraint_obj = Constraint_Tool(self.ctrl_wdg)
+        
         
     
         
@@ -102,6 +113,7 @@ class Features(QWidget):
         elif self.ctrl_wdg.kf_method == "Network":
             for i,hr in enumerate(v.hide_network):
                 for j,hide in enumerate(hr):
+                    fc = v.features_network[i][j]
                     if not hide:
                         tmp2.append(i)
                         tmp3.append(int(fc.label))
@@ -146,9 +158,9 @@ class Features(QWidget):
             
             if len(num_labels_on_images) < 2:
                 bReturn = True
-                
+                    
         if bReturn:
-            numFeature_dialogue()
+            # numFeature_dialogue()
             return np.zeros((1,1)), [], [], []         # Dummy return
         
         else:
@@ -163,10 +175,13 @@ class Features(QWidget):
         self.K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
 
         if len(self.BA_obj.results) > 0:
-            # v.constrained_features_regular[t] = [(33, 34), (33, 27), (33, 34), (26, 27), (33, 34), (26, 31), (33, 34), (25, 26), (33, 34), (30, 31), (33, 34), (25, 30), (33, 34), (24, 25), (33, 34), (24, 29), (33, 34), (29, 30), (33, 34), (23, 24), (33, 34), (23, 28), (33, 34), (28, 29), (33, 27), (26, 27), (33, 27), (26, 31), (33, 27), (25, 26), (33, 27), (30, 31), (33, 27), (25, 30), (33, 27), (24, 25), (33, 27), (29, 30), (33, 27), (24, 29), (33, 27), (23, 28), (33, 27), (23, 24), (33, 27), (28, 29), (26, 27), (26, 31), (26, 27), (25, 26), (26, 27), (30, 31), (26, 27), (25, 30), (26, 27), (24, 25), (26, 27), (29, 30), (26, 27), (24, 29), (26, 27), (23, 24), (26, 27), (23, 28)]
-            # v.constrained_features_regular[t] = [(33, 34), (33, 27), (33, 34), (26, 27), (33, 34), (26, 31), (33, 34), (25, 26), (33, 34), (30, 31), (33, 34), (25, 30), (33, 34), (24, 25), (33, 34), (24, 29), (33, 34), (29, 30), (33, 34), (23, 24), (33, 34), (23, 28), (33, 34), (28, 29), (33, 27), (26, 27), (33, 27), (26, 31), (33, 27), (25, 26), (33, 27), (30, 31), (33, 27), (25, 30), (33, 27), (24, 25), (33, 27), (29, 30), (33, 27), (24, 29), (33, 27), (23, 28), (33, 27), (23, 24), (33, 27), (28, 29)]
+            # v.constrained_features_regular[t] = [(23, 24), (23, 28), (28, 29), (24, 29), (24, 25), (24, 29), (29, 30), (25, 30), (30, 31), (26, 31), (26, 27), (26, 31), (32, 27), (23, 24), (32, 33), (28, 29)]
+            #### Most used for rooftop video
+            v.constrained_features_regular[t] = [(23, 24), (23, 28), (28, 29), (24, 29), (24, 25), (24, 29), (29, 30), (25, 30), (30, 31), (26, 31), (26, 27), (26, 31), (33, 27), (23, 24), (33, 34), (28, 29)]
+            # v.constrained_features_regular[t] = [(23, 24), (23, 28), (28, 29), (24, 29), (24, 25), (24, 29), (29, 30), (25, 30), (30, 31), (26, 31), (26, 27), (26, 31), (33, 27), (23, 24), (33, 27), (28, 29), (26, 27), (24, 25), (25, 26), (33, 27), (28, 29), (29, 30)]
             
-            # v.constrained_features_regular[t] = [(0, 1), (0, 4), (4, 5), (1, 5), (5, 6), (2, 6), (6, 7), (3, 7), (4, 8), (8, 9), (5, 9), (9, 10), (6, 10), (10, 11)]
+            #### Most used for checkerboard video
+            # v.constrained_features_regular[t] = [(0, 1), (0, 4), (4, 5), (1, 5), (5, 6), (2, 6), (6, 7), (3, 7), (4, 8), (8, 9), (5, 9), (9, 10), (6, 10), (10, 11)]            
             
             constrained_list = []
             if self.ctrl_wdg.kf_method == "Regular":
@@ -174,7 +189,6 @@ class Features(QWidget):
               
             elif self.ctrl_wdg.kf_method == "Network":
                 constrained_list = v.constrained_features_network[t]
-            
             
             print("Number of constraints : "+str(len(constrained_list)/2))
             
@@ -185,6 +199,7 @@ class Features(QWidget):
                 w = Dialog()
                 w.show()
             
+                # opt_cameras, all_points, opt_points = self.BA_obj.apply_linear_constraint(self.K, constrained_list, self.cb_lc.currentText(), self.planar_pts[-1])
                 opt_cameras, all_points, opt_points = self.BA_obj.apply_linear_constraint(self.K, constrained_list, self.cb_lc.currentText())
     
                 w.done(0)
@@ -192,8 +207,8 @@ class Features(QWidget):
                 
                 self.all_ply_pts.append(all_points)
                 self.ply_pts.append(opt_points)
-                        
-            
+                
+
                 cam_pos_list = []
                 for i in range(opt_cameras.shape[0]):
                     R = getRotation(opt_cameras[i,:3], 'e')
@@ -216,7 +231,6 @@ class Features(QWidget):
 
         
     def compute_sfm(self):
-
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         t = self.ctrl_wdg.selected_thumbnail_index
         all_pts, img_indices, visible_labels, num_labels = self.get_correspondent_pts(v)
@@ -231,14 +245,18 @@ class Features(QWidget):
             w = Dialog()
             w.show()
         
-            opt_cameras, all_points, opt_points = self.BA_obj.bundle_adjustment(all_pts, visible_labels, self.K, img_indices)
+            opt_cameras, all_points, opt_points = self.BA_obj.bundle_adjustment(all_pts, visible_labels, img_indices, self.K)
 
             w.done(0)
             print("Bundle adjustment has been computed.")
-            
+
             self.all_ply_pts.append(all_points)
-            self.ply_pts.append(opt_points)
-            
+            self.ply_pts.append(opt_points)         
+
+            # planar1 = opt_points[23:32, :]
+            # planar2 = opt_points[32:34, :]
+            # self.planar_pts.append(np.concatenate((planar1, planar2), axis=0))            
+
             if self.ctrl_wdg.kf_method == "Regular":
                 self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][0] = True
                         
@@ -252,25 +270,32 @@ class Features(QWidget):
                         for k, fc in enumerate(v.features_regular[img_idx]):
                             if not v.hide_regular[img_idx][k]:
                                 if j == int(fc.label) - 1:
-                                    # print(j, k)
                                     v.mapping_2d_3d_regular[img_idx].append(j)
                                     
                     elif self.ctrl_wdg.kf_method == "Network":
                         for k, fc in enumerate(v.features_network[img_idx]):
                             if not v.hide_network[img_idx][k]:
                                 if j == int(fc.label) - 1:
-                                    # print(j, k)
                                     v.mapping_2d_3d_network[img_idx].append(j)                                
                                 
-                    
-
-        
+            # for mapping in v.mapping_2d_3d_regular:
+            #     print(mapping)
             self.img_indices = img_indices
             self.ctrl_wdg.populate_scrollbar(self.ctrl_wdg.selected_thumbnail_index)
         
             cam_pos_list = []
+            print("\nQuaternions")
             for i in range(opt_cameras.shape[0]):
+                # Create a rotation object from Euler angles specifying axes of rotation
                 R = getRotation(opt_cameras[i,:3], 'e')
+                
+                rot = Rotation.from_matrix(R)
+                
+                # Convert to quaternions and print
+                rot_quat = rot.as_quat()
+                print(rot_quat)
+                
+                
                 t = opt_cameras[i,3:].reshape((3,1))
                 cam_ext = np.concatenate((np.concatenate((R, t), axis=1), np.array([0,0,0,1]).reshape((1,4))), axis=0)
                 self.camera_projection_mat.append((img_indices[i], cam_ext))
@@ -279,9 +304,14 @@ class Features(QWidget):
                 cam_pos_list.append([cm[0,0], cm[0,1], cm[0,2]])
         
             array_camera_poses = np.asarray(cam_pos_list)
+            print("\nCamera poses")
+            print(array_camera_poses)
             
             self.camera_poses.append(array_camera_poses)
-
+            
+        else:
+            numFeature_dialogue()
+            
 
 
     def init_3D_feature_regular(self, v, t):
@@ -296,38 +326,37 @@ class Features(QWidget):
         v.cylinder_groups_network[t].append(-1)
 
         
-    def add_feature(self,x,y,label=-1):
-        t = self.ctrl_wdg.selected_thumbnail_index
+    def add_feature(self,x,y,label=-1, img_idx=-1):
+        if img_idx == -1:
+            img_idx = self.ctrl_wdg.selected_thumbnail_index
         m_idx = self.ctrl_wdg.mv_panel.selected_movie_idx
         v = self.ctrl_wdg.mv_panel.movie_caps[m_idx]
         # print("===========================================")
 
         if self.ctrl_wdg.kf_method == "Regular":
-            v.n_objects_kf_regular[t] += 1
+            v.n_objects_kf_regular[img_idx] += 1
             if label == -1:    
-                label = v.n_objects_kf_regular[t]
+                label = v.n_objects_kf_regular[img_idx]
             fc = FeatureCrosshair(x, y, label)
-            v.features_regular[t].append(fc)
+            v.features_regular[img_idx].append(fc)
             # print("-------------------------------------")
-            v.hide_regular[t].append(False)
-            self.init_3D_feature_regular(v, t)
+            v.hide_regular[img_idx].append(False)
+            self.init_3D_feature_regular(v, img_idx)
 
         elif self.ctrl_wdg.kf_method == "Network":
-            v.n_objects_kf_network[t] += 1
+            v.n_objects_kf_network[img_idx] += 1
             if label == -1:
-                label = v.n_objects_kf_network[t]
+                label = v.n_objects_kf_network[img_idx]
             fc = FeatureCrosshair(x, y, label)
-            v.features_network[t].append(fc)
-            v.hide_network[t].append(False)
-            self.init_3D_feature_network(v, t)
+            v.features_network[img_idx].append(fc)
+            v.hide_network[img_idx].append(False)
+            self.init_3D_feature_network(v, img_idx)
 
 
         self.feature_panel.selected_feature_idx = -1
         self.feature_panel.display_data()
     
 
-            
-            
             
     def count_visible_features(self, img_idx):
         m_idx = self.ctrl_wdg.mv_panel.selected_movie_idx
@@ -339,7 +368,7 @@ class Features(QWidget):
             hide_list = v.hide_network[img_idx]
 
         for bool_hide in hide_list:
-            if bool_hide:
+            if not bool_hide:
                 num_features = num_features + 1
 
         return num_features
@@ -438,8 +467,72 @@ class Features(QWidget):
         cal_layout.addWidget(self.e1)
         cal_layout.addWidget(buttonBox)
         self.rename_dialog.setLayout(cal_layout)
-
+        
+        
+        
+    def get_epipolar_correspondences(self, v, t):
+        current_pts, last_pts, found_labels = [], [], []
+        all_labels = []
+        temp_last_idx = -1
+        
+        if self.ctrl_wdg.kf_method == "Regular" and len(v.hide_regular) > 0 :            
+            for i in range(t-1, -1, -1):
+                if len(v.hide_regular[i]) > 0 and temp_last_idx == -1:
+                    temp_last_idx = i
+                    for j,hide in enumerate(v.hide_regular[i]):
+                        fc = v.features_regular[i][j]
+                        if not hide:
+                            all_labels.append(int(fc.label))
+                            
+                            
+            hide_list = v.hide_regular[t]
+            for j,hide in enumerate(hide_list):
+                fc = v.features_regular[t][j]
+                if not hide:
+                    all_labels.append(int(fc.label))
             
+            if temp_last_idx == -1:
+                epipolar_dialogue()
+                return [], []
+            else:
+                all_labels_set = set(all_labels)            
+                all_labels_unique = sorted(all_labels_set)
+                
+                for i, label in enumerate(all_labels_unique):
+                    found_current, idx_current = self.feature_panel.get_feature_index(label, t)
+                    found_last, idx_last = self.feature_panel.get_feature_index(label, temp_last_idx)
+                    
+                    if found_current and found_last:
+                        found_labels.append(label)
+                        if self.ctrl_wdg.kf_method == "Regular":
+                            last_pts.append([v.features_regular[temp_last_idx][idx_last].x_loc, v.features_regular[temp_last_idx][idx_last].y_loc])
+                            current_pts.append([v.features_regular[t][idx_current].x_loc, v.features_regular[t][idx_current].y_loc])
+
+                
+                if len(found_labels) > 7:
+                    self.last_img_idx = temp_last_idx
+                    self.current_img_epipolar = t
+                    return last_pts, current_pts
+                else:
+                    epipolar_dialogue()
+                    return [], []
+
+
+        
+        
+    def compute_fundamental_mat(self):
+        v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        t = self.ctrl_wdg.selected_thumbnail_index
+        last_pts, current_pts = self.get_epipolar_correspondences(v, t)
+        self.fundamental_mat = None
+        if len(last_pts) > 0 and len(current_pts) > 0:
+            self.epipolar_current = []
+            last_pts_array = np.array(last_pts)
+            current_pts_array = np.array(current_pts)
+            F, mask = cv2.findFundamentalMat(last_pts_array, current_pts_array, cv2.FM_8POINT)
+            self.fundamental_mat = F
+            fundamental_dialogue()
+                    
 
 
 class FeatureCrosshair():

@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PIL import Image
-from PIL.ImageQt import ImageQt 
+from PIL.ImageQt import ImageQt
 import cv2, copy
 import numpy as np
 from scipy.spatial import distance
@@ -52,6 +52,7 @@ class Util_viewer(QWidget):
         
         self.bRightClick = False
         self.contextMenuPosition = None
+        self.bool_shift_pressed = False
         
         
         
@@ -176,6 +177,9 @@ class Util_viewer(QWidget):
         f = self.parent_viewer.obj.feature_panel.selected_feature_idx
         t = ctrl_wdg.selected_thumbnail_index
         
+        if event.modifiers() & Qt.ShiftModifier :
+            # print("Pressed shift")
+            self.bool_shift_pressed = True
         
         if ctrl_wdg.ui.bBezier and event.key() == Qt.Key_F :
             bfinal_curve = False
@@ -506,7 +510,7 @@ class Util_viewer(QWidget):
                                 if d < self.dist_thresh:
                                     self.parent_viewer.obj.feature_panel.select_feature(i, fc.label)
                                     self.move_feature_bool = True
-    
+                                    
     
                 elif ctrl_wdg.kf_method == "Network":
                     if len(v.features_network) > 0:
@@ -516,6 +520,11 @@ class Util_viewer(QWidget):
                                 if d < self.dist_thresh:
                                     self.parent_viewer.obj.feature_panel.select_feature(i, fc.label)
                                     self.move_feature_bool = True
+                                    
+                                    
+
+    
+                
             
             selected_feature = False
             if (ctrl_wdg.ui.bRect or ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bBezier or ctrl_wdg.ui.bAnchor) and len(self.parent_viewer.obj.ply_pts) > 0:
@@ -537,7 +546,6 @@ class Util_viewer(QWidget):
 
                     
                 if not selected_feature:
-                    # print("Not selected ")
                     self.x = a.x()
                     self.y = a.y()
                     self.x_zoomed, self.y_zoomed = x, y
@@ -602,7 +610,50 @@ class Util_viewer(QWidget):
                     for tup in v.constrained_features_network[t]:
                         fc1, fc2 = v.features_network[t][tup[0]], v.features_network[t][tup[1]]
                         painter.drawLine(QLineF(fc1.x_loc, fc1.y_loc, fc2.x_loc, fc2.y_loc))
-            
+                        
+                        
+            ## Painting epipolar lines
+            if self.parent_viewer.obj.fundamental_mat is not None and self.parent_viewer.obj.ctrl_wdg.ui.bEpipolar:
+                epipolar_current = []
+                if self.parent_viewer.obj.ctrl_wdg.kf_method == "Regular":
+                    if self.parent_viewer.obj.count_visible_features(self.parent_viewer.obj.last_img_idx) > self.parent_viewer.obj.count_visible_features(self.parent_viewer.obj.current_img_epipolar):
+                        fc = v.features_regular[self.parent_viewer.obj.last_img_idx][-1]
+                        dbool = True
+                    else:
+                        dbool = False
+                elif self.parent_viewer.obj.ctrl_wdg.kf_method == "Network":
+                    if self.parent_viewer.obj.count_visible_features(self.parent_viewer.obj.last_img_idx) > self.parent_viewer.obj.count_visible_features(self.parent_viewer.obj.current_img_epipolar):
+                        fc = v.features_network[self.parent_viewer.obj.last_img_idx][-1]
+                        dbool = True
+                    else:
+                        dbool = False
+
+                if dbool or self.parent_viewer.obj.feature_panel.selected_feature_idx != -1:
+                    if self.parent_viewer.obj.feature_panel.selected_feature_idx != -1:
+                        if self.parent_viewer.obj.ctrl_wdg.kf_method == "Regular":
+                            fc = v.features_regular[self.parent_viewer.obj.last_img_idx][self.parent_viewer.obj.feature_panel.selected_feature_idx]
+                        elif self.parent_viewer.obj.ctrl_wdg.kf_method == "Network":
+                            fc = v.features_network[self.parent_viewer.obj.last_img_idx][self.parent_viewer.obj.feature_panel.selected_feature_idx]
+                
+                    pt = np.array([fc.x_loc, fc.y_loc]).reshape(1,1,2)
+                    lines_current = cv2.computeCorrespondEpilines(pt, 1,  self.parent_viewer.obj.fundamental_mat)
+
+                    lines_current = lines_current.reshape(1,3)
+                    slopes_current = -1*np.divide(lines_current[0, 0], lines_current[0, 1])
+                    intercepts_current = -1*np.divide(lines_current[0, 2], lines_current[0, 1])
+          
+                    y = slopes_current*0 + intercepts_current
+                    epipolar_current.append([0, int(y)])
+                    
+                    y = slopes_current*self.parent_viewer.width() + intercepts_current
+                    epipolar_current.append([self.parent_viewer.width(), int(y)])
+                        
+                    if self.parent_viewer.obj.current_img_epipolar == t:
+                        for i in range(len(epipolar_current)-1):
+                            pt = epipolar_current[i]
+                            pt_next = epipolar_current[i+1]
+                            painter.drawLine(QLineF(pt[0], pt[1], pt_next[0], pt_next[1]))
+                    
             
             
             pen = QPen(QColor(0, 255, 0))
@@ -612,17 +663,19 @@ class Util_viewer(QWidget):
             # Painting the selected feature
             
             if self.parent_viewer.obj.feature_panel.selected_feature_idx != -1 and ctrl_wdg.ui.cross_hair:
-                if ctrl_wdg.kf_method == "Regular" and len(v.features_regular[t]) > 0 and not v.hide_regular[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]:
-                    fc = v.features_regular[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]
-                    painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc, fc.x_loc + self.ft_dist/2, fc.y_loc))
-                    painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
-                    painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-                
-                elif ctrl_wdg.kf_method == "Network" and len(v.features_network[t]) > 0 and not v.hide_network[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]:
-                    fc = v.features_network[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]
-                    painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc, fc.x_loc + self.ft_dist/2, fc.y_loc))
-                    painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
-                    painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                if ctrl_wdg.kf_method == "Regular" and len(v.features_regular[t]) > self.parent_viewer.obj.feature_panel.selected_feature_idx:
+                    if not v.hide_regular[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]:
+                        fc = v.features_regular[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]
+                        painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc, fc.x_loc + self.ft_dist/2, fc.y_loc))
+                        painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
+                        painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                    
+                elif ctrl_wdg.kf_method == "Network" and len(v.features_network[t]) > self.parent_viewer.obj.feature_panel.selected_feature_idx:
+                    if not v.hide_network[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]:
+                        fc = v.features_network[t][self.parent_viewer.obj.feature_panel.selected_feature_idx]
+                        painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc, fc.x_loc + self.ft_dist/2, fc.y_loc))
+                        painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
+                        painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
             
             
             # Painting for Rectangle Tool

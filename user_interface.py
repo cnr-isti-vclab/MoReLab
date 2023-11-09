@@ -21,6 +21,8 @@ class UserInterface(QWidget):
         self.add_tool_icons()
         self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
         self.set_flags(True, False, False, False, False, False, False, False, False, False, False, False)
+        self.bEpipolar = False
+        self.epipolar_tool.setStyleSheet(self.tool_btn_style)
 
         
         
@@ -46,6 +48,12 @@ class UserInterface(QWidget):
         fileMenu.addAction(self.open_mov)
         self.open_mov.triggered.connect(self.ctrl_wdg.main_file.implement_open_movie)
         self.open_mov.setShortcut("ctrl+shift+o")
+        
+
+        self.open_fold = QAction(QIcon("./icons/open-folder.png"), "&Import Folder", self)
+        fileMenu.addAction(self.open_fold)
+        self.open_fold.triggered.connect(self.ctrl_wdg.main_file.implement_open_folder)
+        self.open_fold.setShortcut("ctrl+f")
 
         
         self.save_pr = QAction(QIcon("./icons/save_project.png"), "&Save", self)
@@ -135,6 +143,13 @@ class UserInterface(QWidget):
         self.om_tool.setStyleSheet(self.tool_btn_style)
         self.om_tool.setToolTip("Import Movie")
         self.om_tool.clicked.connect(self.ctrl_wdg.main_file.implement_open_movie)
+
+        self.of_tool = QPushButton()
+        self.of_tool.setIcon(QIcon("./icons/open-folder.png"))
+        self.of_tool.setIconSize(QSize(icon_size, icon_size))
+        self.of_tool.setStyleSheet(self.tool_btn_style)
+        self.of_tool.setToolTip("Import Folder")
+        self.of_tool.clicked.connect(self.ctrl_wdg.main_file.implement_open_folder)
         
         self.sp_tool = QPushButton()
         self.sp_tool.setIcon(QIcon("./icons/save_project.png"))
@@ -244,7 +259,13 @@ class UserInterface(QWidget):
         self.anchor_tool.setToolTip("Anchor Tool")
         self.anchor_tool.clicked.connect(self.implement_anchor_tool)
         
-
+        self.epipolar_tool = QPushButton()
+        self.epipolar_tool.setIcon(QIcon("./icons/diagonal-line.png"))
+        self.epipolar_tool.setIconSize(QSize(icon_size, icon_size))
+        self.epipolar_tool.setStyleSheet(self.tool_btn_style)
+        self.epipolar_tool.setToolTip("Epipolar Tool")
+        self.epipolar_tool.clicked.connect(self.implement_epipolar_tool)
+        
 
     def implement_move_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
@@ -274,8 +295,6 @@ class UserInterface(QWidget):
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
             self.ctrl_wdg.gl_viewer.obj.constraint_obj.get_distances()
 
-                
-            
             
     def implement_rect_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
@@ -325,6 +344,16 @@ class UserInterface(QWidget):
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style)
             self.set_flags(False, False, False, False, False, False, False, False, False, False, False, True)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
+
+    def implement_epipolar_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            if self.bEpipolar:
+                self.bEpipolar = False
+                self.epipolar_tool.setStyleSheet(self.tool_btn_style)
+            else:
+                self.bEpipolar = True
+                self.epipolar_tool.setStyleSheet(self.selected_btn_style)
+                self.ctrl_wdg.gl_viewer.obj.compute_fundamental_mat()
 
         
         

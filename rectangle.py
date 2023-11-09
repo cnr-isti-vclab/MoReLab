@@ -53,13 +53,14 @@ class Rectangle_Tool(QObject):
                     if not v.hide_regular[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
-                            self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt], :])
-                            self.order.append(i)
-                            v.rect_groups_regular[t][i] = self.group_num
-                            feature_selected = True
-                                
-                            if len(self.data_val) == 4:
-                                self.add_rectangle()
+                            if len(v.mapping_2d_3d_regular[t]) > cnt:
+                                self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt], :])
+                                self.order.append(i)
+                                v.rect_groups_regular[t][i] = self.group_num
+                                feature_selected = True
+                                    
+                                if len(self.data_val) == 4:
+                                    self.add_rectangle()
 
                         cnt += 1
                                 
@@ -68,10 +69,8 @@ class Rectangle_Tool(QObject):
                     if not v.hide_network[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
-                            found, idx = self.ctrl_wdg.gl_viewer.obj.feature_panel.get_feature_index(int(fc.label), t)
-                            if found:
-                                self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt], :])
-                                
+                            if len(v.mapping_2d_3d_network[t]) > cnt:
+                                self.data_val.append(data[v.mapping_2d_3d_network[t][cnt], :])
                                 self.order.append(i)
                                 v.rect_groups_network[t][i] = self.group_num
                                 feature_selected = True
@@ -80,6 +79,7 @@ class Rectangle_Tool(QObject):
                                     self.add_rectangle()
 
                         cnt += 1
+
         return feature_selected
     
     

@@ -61,8 +61,6 @@ class Curve_Tool(QObject):
                     self.data_val_regular = []
                     v.bPaint_regular[t] = False
                     v.bAssignDepth_regular[t] = True
-                    # print("Mark ------------")
-                    # print(len(v.curve_groups_regular[t]))
 
             elif self.ctrl_wdg.kf_method == "Network":
                 self.data_val_network.append([x, y])
@@ -193,23 +191,23 @@ class Curve_Tool(QObject):
                 # print(len(d_temp))
                 if len(d_temp) > 0:
                     all_data = d_temp[-1]
-                    # print("aaaaaaaaaaaa")
-                    # print(len(all_data))
-
                     pts = all_data[5:]
                     pts2 = all_data[1:5]
-
                     val_list = v.curve_groups_regular[tup[0]][-1]
-
                     for tup in val_list:
                         data_val.append([self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(tup[0]), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(tup[1])])
 
             elif self.ctrl_wdg.kf_method == "Network":
-                pts = v.curve_pts_network[-1][tup[0]][5:]
-                pts2 = v.curve_pts_network[-1][tup[0]][1:5]
-                val_list = v.curve_groups_network[tup[0]]
-                for tup in val_list:
-                    data_val.append([self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(tup[0]), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(tup[1])])
+                d_temp = v.temp_pts_network[tup[0]]
+                # print(len(d_temp))
+                if len(d_temp) > 0:
+                    all_data = d_temp[-1]
+                    pts = all_data[5:]
+                    pts2 = all_data[1:5]
+                    val_list = v.curve_groups_network[tup[0]][-1]
+                    for tup in val_list:
+                        data_val.append([self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_x(tup[0]), self.ctrl_wdg.gl_viewer.obj.feature_panel.transform_y(tup[1])])
+
 
             if len(pts) > 10:
                 a = np.asarray(data_val)

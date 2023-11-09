@@ -52,26 +52,27 @@ class Cylinder_Tool(QObject):
                     if not v.hide_regular[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
-                            self.order.append(i)
-                            self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt],:])
-                            v.cylinder_groups_regular[t][i] = self.group_num
-                            feature_selected = True
-                            
-                            if len(self.data_val) == 4:
-                                if self.ctrl_wdg.ui.bnCylinder:
-                                    bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
-                                    if len(bases) > 0:
-
-                                        self.bool_cylinder_type.append(False)
-                                        self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
+                            if len(v.mapping_2d_3d_regular[t]) > cnt:
+                                self.order.append(i)
+                                self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt],:])
+                                v.cylinder_groups_regular[t][i] = self.group_num
+                                feature_selected = True
+                                
+                                if len(self.data_val) == 4:
+                                    if self.ctrl_wdg.ui.bnCylinder:
+                                        bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                        if len(bases) > 0:
+    
+                                            self.bool_cylinder_type.append(False)
+                                            self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
+                                        else:
+                                            straight_line_dialogue()
+                                            del self.data_val[-1]
                                     else:
-                                        straight_line_dialogue()
-                                        del self.data_val[-1]
-                                else:
-
-                                    bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
-                                    self.bool_cylinder_type.append(True)
-                                    self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
+    
+                                        bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                        self.bool_cylinder_type.append(True)
+                                        self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
                         cnt += 1
              
             elif self.ctrl_wdg.kf_method == "Network":
@@ -79,30 +80,31 @@ class Cylinder_Tool(QObject):
                     if not v.hide_network[t][i]:
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
-                            self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt],:])
-                            v.cylinder_groups_network[t][i] = self.group_num
-                            self.order.append(i)
-                            feature_selected = True
-                            
-                            if len(self.data_val) == 4:
-                                if self.ctrl_wdg.ui.bnCylinder:
-                                    bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
-                                    if len(bases) > 0:
-
-                                        self.bool_cylinder_type.append(False)
-                                        self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
+                            if len(v.mapping_2d_3d_network[t]) > cnt:
+                                self.data_val.append(data[v.mapping_2d_3d_network[t][cnt],:])
+                                v.cylinder_groups_network[t][i] = self.group_num
+                                self.order.append(i)
+                                feature_selected = True
+                                
+                                if len(self.data_val) == 4:
+                                    if self.ctrl_wdg.ui.bnCylinder:
+                                        bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                        if len(bases) > 0:
+    
+                                            self.bool_cylinder_type.append(False)
+                                            self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
+                                        else:
+                                            straight_line_dialogue()
+                                            del self.data_val[-1]
                                     else:
-                                        straight_line_dialogue()
-                                        del self.data_val[-1]
-                                else:
-                                    
-                                    v.cylinder_groups_network[t][i] = -1
-                                    for order in self.order:
-                                        v.cylinder_groups_network[t][order] = -1
-
-                                    bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
-                                    self.bool_cylinder_type.append(True)
-                                    self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
+                                        
+                                        v.cylinder_groups_network[t][i] = -1
+                                        for order in self.order:
+                                            v.cylinder_groups_network[t][order] = -1
+    
+                                        bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
+                                        self.bool_cylinder_type.append(True)
+                                        self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
                         cnt += 1
 
         return feature_selected

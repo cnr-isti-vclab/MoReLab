@@ -91,7 +91,12 @@ class GL_Widget(QOpenGLWidget):
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:
-                    self.render_points()
+                    if self.obj.ctrl_wdg.kf_method == "Regular":
+                        mapping = v.mapping_2d_3d_regular[tup[0]]
+                    elif self.obj.ctrl_wdg.kf_method == "Network":
+                        mapping = v.mapping_2d_3d_network[tup[0]]
+                        
+                    self.render_points(mapping)
                     
                     # if self.obj.ctrl_wdg.ui.bRect or self.obj.ctrl_wdg.ui.bPick or self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bCylinder or self.obj.ctrl_wdg.ui.bnCylinder or self.obj.ctrl_wdg.ui.bBezier or self.obj.ctrl_wdg.ui.bQuad:
                     self.render_rect(True)
@@ -166,7 +171,8 @@ class GL_Widget(QOpenGLWidget):
         glFrontFace(GL_CCW)
         
 
-        
+        # if self.util_.bool_shift_pressed:
+        #     print("shift")
         
         
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
@@ -186,7 +192,7 @@ class GL_Widget(QOpenGLWidget):
                     
                     glLoadMatrixf(load_mat)
                     
-                    self.render_points()
+                    self.render_points(mapping)
 
                     # if self.obj.ctrl_wdg.ui.bRect or self.obj.ctrl_wdg.ui.bPick :
                     self.render_rect(False)
@@ -293,7 +299,10 @@ class GL_Widget(QOpenGLWidget):
                         
                 
                         
-                        
+    def keyReleaseEvent(self, event):
+        if self.util_.bool_shift_pressed:
+            self.util_.bool_shift_pressed = False
+        super(GL_Widget, self).keyReleaseEvent(event)                        
         
 
 
@@ -478,7 +487,7 @@ class GL_Widget(QOpenGLWidget):
 
 
 
-    def render_points(self):
+    def render_points(self, indices_to_display):
         data = self.obj.ply_pts[-1]
         
         # # print(bezier_points)
@@ -487,9 +496,14 @@ class GL_Widget(QOpenGLWidget):
         glPointSize(5*self.util_._zoom)
         glBegin(GL_POINTS)
         
-        for i in range(data.shape[0]):
-            glVertex3f(data[i,0], data[i,1], data[i,2])
+        for i in indices_to_display:
+            if i < len(data):
+                glVertex3f(data[i,0], data[i,1], data[i,2])
         glEnd()
+        
+        # for i in range(data.shape[0]):
+        #     glVertex3f(data[i,0], data[i,1], data[i,2])
+        # glEnd()
         
 
     def render_rect(self, offscreen_bool = False):
