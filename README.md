@@ -36,6 +36,36 @@ git clone https://github.com/magicleap/SuperGluePretrainedNetwork.git
 cp -r SuperGluePretrainedNetwork/models MoRelab/
 ~~~
 
+-At this point MoReLab directory should look like this:
+```bash
+├── models
+│   ├── weights
+│   ├── matching.py
+│   ├── superglue.py
+│   ├── superpoint.py
+│   └── utils.py
+├── icons
+├── readme_images
+├── sample_movies
+├── util
+├── main.py
+├── central_widget.py
+├── GL_widget_viewer.py
+├── user_interface.py
+├── rectangle.py
+├── quad.py
+├── rectangle.py
+├── constraints.py
+├── curve.py
+├── cylinder.py
+├── feature_panel.py
+├── features.py
+├── movie_panel.py
+├── util_viewer.py
+├── requirements.txt
+└── .gitignore
+```
+
 - Move to the repository:
 ~~~
 cd MoReLab
