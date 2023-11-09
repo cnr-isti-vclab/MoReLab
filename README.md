@@ -26,6 +26,16 @@ conda activate morelab_env
 git clone https://github.com/cnr-isti-vclab/MoReLab.git
 ~~~
 
+- Also clone the SuperGlue repository using this command:
+~~~
+git clone https://github.com/magicleap/SuperGluePretrainedNetwork.git
+~~~
+
+- Copy the folder of models from SuperGlue repository to . You can do it manually or use this command:
+~~~
+cp -r SuperGluePretrainedNetwork/models MoRelab/
+~~~
+
 - Move to the repository:
 ~~~
 cd MoReLab
