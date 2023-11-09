@@ -39,15 +39,15 @@ cp -r SuperGluePretrainedNetwork/models MoRelab/
 -At this point MoReLab directory should look like this:
 ```bash
 ├── models
-│   ├── weights
+│   ├── weights/
 │   ├── matching.py
 │   ├── superglue.py
 │   ├── superpoint.py
 │   └── utils.py
-├── icons
-├── readme_images
-├── sample_movies
-├── util
+├── icons/
+├── readme_images/
+├── sample_movies/
+├── util/
 ├── main.py
 ├── central_widget.py
 ├── GL_widget_viewer.py
