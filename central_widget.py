@@ -10,6 +10,7 @@ from quad import Quad_Tool
 from util.kf_dialogue import KF_dialogue
 from util.util import *
 import cv2, time, copy, os
+import numpy as np
 import pyautogui
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
@@ -271,26 +272,10 @@ class Widget(QWidget):
                                 
                                 
                                 min_indices = np.unravel_index(distance_matrix.argmin(), distance_matrix.shape)
-                                new_distance_matrix = copy.deepcopy(distance_matrix)
-                                new_distance_matrix[min_indices[0], min_indices[1]] = 1000000
-                                
-                                min_indices_second = np.unravel_index(new_distance_matrix.argmin(), new_distance_matrix.shape)
-                                
-                                NNDR_ratio = distance_matrix[min_indices[0], min_indices[1]]/distance_matrix[min_indices_second[0], min_indices_second[1]]
-                                # print("Feature no : "+str(i+1))
-                                # print("Ratio : "+str(NNDR_ratio))
-                                # print(distance_matrix[min_indices[0], min_indices[1]])
-                                # print(distance_matrix[min_indices_second[0], min_indices_second[1]])
-                                # print("==============================================")
-                                # print("================================================================")
+
                                 kps2 = all_kps2[min_indices[0]][min_indices[1]]
                                 desc2 = all_desc2[min_indices[0]][min_indices[1]]
                                 
-                                # # BFMatcher with default params
-                                # bf = cv2.BFMatcher()
-                                # matches = bf.match(patch1_desc, desc2)
-                                # matches = sorted(matches, key=lambda val: val.distance)
-                                # out = cv2.drawMatches(old_frame, kps1, new_frame, kps2, matches, None, flags=2)
                                 # cv2.imwrite('final_img_'+str(i)+'.jpg', out)
 
                                 x_shift, y_shift = self.gl_viewer.obj.feature_panel.inv_trans_x(kps2[0].pt[0]*(1/resize_scale)) + 2 , self.gl_viewer.obj.feature_panel.inv_trans_y(kps2[0].pt[1]*(1/resize_scale)) + 2
@@ -350,6 +335,28 @@ class Widget(QWidget):
             v.count_deleted_network[idx0] = []
             v.bool_superglue_network[idx0] = True
             
+    def read_image_for_superglue(self, image_rgb, device, resize, rotation, resize_float):
+        image = cv2.cvtColor(image_rgb, cv2.COLOR_BGR2GRAY)
+        if image is None:
+            return None, None, None
+        w, h = image.shape[1], image.shape[0]
+        w_new, h_new = w, h
+        # w_new, h_new = process_resize(w, h, resize)
+        scales = (float(w) / float(w_new), float(h) / float(h_new))
+    
+        if resize_float:
+            image = cv2.resize(image.astype('float32'), (w_new, h_new))
+        else:
+            image = cv2.resize(image, (w_new, h_new)).astype('float32')
+    
+        if rotation != 0:
+            image = np.rot90(image, k=rotation)
+            if rotation % 2:
+                scales = scales[::-1]
+    
+        inp = torch.from_numpy(image/255.).float()[None, None].to(device)
+        return image, inp, scales
+            
                     
     def superglue_detection(self, idx0, idx1):
         v = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
@@ -369,12 +376,14 @@ class Widget(QWidget):
                                           estimate_pose, make_matching_plot_fast,
                                           error_colormap, AverageTimer, pose_auc, read_image,
                                           rotate_intrinsics, rotate_pose_inplane,
-                                          scale_intrinsics)
+                                          scale_intrinsics, process_resize, frame2tensor)
                 print("Applying AI-based automatic detection of features")
                 w = Dialog()
                 w.show()
             
                 image0, image1 = images[idx0], images[idx1]
+                print(image0.shape)
+                print(image1.shape)
                                 
                 # Load the SuperPoint and SuperGlue models.
                 if torch.cuda.is_available():
@@ -387,20 +396,20 @@ class Widget(QWidget):
                 config = {
                     'superpoint': {
                         'nms_radius': 4,
-                        'keypoint_threshold': 0.010,
+                        'keypoint_threshold': 0.005,
                         'max_keypoints': 1024
                     },
                     'superglue': {
                         'weights': "indoor",
                         'sinkhorn_iterations': 20,
-                        'match_threshold': 0.9,
+                        'match_threshold': 0.7,
                     }
                 }
                 matching = Matching(config).eval().to(device)
                 
                 # Load the image pair.
-                image0, inp0, scales0 = read_image(image0, device, [-1], 0, False)
-                image1, inp1, scales1 = read_image(image1, device, [-1], 0, False)
+                image0, inp0, scales0 = self.read_image_for_superglue(image0, device, [-1], 0, False)
+                image1, inp1, scales1 = self.read_image_for_superglue(image1, device, [-1], 0, False)
     
                 pred = matching({'image0': inp0, 'image1': inp1})
                 pred = {k: v[0].cpu().numpy() for k, v in pred.items()}
@@ -413,10 +422,10 @@ class Widget(QWidget):
                 mkpts1 = kpts1[matches[valid]]
                 mconf = conf[valid]
                             
-                color = cm.jet(mconf)
-                out_image = make_matching_plot_fast(image0, image1, kpts0, kpts1, mkpts0,
-                                            mkpts1, color, show_keypoints=False, margin=10)
-                cv2.imwrite("output.jpg", out_image)
+                # color = cm.jet(mconf)
+                # out_image = make_matching_plot_fast(image0, image1, kpts0, kpts1, mkpts0,
+                #                             mkpts1, color, text='', show_keypoints=False, margin=10)
+                # cv2.imwrite("output.jpg", out_image)
                 
                 if self.kf_method == "Regular":
                     fc_list_idx0 = v.features_regular[idx0]
