@@ -23,63 +23,6 @@ class UserInterface(QWidget):
         self.set_flags(True, False, False, False, False, False, False, False, False, False, False, False)
         self.bEpipolar = False
         self.epipolar_tool.setStyleSheet(self.tool_btn_style)
-
-        
-        
-    def create_menu(self):
-        menuBar = self.ctrl_wdg.main_file.menuBar()
-        fileMenu = QMenu("&File", self)
-        menuBar.addMenu(fileMenu)
-
-
-        self.new_pr = QAction(QIcon("./icons/new_project.png"), "&New", self)
-        fileMenu.addAction(self.new_pr)
-        self.new_pr.triggered.connect(self.ctrl_wdg.main_file.implement_new_project)
-        self.new_pr.setShortcut("ctrl+n")
-
-
-        self.open_pr = QAction(QIcon("./icons/open_project.png"), "&Open", self)
-        fileMenu.addAction(self.open_pr)
-        self.open_pr.triggered.connect(self.ctrl_wdg.main_file.open_project)
-        self.open_pr.setShortcut("ctrl+o")
-        
-        
-        self.open_mov = QAction(QIcon("./icons/open_movie.png"), "&Import Movie", self)
-        fileMenu.addAction(self.open_mov)
-        self.open_mov.triggered.connect(self.ctrl_wdg.main_file.implement_open_movie)
-        self.open_mov.setShortcut("ctrl+shift+o")
-        
-
-        self.open_fold = QAction(QIcon("./icons/open-folder.png"), "&Import Folder", self)
-        fileMenu.addAction(self.open_fold)
-        self.open_fold.triggered.connect(self.ctrl_wdg.main_file.implement_open_folder)
-        self.open_fold.setShortcut("ctrl+f")
-
-        
-        self.save_pr = QAction(QIcon("./icons/save_project.png"), "&Save", self)
-        fileMenu.addAction(self.save_pr)
-        self.save_pr.triggered.connect(self.ctrl_wdg.main_file.save_project)
-        self.save_pr.setShortcut("ctrl+s")
-
-        
-        self.save_as = QAction(QIcon("./icons/save_as.png"), "&Save as", self)
-        fileMenu.addAction(self.save_as)
-        self.save_as.triggered.connect(self.ctrl_wdg.main_file.save_as_project)
-        self.save_as.setShortcut("ctrl+shift+s")
-        
-        
-        self.exp_ply = QAction(QIcon("./icons/3d_printer.png"), "&Export PLY", self)
-        fileMenu.addAction(self.exp_ply)
-        self.exp_ply.triggered.connect(self.ctrl_wdg.main_file.export_ply_data)
-        self.exp_ply.setShortcut("ctrl+e")
-        
-        
-        self.exit_pr = QAction(QIcon("./icons/exit_project.png"), "&Exit", self)
-        fileMenu.addAction(self.exit_pr)
-        self.exit_pr.triggered.connect(self.ctrl_wdg.main_file.implement_exit_project)
-        self.exit_pr.setShortcut("ctrl+q")
-        
-
         
         
 
@@ -194,13 +137,6 @@ class UserInterface(QWidget):
         self.ft_plus_tool.setToolTip("New Feature Tool")
         self.ft_plus_tool.clicked.connect(self.implement_feature_plus_tool)
         
-        self.constraint_tool = QPushButton()
-        self.constraint_tool.setIcon(QIcon("./icons/constraint.png"))
-        self.constraint_tool.setIconSize(QSize(icon_size, icon_size))
-        self.constraint_tool.setStyleSheet(self.tool_btn_style)
-        self.constraint_tool.setToolTip("Linear constraint")
-        self.constraint_tool.clicked.connect(self.implement_constraint_tool)
-        
         
         self.rect_tool = QPushButton()
         self.rect_tool.setIcon(QIcon("./icons/square.png"))
@@ -259,12 +195,22 @@ class UserInterface(QWidget):
         self.anchor_tool.setToolTip("Anchor Tool")
         self.anchor_tool.clicked.connect(self.implement_anchor_tool)
         
+        self.selection_tool = QPushButton()
+        self.selection_tool.setIcon(QIcon("./icons/select.png"))
+        self.selection_tool.setIconSize(QSize(icon_size, icon_size))
+        self.selection_tool.setStyleSheet(self.tool_btn_style)
+        self.selection_tool.setToolTip("Selection Tool")
+        self.selection_tool.clicked.connect(self.implement_selection_tool)
+
+
         self.epipolar_tool = QPushButton()
         self.epipolar_tool.setIcon(QIcon("./icons/diagonal-line.png"))
         self.epipolar_tool.setIconSize(QSize(icon_size, icon_size))
         self.epipolar_tool.setStyleSheet(self.tool_btn_style)
         self.epipolar_tool.setToolTip("Epipolar Tool")
         self.epipolar_tool.clicked.connect(self.implement_epipolar_tool)
+        
+
         
 
     def implement_move_tool(self):
@@ -286,64 +232,64 @@ class UserInterface(QWidget):
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(False, False, True, False, False, False, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
-            
-            
-    def implement_constraint_tool(self):
-        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, True, False, False, False, False, False, False, False, False)
-            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
-            self.ctrl_wdg.gl_viewer.obj.constraint_obj.get_distances()
 
             
     def implement_rect_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, False, True, False, False, False, False, False, False, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, True, False, False, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             
             
     def implement_cylinder_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, False, False, True, False, False, False, False, False, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, False, True, False, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             
     def implement_new_cylinder_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, False, False, False, True, False, False, False, False, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, False, False, True, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
                      
     def implement_bezier_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, False, False, False, False, True, False, False, False, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, False, False, False, True, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             
     def implement_measure_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, False, False, False, False, False, True, False, False, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style,self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, False, False, False, False, True, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))            
             
     def implement_picking_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style)
-            self.set_flags(False, False, False, False, False, False, False, False, False, True, False, False)
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, False, False, False, False, False, True, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
             
     def implement_quad_tool(self):
+        if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
+            self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style)
+            self.set_flags(False, False, False, False, False, False, False, False, False, True, False, False)
+            self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
+            
+    def implement_anchor_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style)
             self.set_flags(False, False, False, False, False, False, False, False, False, False, True, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             
-    def implement_anchor_tool(self):
+    def implement_selection_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style)
             self.set_flags(False, False, False, False, False, False, False, False, False, False, False, True)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
+            
+                        
 
     def implement_epipolar_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
@@ -357,11 +303,10 @@ class UserInterface(QWidget):
 
         
         
-    def set_styles(self, mv_sty, ft_sty, ft_plus_sty, constraint_sty, quad_sty, cyl_sty, new_cyl_sty, bz_sty, measure_sty, pick_sty, connect_dots_sty, anchor_sty):
+    def set_styles(self, mv_sty, ft_sty, ft_plus_sty, quad_sty, cyl_sty, new_cyl_sty, bz_sty, measure_sty, pick_sty, connect_dots_sty, anchor_sty, sel_sty):
         self.mv_tool.setStyleSheet(mv_sty)
         self.ft_tool.setStyleSheet(ft_sty)
         self.ft_plus_tool.setStyleSheet(ft_plus_sty)
-        self.constraint_tool.setStyleSheet(constraint_sty)
         self.rect_tool.setStyleSheet(quad_sty)
         self.cyl_tool.setStyleSheet(cyl_sty)
         self.new_cyl_tool.setStyleSheet(new_cyl_sty)
@@ -370,13 +315,13 @@ class UserInterface(QWidget):
         self.pick_tool.setStyleSheet(pick_sty)
         self.quad_tool.setStyleSheet(connect_dots_sty)
         self.anchor_tool.setStyleSheet(anchor_sty)
+        self.selection_tool.setStyleSheet(sel_sty)
 
 
-    def set_flags(self, move_bool, cross_hair, crosshair_plus, bConstraint, bRect, bCylinder, bnCylinder, bBezier, bMeasure, bPick, bQuad, bAnchor):
+    def set_flags(self, move_bool, cross_hair, crosshair_plus, bRect, bCylinder, bnCylinder, bBezier, bMeasure, bPick, bQuad, bAnchor, bSelect):
         self.move_bool = move_bool
         self.cross_hair = cross_hair
         self.crosshair_plus = crosshair_plus
-        self.bConstraint = bConstraint
         self.bRect = bRect
         self.bCylinder = bCylinder
         self.bnCylinder = bnCylinder
@@ -385,5 +330,6 @@ class UserInterface(QWidget):
         self.bPick = bPick
         self.bQuad = bQuad
         self.bAnchor = bAnchor
+        self.bSelect = bSelect
 
     

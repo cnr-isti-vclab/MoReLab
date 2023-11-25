@@ -42,6 +42,7 @@ class Quad_Tool(QObject):
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
                             if len(v.mapping_2d_3d_regular[t]) > cnt:
+                                self.ctrl_wdg.main_file.logfile.info("Clicked on a feature for QUAD primitive ....")
                                 self.data_val.append(data[v.mapping_2d_3d_regular[t][cnt] , :])
                                 self.order.append(i)
                                 # self.data_val.append(data[i,:])
@@ -64,6 +65,7 @@ class Quad_Tool(QObject):
                         d = distance.euclidean((fc.x_loc, fc.y_loc), (x, y))
                         if d < self.dist_thresh_select:
                             if len(v.mapping_2d_3d_network[t]) > cnt:
+                                self.ctrl_wdg.main_file.logfile.info("Clicked on a feature for QUAD primitive ....")
                                 self.data_val.append(data[v.mapping_2d_3d_network[t][cnt] , :])
                                 self.order.append(i)
                                 # self.data_val.append(data[i,:])
@@ -103,10 +105,13 @@ class Quad_Tool(QObject):
         self.data_val = []
         self.group_num += 1
         self.ctrl_wdg.rect_obj.primitive_count += 1
+        self.ctrl_wdg.main_file.logfile.info("A quad number "+str(len(self.group_counts))+" has been made while total primitives are "+str(self.ctrl_wdg.rect_obj.primitive_count)+" ....")
+
     
     
     def delete_quad(self, idx):
         if idx != -1:
+            self.ctrl_wdg.main_file.logfile.info("Delete the quad number "+str(idx)+" ....")
             self.deleted[idx] = True
             self.selected_quad_idx = -1
 

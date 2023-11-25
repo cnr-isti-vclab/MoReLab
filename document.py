@@ -15,6 +15,7 @@ class Document(QWidget):
         self.ctrl_wdg = ctrl_wdg
         
     def get_data(self):
+        self.ctrl_wdg.main_file.logfile.info("Going to create json data ....")
         data_movies = []
         h1_list = []
         w1_list = []
@@ -148,7 +149,7 @@ class Document(QWidget):
             base_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_base_centers[0])
             n_curved_cyl = base_centers.shape[0]
 
-
+        self.ctrl_wdg.main_file.logfile.info("json data has been returned ....")
         data = {
             "movies" : self.ctrl_wdg.mv_panel.movie_paths,
             "fps" : movies_fps,
@@ -180,7 +181,7 @@ class Document(QWidget):
         return data
         
     
-    def save_3D(self, name_project):
+    def save_3D(self, name_project):        
 
         disp_bool = False
         if self.ctrl_wdg.kf_method == "Regular":
@@ -197,18 +198,18 @@ class Document(QWidget):
                 os.makedirs(b_out)
 
             if len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0:
+                self.ctrl_wdg.main_file.logfile.info("Saving sparse 3D points data ....")
+                
                 ply_data_all = self.ctrl_wdg.gl_viewer.obj.all_ply_pts[-1]
                 ply_data = self.ctrl_wdg.gl_viewer.obj.ply_pts[-1]
                 camera_pose = self.ctrl_wdg.gl_viewer.obj.camera_poses[-1]
                 projections = self.ctrl_wdg.gl_viewer.obj.camera_projection_mat
-                res = self.ctrl_wdg.gl_viewer.obj.BA_obj.results[-1]
                 
                 v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
 
                 np.savetxt(os.path.join(out_dir, 'ply.csv'), ply_data, delimiter=',')
                 np.savetxt(os.path.join(out_dir, 'all_ply.csv'), ply_data_all, delimiter=',')
                 np.savetxt(os.path.join(out_dir, 'cam_poses.csv'), camera_pose, delimiter=',')
-                np.savetxt(os.path.join(out_dir, 'res.csv'), camera_pose, delimiter=',')
 
 
                 for i, tup in enumerate(projections):
@@ -224,9 +225,9 @@ class Document(QWidget):
                         if not os.path.exists(rect_path):
                             os.makedirs(rect_path)
 
-
                         d = np.asarray(rect_)
                         np.savetxt(os.path.join(rect_path, 'rect_'+str(i)+'.csv'), d, delimiter=',')
+                        self.ctrl_wdg.main_file.logfile.info("Saving Rectangle points data ....")
 
                 ##### PLY Data for Quads
 
@@ -244,6 +245,7 @@ class Document(QWidget):
                         
                 if len(occ) > 0:
                     np.savetxt(os.path.join(quad_path, 'occ.csv'), np.asarray(occ), delimiter=',')
+                    self.ctrl_wdg.main_file.logfile.info("Saving Quadrilateral points data ....")
 
 
                 ##### PLY Data for Cylinders
@@ -298,6 +300,8 @@ class Document(QWidget):
                     np.savetxt(os.path.join(cyl_path, 'N.csv'), N_data, delimiter=',')
                     np.savetxt(os.path.join(cyl_path, 'heights.csv'), height_data, delimiter=',')
                     np.savetxt(os.path.join(cyl_path, 'radii.csv'), radius_data, delimiter=',')
+                    
+                    self.ctrl_wdg.main_file.logfile.info("Saving Cylinder points data ....")
 
                 ##### PLY Data for curved cylinder
 
@@ -329,15 +333,12 @@ class Document(QWidget):
                             general_cylinder = np.concatenate((base_centers, np.vstack(general_bases), top_centers, np.vstack(general_tops)))
                             np.savetxt(os.path.join(ccyl_path, 'curved_cyl_'+str(i)+'.csv'), general_cylinder, delimiter=',')
                             
-                            
                             radius_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.radii[i])
                             t_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.t_vecs[i])
                             b_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.b_vecs[i])
                             N_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.Ns[i])
                             
-                            
                     if len(radius_temp) > 0:
-                        
                         t_vec_data = np.vstack(t_vec_temp)
                         b_vec_data = np.vstack(b_vec_temp)
                         N_data = np.vstack(N_vec_temp)
@@ -348,24 +349,26 @@ class Document(QWidget):
                         np.savetxt(os.path.join(ccyl_path, 'N.csv'), N_data, delimiter=',')
                         np.savetxt(os.path.join(ccyl_path, 'radii.csv'), radius_data, delimiter=',')
                         
+                        self.ctrl_wdg.main_file.logfile.info("Saving curved tube points data ....")
             
             
             
     
         
     def save_directory(self, name_project):
-        out_dir = os.path.join(name_project.split('.')[0], 'extracted_frames')
+        out_dir = name_project.split('.')[0] + '/extracted_frames'
             
         if len(self.ctrl_wdg.mv_panel.movie_caps) > 0:
             if len(self.ctrl_wdg.mv_panel.movie_caps[0].key_frames_regular) > 0 or len(self.ctrl_wdg.mv_panel.movie_caps[0].key_frames_network) > 0:
                 if not os.path.exists(out_dir):
                     os.makedirs(out_dir)
             
-        for i, p in enumerate(self.ctrl_wdg.mv_panel.movie_paths):
-            aa = split_path(p)
-            video_folder = aa.split('.')[0]
-            video_folder_path = os.path.join(out_dir, video_folder)
-            
+        for i, p in enumerate(self.ctrl_wdg.mv_panel.movie_paths):            
+            video_name = p.split('/')[-1]
+            video_folder = video_name.split('.')[0]
+            video_folder_path = out_dir + '/' + video_folder
+            self.ctrl_wdg.main_file.logfile.info("Directory created to save images ....")
+
             if len(self.ctrl_wdg.mv_panel.movie_caps[i].key_frames_regular) > 0:
                 path_regular = os.path.join(video_folder_path , 'Regular')
                 if not os.path.exists(path_regular):
@@ -400,16 +403,17 @@ class Document(QWidget):
         w1_past = data["w1"]
 
         feature_data_list = data["feature_dict"]
+        a = project_path.split('.')[0] + '/extracted_frames'
 
-        a = os.path.join(project_path.split('.')[0], 'extracted_frames')
         if os.path.exists(a):
+            self.ctrl_wdg.main_file.logfile.info("Loading data ....")
             movie_dirs = os.listdir(a)
-            # print(a)
-    
+
             for i,p in enumerate(mv_paths):
                 # print(p)
                 self.ctrl_wdg.selected_thumbnail_index = -1
-                movie_name = split_path(p)
+                # movie_name = split_path(p)
+                movie_name = p.split('/')[-1]
                 # print(self.ctrl_wdg.grid_layout)
                 # self.ctrl_wdg.mv_panel.add_movie(p)
                 v = self.ctrl_wdg.mv_panel.add_movie(p, mv_fps[i], mv_frames[i], mv_durations[i], mv_widths[i], mv_heights[i])
@@ -417,6 +421,7 @@ class Document(QWidget):
                 self.ctrl_wdg.mv_panel.selected_movie_idx = i
     
                 for j,mv in enumerate(movie_dirs):
+                    # print(movie_name.split('.')[0], mv)
                     if movie_name.split('.')[0] == mv:
                         movie_dirr = os.path.join(a, mv)
     
@@ -440,11 +445,17 @@ class Document(QWidget):
                     x_locs = video_data["x_locs"]
                     y_locs = video_data["y_locs"]
                     labels = video_data["labels_regular"]
+                    
+                    # self.ctrl_wdg.gl_viewer.util_.w1 = w1_past[i]
+                    # self.ctrl_wdg.gl_viewer.util_.h1 = h1_past[i]
+                    
     
                     w = self.ctrl_wdg.gl_viewer.util_.w2 - self.ctrl_wdg.gl_viewer.util_.w1
                     h = self.ctrl_wdg.gl_viewer.util_.h2 - self.ctrl_wdg.gl_viewer.util_.h1
                     diff_h = 0.75 * (self.ctrl_wdg.gl_viewer.util_.h1 - h1_past[i])
                     diff_w = 0.75 * (self.ctrl_wdg.gl_viewer.util_.w1 - w1_past[i])
+                    # diff_h, diff_w = 0, 0
+                    # print(diff_h, diff_w)
     
                     # print(diff_h)
                     self.ctrl_wdg.kf_method = "Regular"
@@ -496,13 +507,13 @@ class Document(QWidget):
             self.ctrl_wdg.mv_panel.selected_movie_idx = int(data["selected_movie"])
             v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
             self.ctrl_wdg.kf_method = data["selected_kf_method"]
-    
+            
+            self.ctrl_wdg.main_file.logfile.info("2D data has been loaded ....")
             if data["bool_3D"]:
-    
                 ############### Load 3D data points ###############
                 
+                self.ctrl_wdg.main_file.logfile.info("Loading 3D data ....")
                 self.ctrl_wdg.gl_viewer.obj.initialize_mats()
-    
                 self.ctrl_wdg.gl_viewer.obj.img_indices = [int(x) for x in data["img_indices"]]
                 self.ctrl_wdg.mv_panel.global_display_bool = data["bool_display_list"]
     
@@ -512,7 +523,6 @@ class Document(QWidget):
                 ply = np.loadtxt(os.path.join(a, 'ply.csv'), delimiter=',').astype(float)
                 all_ply = ply = np.loadtxt(os.path.join(a, 'all_ply.csv'), delimiter=',').astype(float)
                 cam_poses = np.loadtxt(os.path.join(a, 'cam_poses.csv'), delimiter=',').astype(float)
-                res = np.loadtxt(os.path.join(a, 'res.csv'), delimiter=',').astype(float)
                 mapping = []
                 for i, map_ in enumerate(data["mapping"]):
                     mapping.append([int(x) for x in map_])
@@ -526,7 +536,6 @@ class Document(QWidget):
                 self.ctrl_wdg.gl_viewer.obj.ply_pts.append(ply)
                 self.ctrl_wdg.gl_viewer.obj.all_ply_pts.append(all_ply)
                 self.ctrl_wdg.gl_viewer.obj.camera_poses.append(cam_poses)
-                self.ctrl_wdg.gl_viewer.obj.BA_obj.results.append(res)
                     
                 # print("--------------------------")
                 # print(v.mapping_2d_3d_regular)
@@ -537,12 +546,10 @@ class Document(QWidget):
                 # print(ext_paths)
     
                 if len(ext_paths) > 0:
-                    for i, path in enumerate(ext_paths):
-                        # print(path)
-                        p = split_path(path)
+                    for i, p in enumerate(ext_paths):
                         idx = int(p.split('.')[0].split('_')[-1])
                         self.ctrl_wdg.gl_viewer.obj.img_indices.append(idx)
-                        self.ctrl_wdg.gl_viewer.obj.camera_projection_mat.append((idx, np.loadtxt(path, delimiter=',').astype(float)))
+                        self.ctrl_wdg.gl_viewer.obj.camera_projection_mat.append((idx, np.loadtxt(p, delimiter=',').astype(float)))
     
     
                 ############### Load Rectangles ###############
@@ -707,8 +714,7 @@ class Document(QWidget):
                                 TC.append(tops_arr[k, :])
                             TC_all.append(TC)
                         self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops.append(TC_all)
-    
-    
+
                         self.ctrl_wdg.gl_viewer.obj.curve_obj.curve_count.append(self.ctrl_wdg.rect_obj.primitive_count)
                         col = self.ctrl_wdg.rect_obj.getRGBfromI(self.ctrl_wdg.rect_obj.primitive_count)
                         self.ctrl_wdg.gl_viewer.obj.curve_obj.colors.append(col)
@@ -731,13 +737,10 @@ class Document(QWidget):
                         self.ctrl_wdg.gl_viewer.obj.curve_obj.Ns.append(N_vecs_list)
                         
                         self.ctrl_wdg.gl_viewer.obj.curve_obj.radii.append(radii_list)
-                    
-                    
 
         self.ctrl_wdg.selected_thumbnail_index = int(data["selected_thumbnail"])
         self.ctrl_wdg.mv_panel.select_movie(self.ctrl_wdg.selected_thumbnail_index )
         self.ctrl_wdg.ui.implement_move_tool()
-        self.ctrl_wdg.main_file.bLoad = True
 
 
 

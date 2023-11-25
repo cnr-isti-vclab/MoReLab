@@ -48,6 +48,7 @@ class Widget(QWidget):
         self.rect_obj = Rectangle_Tool(self)
         self.quad_obj = Quad_Tool(self)
         self.old_thumbnail_index = -1
+        self.bool_shift_pressed = False
         
         
         
@@ -72,6 +73,7 @@ class Widget(QWidget):
 
     def extract(self):
         b = True
+        old_method = self.kf_method
         if self.kf_method == "":
             self.kf_method = "Regular"
         dlg = KF_dialogue(self.kf_method)
@@ -90,22 +92,29 @@ class Widget(QWidget):
                         sampling_rate = int(rate_str)
                         v1.extract_frames_regularly(sampling_rate)
                         self.ui.radiobutton1.setChecked(True)
+                        self.main_file.logfile.info("Key-frames extracted by regular extraction method ....")
     
                     elif self.kf_method == "Network":
                         # print("Going to extract frames")
                         v1.cleanSequence()
                         # print(len(v1.key_frames_network))
                         self.ui.radiobutton2.setChecked(True)
+                        self.main_file.logfile.info("Key-frames extracted by Network extraction method ....")
                     
                     w.done(0)
                     self.selected_thumbnail_index = -1
                     self.populate_scrollbar()
+                    
                 else:
                     not_extractKF_dialogue()
+                    self.kf_method = old_method
+                    self.main_file.logfile.info("Not extracting frames. Key-frame extraction method is : "+self.kf_method+" ....")
 
             else:
                 self.kf_method = dlg.kf_met
-            
+                self.main_file.logfile.info("Not extracting frames. Key-frame extraction method is : "+self.kf_method+" ....")
+        else:
+            self.main_file.logfile.info("Not extracting frames. Key-frame extraction method is : "+self.kf_method+" ....")
             
     def populate_scrollbar(self, disp_idx = -1):
         widget = QWidget()                 
@@ -113,6 +122,7 @@ class Widget(QWidget):
         row_in_grid_layout = 0
         kfs = self.find_kfs()
         if len(kfs) > 0:
+            self.main_file.logfile.info("Populating scrolbar ....")
             for i, img in enumerate(kfs):
                 img_label = QLabel("")
                 img_label.setAlignment(Qt.AlignCenter)
@@ -152,11 +162,12 @@ class Widget(QWidget):
     
         
     def displayThumbnail(self, index):
+        self.main_file.logfile.info("Display image number : "+str(index+1)+" ....")
         self.selected_thumbnail_index = index
         # print(self.old_thumbnail_index, self.selected_thumbnail_index)
         # print(self.gl_viewer.util_.bool_shift_pressed)
-        if self.gl_viewer.util_.bool_shift_pressed:
-            self.gl_viewer.util_.bool_shift_pressed = False
+        if self.bool_shift_pressed:
+            self.bool_shift_pressed = False
             self.superglue_detection(self.old_thumbnail_index, self.selected_thumbnail_index)
 
         ## Deselect all thumbnails in the image selector
@@ -191,7 +202,7 @@ class Widget(QWidget):
         if self.gl_viewer.obj.fundamental_mat is None:
             self.gl_viewer.obj.feature_panel.selected_feature_idx = -1
         
-        self.gl_viewer.util_.bool_shift_pressed = False
+        self.bool_shift_pressed = False
 
 
         
@@ -205,6 +216,7 @@ class Widget(QWidget):
                                 "old_kf_method" : self.kf_method,
                                 "old_movie_idx" : self.mv_panel.selected_movie_idx}
             copy_dialogue()
+            self.main_file.logfile.info("Copied feature data on the frame "+str(t+1)+" ....")
         else:
             noImage_dialogue()
         
@@ -212,6 +224,7 @@ class Widget(QWidget):
         if len(self.copied_data)==0:
             copy_features_dialogue()
         else:
+            self.main_file.logfile.info("Pasting feature data on the frame "+str(self.selected_thumbnail_index+1)+" ....")
             v = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
             t = self.copied_data["img_index"]
             old_kf = self.copied_data["old_kf_method"]
@@ -244,9 +257,6 @@ class Widget(QWidget):
                                 # cv2.imwrite('old_patch_'+str(i)+'.jpg', old_patch)
                                 kp1 = cv2.KeyPoint.convert([(x_loc, y_loc)])
                                 (kps1, patch1_desc) = sift.compute(old_frame, kp1)
-                                # print(patch1_desc.shape)
-                                # patch2 = new_frame[y_loc - 2*search_pixels : y_loc + 2*search_pixels, x_loc - 2*search_pixels : x_loc + 2*search_pixels]
-                                # cv2.imwrite('new_patch_'+str(i)+'.jpg', patch2)
                                 distance_matrix = 100000*np.ones(shape=(4*search_pixels , 4*search_pixels))
                                 j_idx = 0
                                 all_kps2 = []
@@ -283,7 +293,7 @@ class Widget(QWidget):
                                 # x_shift, y_shift = self.calc_shifts(patch1_rgb, patch2_rgb, i, patch_size, search_patch_factor)
                                 self.gl_viewer.obj.add_feature(x_shift, y_shift)
                             else:
-                                print("Adding and deleting feature")
+                                # print("Adding and deleting feature")
                                 self.gl_viewer.obj.add_feature(fc.x_loc, fc.y_loc)
                                 self.gl_viewer.obj.feature_panel.selected_feature_idx = i
                                 self.gl_viewer.obj.delete_feature()
@@ -292,22 +302,61 @@ class Widget(QWidget):
                         
                 elif old_kf == "Network" and self.kf_method == "Network":
                     if v.n_objects_kf_network[self.selected_thumbnail_index] == 0:
+                        sift = cv2.SIFT_create()
                         old_frame = v.key_frames_network[t]
+                        old_frame = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
+                        old_frame = cv2.resize(old_frame, None, fx=resize_scale, fy=resize_scale, interpolation = cv2.INTER_AREA)
+                        
+                        
                         new_frame = v.key_frames_network[self.selected_thumbnail_index]
+                        new_frame = cv2.cvtColor(new_frame, cv2.COLOR_BGR2GRAY)
+                        new_frame = cv2.resize(new_frame, None, fx=resize_scale, fy=resize_scale, interpolation = cv2.INTER_AREA)
 
-                        for i in range(len(v.features_network[t])):
-                            fc = v.features_network[t][i]
+                        for i, fc in enumerate(v.features_network[t]):
                             if not v.hide_network[t][i]:
-                                patch1_rgb = old_frame[int(self.gl_viewer.obj.feature_panel.transform_y(fc.y_loc) - patch_before_size) : int(self.gl_viewer.obj.feature_panel.transform_y(fc.y_loc) + patch_after_size) , int(self.gl_viewer.obj.feature_panel.transform_x(fc.x_loc) - patch_before_size) : int(self.gl_viewer.obj.feature_panel.transform_x(fc.x_loc) + patch_after_size), :]
-                                patch2_rgb = new_frame[int(self.gl_viewer.obj.feature_panel.transform_y(fc.y_loc) - patch_size*0.5*search_patch_factor) : int(self.gl_viewer.obj.feature_panel.transform_y(fc.y_loc) + patch_size*0.5*search_patch_factor), int(self.gl_viewer.obj.feature_panel.transform_x(fc.x_loc) - patch_size*0.5*search_patch_factor) : int(self.gl_viewer.obj.feature_panel.transform_x(fc.x_loc) + patch_size*0.5*search_patch_factor), :]
-                                cv2.imwrite('old_patch_'+str(i)+'.jpg', patch1_rgb)
-                                cv2.imwrite('new_patch_'+str(i)+'.jpg', patch2_rgb)
-                                x_shift, y_shift = self.calc_shifts(patch1_rgb, patch2_rgb, i, patch_size, search_patch_factor)
-                                self.gl_viewer.obj.add_feature(fc.x_loc + x_shift, fc.y_loc + y_shift)
+                                x_loc, y_loc = int(resize_scale*self.gl_viewer.obj.feature_panel.transform_x(fc.x_loc)), int(resize_scale*self.gl_viewer.obj.feature_panel.transform_y(fc.y_loc))
+                                old_patch = old_frame[y_loc - search_pixels:y_loc + search_pixels, x_loc - search_pixels:x_loc + search_pixels]
+                                kp1 = cv2.KeyPoint.convert([(x_loc, y_loc)])
+                                (kps1, patch1_desc) = sift.compute(old_frame, kp1)
+                                distance_matrix = 100000*np.ones(shape=(4*search_pixels , 4*search_pixels))
+                                j_idx = 0
+                                all_kps2 = []
+                                all_desc2 = []
+                                # print(x_loc, y_loc)
+                                for j in range(-2*search_pixels, 2*search_pixels, sliding_window_size):
+                                    k_idx = 0
+                                    kps2_temp = []
+                                    desc2_temp = []
+                                    for k in range(-2*search_pixels, 2*search_pixels, sliding_window_size):
+                                        kp2 = cv2.KeyPoint.convert([(x_loc + j, y_loc + k)])
+                                        (kps2, patch2_desc) = sift.compute(new_frame, kp2)
+                                        kps2_temp.append(kps2)
+                                        desc2_temp.append(patch2_desc)
+                                        dist = np.linalg.norm(patch1_desc - patch2_desc)
+                                        distance_matrix[j_idx, k_idx] = dist
+                                        k_idx += 1
+                                    all_kps2.append(kps2_temp)
+                                    all_desc2.append(desc2_temp)
+                                    j_idx = j_idx + 1
+                                
+                                
+                                min_indices = np.unravel_index(distance_matrix.argmin(), distance_matrix.shape)
+
+                                kps2 = all_kps2[min_indices[0]][min_indices[1]]
+                                desc2 = all_desc2[min_indices[0]][min_indices[1]]
+                                
+                                # cv2.imwrite('final_img_'+str(i)+'.jpg', out)
+
+                                x_shift, y_shift = self.gl_viewer.obj.feature_panel.inv_trans_x(kps2[0].pt[0]*(1/resize_scale)) + 2 , self.gl_viewer.obj.feature_panel.inv_trans_y(kps2[0].pt[1]*(1/resize_scale)) + 2
+                                self.gl_viewer.obj.add_feature(x_shift, y_shift)
+                                
+                                
                             else:
+                                # print("Adding and deleting feature")
                                 self.gl_viewer.obj.add_feature(fc.x_loc, fc.y_loc)
                                 self.gl_viewer.obj.feature_panel.selected_feature_idx = i
                                 self.gl_viewer.obj.delete_feature()
+
                     else:
                         filledImage_dialogue()
                     
@@ -315,6 +364,7 @@ class Widget(QWidget):
                     switch_kf_dialogue()
                     
     def init_2d(self, v, idx0):
+        self.main_file.logfile.info("Initializing 2D data")
         if self.kf_method == "Regular":
             v.n_objects_kf_regular[idx0] = 0
             v.measured_pos_regular[idx0] = []
@@ -363,12 +413,23 @@ class Widget(QWidget):
 
         if self.kf_method == "Regular":
             images = v.key_frames_regular
+            x1_idx0, x1_idx1 = v.select_x1_regular[idx0], v.select_x1_regular[idx1]
+            y1_idx0, y1_idx1 = v.select_y1_regular[idx0], v.select_y1_regular[idx1]
+            w_idx0, w_idx1 = v.select_w_regular[idx0], v.select_w_regular[idx1]
+            h_idx0, h_idx1 = v.select_h_regular[idx0], v.select_h_regular[idx1]
+            
         elif self.kf_method == "Network":
             images = v.key_frames_network
+            x1_idx0, x1_idx1 = v.select_x1_network[idx0], v.select_x1_network[idx1]
+            y1_idx0, y1_idx1 = v.select_y1_network[idx0], v.select_y1_network[idx1]
+            w_idx0, w_idx1 = v.select_w_network[idx0], v.select_w_network[idx1]
+            h_idx0, h_idx1 = v.select_h_network[idx0], v.select_h_network[idx1]
+            
         if len(images) == 0:
             no_keyframe_dialogue()
         else:
             if not os.path.exists(os.path.join(os.getcwd(), 'models')):
+                self.main_file.logfile.info("User did not place models folder inside MoReLab ....")
                 models_folder_dialogue()
             else:
                 from models.matching import Matching
@@ -377,20 +438,25 @@ class Widget(QWidget):
                                           error_colormap, AverageTimer, pose_auc, read_image,
                                           rotate_intrinsics, rotate_pose_inplane,
                                           scale_intrinsics, process_resize, frame2tensor)
-                print("Applying AI-based automatic detection of features")
+                self.main_file.logfile.info("AI-based automatic detection is starting ....")
                 w = Dialog()
                 w.show()
             
                 image0, image1 = images[idx0], images[idx1]
-                print(image0.shape)
-                print(image1.shape)
-                                
+                
+                if x1_idx0 != -1:
+                    image0 = image0[self.gl_viewer.obj.feature_panel.transform_y(y1_idx0) : self.gl_viewer.obj.feature_panel.transform_y(y1_idx0+h_idx0), self.gl_viewer.obj.feature_panel.transform_x(x1_idx0) : self.gl_viewer.obj.feature_panel.transform_x(x1_idx0+w_idx0)]
+                
+                if x1_idx1 != -1:
+                    image1 = image1[self.gl_viewer.obj.feature_panel.transform_y(y1_idx1) : self.gl_viewer.obj.feature_panel.transform_y(y1_idx1+h_idx1), self.gl_viewer.obj.feature_panel.transform_x(x1_idx1) : self.gl_viewer.obj.feature_panel.transform_x(x1_idx1+w_idx1)]
+                
                 # Load the SuperPoint and SuperGlue models.
                 if torch.cuda.is_available():
                     device = 'cuda'
                 else:
                     device = 'cpu'
-                print('Running inference on device \"{}\"'.format(device))
+                
+                self.main_file.logfile.info("Detection is being done on device "+device+" ....")
                 
                 
                 config = {
@@ -421,11 +487,6 @@ class Widget(QWidget):
                 mkpts0 = kpts0[valid]
                 mkpts1 = kpts1[matches[valid]]
                 mconf = conf[valid]
-                            
-                # color = cm.jet(mconf)
-                # out_image = make_matching_plot_fast(image0, image1, kpts0, kpts1, mkpts0,
-                #                             mkpts1, color, text='', show_keypoints=False, margin=10)
-                # cv2.imwrite("output.jpg", out_image)
                 
                 if self.kf_method == "Regular":
                     fc_list_idx0 = v.features_regular[idx0]
@@ -439,9 +500,8 @@ class Widget(QWidget):
                     num_idx0 = v.n_objects_kf_network[idx0]
                     num_idx1 = v.n_objects_kf_network[idx1]
                     
-                print("Number of matching keypoints detected : "+str(mkpts0.shape[0]))
-                print("Number of features already on first image : "+str(num_idx0))
-                print("Number of features already on second image : "+str(num_idx1))
+                # print("Number of matching keypoints detected : "+str(mkpts0.shape[0]))
+                self.main_file.logfile.info("Number of matching keypoints detected : "+str(mkpts0.shape[0])+" ....")
             
                 max_label = 0
                 if num_idx0 > 0 or num_idx1 > 1:
@@ -454,13 +514,14 @@ class Widget(QWidget):
                         
                     max_label = max(max(labels_idx0, default=0), max(labels_idx1, default=0))
                 
-                print("Maximum label : "+str(max_label))
+                # print("Maximum label : "+str(max_label))
+                self.main_file.logfile.info("Maximum label : "+str(max_label)+" ....")
                 
                 i_idx = 0
                 for i in range(mkpts0.shape[0]):
                     # print(mkpts0[i,:])
-                    x0, y0 = self.gl_viewer.obj.feature_panel.inv_trans_x(mkpts0[i, 0]), self.gl_viewer.obj.feature_panel.inv_trans_y(mkpts0[i, 1])
-                    x1, y1 = self.gl_viewer.obj.feature_panel.inv_trans_x(mkpts1[i, 0]), self.gl_viewer.obj.feature_panel.inv_trans_y(mkpts1[i, 1])
+                    x0, y0 = self.gl_viewer.obj.feature_panel.inv_trans_x(mkpts0[i, 0]) - self.gl_viewer.util_.w1 + x1_idx0, self.gl_viewer.obj.feature_panel.inv_trans_y(mkpts0[i, 1]) - self.gl_viewer.util_.h1 + y1_idx0
+                    x1, y1 = self.gl_viewer.obj.feature_panel.inv_trans_x(mkpts1[i, 0]) - self.gl_viewer.util_.w1 + x1_idx1, self.gl_viewer.obj.feature_panel.inv_trans_y(mkpts1[i, 1]) - self.gl_viewer.util_.h1 + y1_idx1
                     new_label_0, x0, y0 = self.check_neighbour(x0, y0, fc_list_idx0)
                     new_label_1, x1, y1 = self.check_neighbour(x1, y1, fc_list_idx1)
                         
@@ -477,9 +538,8 @@ class Widget(QWidget):
                         i_idx += 1
                         
                 w.done(0)
-                print("Atomatic detection of features has been computed.")
 
-
+                self.main_file.logfile.info("AI-based automatic detection has been completed ....")
                 
     def check_neighbour(self, x, y, fc_list):
         threshold = 2
@@ -494,6 +554,19 @@ class Widget(QWidget):
         
         return label, x, y
             
-                
+    
+    def keyReleaseEvent(self, event):
+        if self.bool_shift_pressed:
+            self.bool_shift_pressed = False
+        super(Widget, self).keyReleaseEvent(event)                        
+        
+
+
+    def keyPressEvent(self, event):
+        if event.modifiers() & Qt.ShiftModifier :
+            # print("Pressed shift")
+            self.bool_shift_pressed = True
+
+        super(Widget, self).keyPressEvent(event)
             
         

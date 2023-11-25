@@ -299,10 +299,9 @@ class GL_Widget(QOpenGLWidget):
                         
                 
                         
-    def keyReleaseEvent(self, event):
-        if self.util_.bool_shift_pressed:
-            self.util_.bool_shift_pressed = False
-        super(GL_Widget, self).keyReleaseEvent(event)                        
+    # def keyReleaseEvent(self, event):
+        
+    #     super(GL_Widget, self).keyReleaseEvent(event)                        
         
 
 
@@ -345,6 +344,22 @@ class GL_Widget(QOpenGLWidget):
             self.move_x = a.x()
             self.move_y = a.y()
             self.util_.move_pick = True
+            if self.util_.selection_press_loc is not None:
+                if self.move_x < self.util_.selection_press_loc[0]:
+                    self.util_.selection_x1 = self.move_x
+                else:
+                    self.util_.selection_x1 = self.util_.selection_press_loc[0]
+                    
+                if self.move_y < self.util_.selection_press_loc[1]:
+                    self.util_.selection_y1 = self.move_y
+                else:
+                    self.util_.selection_y1 = self.util_.selection_press_loc[1]
+                
+                
+                self.util_.selection_w = abs(self.util_.selection_press_loc[0] - self.move_x)
+                self.util_.selection_h = abs(self.util_.selection_press_loc[1] - self.move_y)
+                # print("Selection rectangle width : "+str(self.move_x - self.util_.selection_press_loc[0]))
+                # print("Selection rectangle height : "+str(self.move_y - self.util_.selection_press_loc[1]))
             
         if self.obj.ctrl_wdg.ui.cross_hair:
             if self.obj.ctrl_wdg.kf_method == "Regular":
@@ -360,16 +375,35 @@ class GL_Widget(QOpenGLWidget):
                 
     def mouseReleaseEvent(self, event):
         a = event.pos()
-
+        
         if event.button() == Qt.RightButton:
             self.release_loc = (a.x(), a.y())
             if self.util_._zoom >= 1:
                 self.util_.offset_x += (self.release_loc[0] - self.util_.press_loc[0])
                 self.util_.offset_y += (self.release_loc[1] - self.util_.press_loc[1])
 
-        if self.obj.ctrl_wdg.ui.move_bool or self.obj.ctrl_wdg.ui.cross_hair:
-            if event.button() == Qt.LeftButton:
-                self.util_.move_feature_bool = False
+        elif event.button() == Qt.LeftButton:
+            v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
+            if self.obj.ctrl_wdg.ui.move_bool or self.obj.ctrl_wdg.ui.cross_hair:            
+                    self.util_.move_feature_bool = False
+                    
+            if self.obj.ctrl_wdg.ui.bSelect:
+                self.util_.selection_press_loc = None
+                if self.obj.ctrl_wdg.kf_method == "Regular":
+                    v.select_x1_regular[self.obj.ctrl_wdg.selected_thumbnail_index] = self.util_.selection_x1
+                    v.select_y1_regular[self.obj.ctrl_wdg.selected_thumbnail_index] = self.util_.selection_y1
+                    v.select_w_regular[self.obj.ctrl_wdg.selected_thumbnail_index] = self.util_.selection_w
+                    v.select_h_regular[self.obj.ctrl_wdg.selected_thumbnail_index] = self.util_.selection_h
+
+                elif self.obj.ctrl_wdg.kf_method == "Network":
+                    v.select_x1_network[self.obj.ctrl_wdg.selected_thumbnail_index] = self.util_.selection_x1
+                    v.select_y1_network[self.obj.ctrl_wdg.selected_thumbnail_index] = self.util_.selection_y1
+                    v.select_w_network[self.obj.ctrl_wdg.selected_thumbnail_index] = self.util_.selection_w
+                    v.select_h_network[self.obj.ctrl_wdg.selected_thumbnail_index] = self.util_.selection_h
+                    
+                self.util_.selection_x1, self.util_.selection_y1 = -1, -1
+                self.util_.selection_w, self.util_.selection_h = -1, -1
+                
 
                     
 

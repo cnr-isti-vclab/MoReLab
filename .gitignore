@@ -18,5 +18,6 @@ util/__pycache__/
 *.zip
 *.bz2
 *.obj
+*.log
 
 

@@ -109,6 +109,10 @@ class Video:
         self.bPaint_regular = []
         self.bAssignDepth_regular = []
         self.temp_pts_regular = []
+        self.select_x1_regular = []
+        self.select_y1_regular = []
+        self.select_w_regular = []
+        self.select_h_regular = []
 
         if n!=-1:
             for i in range(n):
@@ -122,6 +126,10 @@ class Video:
                 self.bPaint_regular.append(True)
                 self.bAssignDepth_regular.append(False)
                 self.temp_pts_regular.append([])
+                self.select_x1_regular.append(-1)
+                self.select_y1_regular.append(-1)
+                self.select_w_regular.append(-1)
+                self.select_h_regular.append(-1)
 
     
     
@@ -228,9 +236,7 @@ class Video:
             lap, value = self.checkLaplaicanBluriness(img, threshold)
         self.key_frame_indices_network.append(j)
         self.key_frames_network.append(img_cv)
-        
-        # if bSave:
-        #     writeCV2(img / 255.0, folder_out + '/' + name_base + '_' + format(j,'06d') + '.jpg')
+
     
         if shift_threshold < 0:
             shape_max = np.max(img.shape)
@@ -281,6 +287,9 @@ class Video:
         self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
+        self.count_deleted_network = []
+        self.bool_superglue_network = []
+
 
         if n!=-1:
             for i in range(n):
@@ -291,6 +300,9 @@ class Video:
                 self.constrained_features_network.append([])
                 self.features_network.append([])
                 self.hide_network.append([])
+                self.count_deleted_network.append([])
+                self.bool_superglue_network.append(False)
+
 
 
     def init_3D_network(self, n=-1):
@@ -304,6 +316,10 @@ class Video:
         self.temp_pts_network = []
         self.bPaint_network = []
         self.bAssignDepth_network = []
+        self.select_x1_network = []
+        self.select_y1_network = []
+        self.select_w_network = []
+        self.select_h_network = []
 
         if n!=-1:
             for i in range(n):
@@ -318,3 +334,7 @@ class Video:
                 self.temp_pts_network.append([])
                 self.bPaint_network.append(True)
                 self.bAssignDepth_network.append(False)
+                self.select_x1_network.append(-1)
+                self.select_y1_network.append(-1)
+                self.select_w_network.append(-1)
+                self.select_h_network.append(-1)

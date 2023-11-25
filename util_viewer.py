@@ -52,7 +52,12 @@ class Util_viewer(QWidget):
         
         self.bRightClick = False
         self.contextMenuPosition = None
-        self.bool_shift_pressed = False
+        self.selection_press_loc = None
+        self.selection_x1 = -1
+        self.selection_y1 = -1
+        self.selection_w = -1
+        self.selection_h = -1
+        
         
         
         
@@ -177,9 +182,7 @@ class Util_viewer(QWidget):
         f = self.parent_viewer.obj.feature_panel.selected_feature_idx
         t = ctrl_wdg.selected_thumbnail_index
         
-        if event.modifiers() & Qt.ShiftModifier :
-            # print("Pressed shift")
-            self.bool_shift_pressed = True
+
         
         if ctrl_wdg.ui.bBezier and event.key() == Qt.Key_F :
             bfinal_curve = False
@@ -196,6 +199,7 @@ class Util_viewer(QWidget):
         if ctrl_wdg.ui.bPick and event.key() == Qt.Key_C and event.modifiers() & Qt.ControlModifier:
             if self.parent_viewer.obj.curve_obj.selected_curve_idx != -1:
                 idx = self.parent_viewer.obj.curve_obj.selected_curve_idx
+                
                 self.parent_viewer.obj.curve_obj.final_base_centers.append(self.parent_viewer.obj.curve_obj.final_base_centers[idx].copy())
                 self.parent_viewer.obj.curve_obj.final_top_centers.append(self.parent_viewer.obj.curve_obj.final_top_centers[idx].copy())
                 self.parent_viewer.obj.curve_obj.final_cylinder_bases.append(copy.deepcopy(self.parent_viewer.obj.curve_obj.final_cylinder_bases[idx]))
@@ -207,6 +211,9 @@ class Util_viewer(QWidget):
                 ctrl_wdg.rect_obj.primitive_count += 1
                 self.parent_viewer.obj.curve_obj.selected_curve_idx = len(self.parent_viewer.obj.curve_obj.final_base_centers) - 1
                 self.parent_viewer.obj.curve_obj.deleted.append(False)
+                
+                self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected curved pipe number : "+ str(idx+1) +" ....")
+                
                 
             elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
                 idx = self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx
@@ -227,7 +234,9 @@ class Util_viewer(QWidget):
                 self.parent_viewer.obj.cylinder_obj.colors.append(c)
                 ctrl_wdg.rect_obj.primitive_count += 1
                 self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = len(self.parent_viewer.obj.cylinder_obj.vertices_cylinder) - 1
-
+                
+                self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected cylinder number : " +str(idx + 1)+ " ....")
+                
             elif ctrl_wdg.rect_obj.selected_rect_idx != -1:
                 idx = ctrl_wdg.rect_obj.selected_rect_idx
 
@@ -249,6 +258,9 @@ class Util_viewer(QWidget):
                 ctrl_wdg.rect_obj.deleted.append(False)
                 ctrl_wdg.rect_obj.group_num += 1
                 
+                self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected Rectangle : " +str(idx + 1)+ " ....")
+
+                
             elif ctrl_wdg.quad_obj.selected_quad_idx != -1:
                 idx = ctrl_wdg.quad_obj.selected_quad_idx
 
@@ -264,6 +276,9 @@ class Util_viewer(QWidget):
                 ctrl_wdg.quad_obj.selected_quad_idx = len(ctrl_wdg.quad_obj.all_pts) - 1
                 ctrl_wdg.quad_obj.deleted.append(False)
                 ctrl_wdg.quad_obj.group_num += 1
+                
+                self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected quadrilateral number : " +str(idx + 1)+ " ....")
+
                 
             else:
                 del_primitive_dialogue()
@@ -489,18 +504,24 @@ class Util_viewer(QWidget):
         
         v = ctrl_wdg.mv_panel.movie_caps[ctrl_wdg.mv_panel.selected_movie_idx]
         t = ctrl_wdg.selected_thumbnail_index
+
+        self.x = a.x()
+        self.y = a.y()
+        self.x_zoomed, self.y_zoomed = x, y
         
         if event.button() == Qt.RightButton:
             self.press_loc = (a.x(), a.y())
             self.bRightClick = True
-            self.x = a.x()
-            self.y = a.y()
-            self.x_zoomed, self.y_zoomed = x, y
             self.pick = True
-            # print("Pressed right button")
-            
+
         
         elif event.button() == Qt.LeftButton:
+            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Clicked a left mouse button ....")
+            if ctrl_wdg.ui.bSelect:
+                self.selection_press_loc = (self.x, self.y)
+                
+            
+            
             if ctrl_wdg.ui.cross_hair:
                 if ctrl_wdg.kf_method == "Regular":
                     if len(v.features_regular) > 0:
@@ -520,11 +541,6 @@ class Util_viewer(QWidget):
                                 if d < self.dist_thresh:
                                     self.parent_viewer.obj.feature_panel.select_feature(i, fc.label)
                                     self.move_feature_bool = True
-                                    
-                                    
-
-    
-                
             
             selected_feature = False
             if (ctrl_wdg.ui.bRect or ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bBezier or ctrl_wdg.ui.bAnchor) and len(self.parent_viewer.obj.ply_pts) > 0:
@@ -546,9 +562,6 @@ class Util_viewer(QWidget):
 
                     
                 if not selected_feature:
-                    self.x = a.x()
-                    self.y = a.y()
-                    self.x_zoomed, self.y_zoomed = x, y
                     self.pick = True
              
     
@@ -573,24 +586,20 @@ class Util_viewer(QWidget):
             
             painter.drawImage(self.w1, self.h1, self.img_file)
             
-            if ctrl_wdg.kf_method == "Regular":
-                # print(len(v.features_regular))
-                if len(v.features_regular) > 0:
-                    for i, fc in enumerate(v.features_regular[t]):
-                        if not v.hide_regular[t][i]:
-                            painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2 , fc.y_loc , fc.x_loc + self.ft_dist/2 , fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+            if ctrl_wdg.kf_method == "Regular" and len(v.features_regular) > 0:
+                for i, fc in enumerate(v.features_regular[t]):
+                    if not v.hide_regular[t][i]:
+                        painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2 , fc.y_loc , fc.x_loc + self.ft_dist/2 , fc.y_loc))
+                        painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
+                        painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
     
-            elif ctrl_wdg.kf_method == "Network":
-                if len(v.features_network) > 0:
-                    for i, fc in enumerate(v.features_network[t]):
-                        if not v.hide_network[t][i]:
-                            painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc, fc.x_loc + self.ft_dist/2, fc.y_loc))
-                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
-                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-                                   
-            
+            elif ctrl_wdg.kf_method == "Network" and len(v.features_network) > 0:
+                for i, fc in enumerate(v.features_network[t]):
+                    if not v.hide_network[t][i]:
+                        painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc, fc.x_loc + self.ft_dist/2, fc.y_loc))
+                        painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
+                        painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                               
             
             
             
@@ -600,13 +609,12 @@ class Util_viewer(QWidget):
             
             
             # Painting for constraints
-            if (len(v.constrained_features_regular) > 0 or len(v.constrained_features_network) > 0) :
-                if ctrl_wdg.kf_method == "Regular":
-                    for tup in v.constrained_features_regular[t]:
-                        fc1, fc2 = v.features_regular[t][tup[0]], v.features_regular[t][tup[1]]
-                        painter.drawLine(QLineF(fc1.x_loc, fc1.y_loc, fc2.x_loc, fc2.y_loc))
+            if ctrl_wdg.kf_method == "Regular" and len(v.constrained_features_regular) > 0:                
+                for tup in v.constrained_features_regular[t]:
+                    fc1, fc2 = v.features_regular[t][tup[0]], v.features_regular[t][tup[1]]
+                    painter.drawLine(QLineF(fc1.x_loc, fc1.y_loc, fc2.x_loc, fc2.y_loc))
                   
-                elif ctrl_wdg.kf_method == "Network":
+            elif ctrl_wdg.kf_method == "Network" and len(v.constrained_features_network) > 0:
                     for tup in v.constrained_features_network[t]:
                         fc1, fc2 = v.features_network[t][tup[0]], v.features_network[t][tup[1]]
                         painter.drawLine(QLineF(fc1.x_loc, fc1.y_loc, fc2.x_loc, fc2.y_loc))
@@ -656,9 +664,43 @@ class Util_viewer(QWidget):
                     
             
             
-            pen = QPen(QColor(0, 255, 0))
+            pen = QPen(Qt.DashDotLine)
+            pen.setBrush(QColor(0, 0, 255))
+            pen.setWidth(2)
+            
+            painter.setPen(pen)
+            
+            
+            if ctrl_wdg.ui.cross_hair or ctrl_wdg.ui.crosshair_plus or ctrl_wdg.ui.bSelect:
+                # Painting the selected rectangular area
+                
+                if self.selection_press_loc is not None and self.selection_x1 != -1 and self.selection_y1 != -1 and self.selection_w != -1 and self.selection_h != -1:
+                    painter.drawLine(QLineF(self.selection_x1, self.selection_y1, self.selection_x1 + self.selection_w, self.selection_y1))
+                    painter.drawLine(QLineF(self.selection_x1 + self.selection_w, self.selection_y1, self.selection_x1 + self.selection_w, self.selection_y1 + self.selection_h))
+                    painter.drawLine(QLineF(self.selection_x1 + self.selection_w, self.selection_y1 + self.selection_h, self.selection_x1, self.selection_y1 + self.selection_h))
+                    painter.drawLine(QLineF(self.selection_x1, self.selection_y1 + self.selection_h, self.selection_x1, self.selection_y1))
+                
+                if ctrl_wdg.kf_method == "Regular" and len(v.select_x1_regular) > 0:
+                    x1, y1, x2, y2 = v.select_x1_regular[t], v.select_y1_regular[t], v.select_x1_regular[t] + v.select_w_regular[t], v.select_y1_regular[t] + v.select_h_regular[t]
+                    if x1 != -1 and y1 != -1 and x2 != -1 and y2 != -1:
+                        painter.drawLine(QLineF(x1, y1, x2, y1))
+                        painter.drawLine(QLineF(x2, y1, x2, y2))
+                        painter.drawLine(QLineF(x2, y2, x1, y2))
+                        painter.drawLine(QLineF(x1, y2, x1, y1))
+                    
+                elif ctrl_wdg.kf_method == "Network" and len(v.select_x1_network) > 0:
+                    x1, y1, x2, y2 = v.select_x1_network[t], v.select_y1_network[t], v.select_x1_network[t] + v.select_w_network[t], v.select_y1_network[t] + v.select_h_network[t]
+                    if x1 != -1 and y1 != -1 and x2 != -1 and y2 != -1:
+                        painter.drawLine(QLineF(x1, y1, x2, y1))
+                        painter.drawLine(QLineF(x2, y1, x2, y2))
+                        painter.drawLine(QLineF(x2, y2, x1, y2))
+                        painter.drawLine(QLineF(x1, y2, x1, y1))
+                    
+
+            pen = QPen(QColor(0, 0, 255))
             pen.setWidth(2)
             painter.setPen(pen)
+
             
             # Painting the selected feature
             
@@ -679,80 +721,98 @@ class Util_viewer(QWidget):
             
             
             # Painting for Rectangle Tool
-            if (len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0) :
-                if ctrl_wdg.kf_method == "Regular":
-                    if len(v.rect_groups_regular[t]) > 0:
-                        for i, fc in enumerate(v.features_regular[t]):
-                            if v.rect_groups_regular[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
-                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-
+            if ctrl_wdg.kf_method == "Regular" and len(v.rect_groups_regular) > 0:
+                if len(v.rect_groups_regular[t]) > 0:
+                    for i, fc in enumerate(v.features_regular[t]):
+                        if v.rect_groups_regular[t][i] != -1:
+                            painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
+                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+    
                     
-                elif ctrl_wdg.kf_method == "Network":
-                    if len(v.rect_groups_network[t]) > 0:
-                        for i, fc in enumerate(v.features_network[t]):
-                            if v.rect_groups_network[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
-                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+            elif ctrl_wdg.kf_method == "Network" and len(v.rect_groups_network) > 0:
+                if len(v.rect_groups_network[t]) > 0:
+                    for i, fc in enumerate(v.features_network[t]):
+                        if v.rect_groups_network[t][i] != -1:
+                            painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
+                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
                             
             # Painting for Quad Tool
-            if (len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0):
-                if ctrl_wdg.kf_method == "Regular":
-                    if len(v.quad_groups_regular[t]) > 0:
-                        for i, fc in enumerate(v.features_regular[t]):
-                            if v.quad_groups_regular[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
-                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+            if ctrl_wdg.kf_method == "Regular" and len(v.quad_groups_regular) > 0:
+                if len(v.quad_groups_regular[t]) > 0:
+                    for i, fc in enumerate(v.features_regular[t]):
+                        if v.quad_groups_regular[t][i] != -1:
+                            painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
+                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
-                    
-                elif ctrl_wdg.kf_method == "Network":
-                    if len(v.quad_groups_network[t]) > 0:
-                        for i, fc in enumerate(v.features_network[t]):
-                            if v.quad_groups_network[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
-                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+                
+            elif ctrl_wdg.kf_method == "Network" and len(v.quad_groups_network) > 0:
+                if len(v.quad_groups_network[t]) > 0:
+                    for i, fc in enumerate(v.features_network[t]):
+                        if v.quad_groups_network[t][i] != -1:
+                            painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
+                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
                             
 
             # Painting for Cylinder Tool
-            if (len(v.cylinder_groups_regular) > 0 or len(v.cylinder_groups_network) > 0) :
-                if ctrl_wdg.kf_method == "Regular":
-                    if len(v.cylinder_groups_regular[t]) > 0:
-                        for i, fc in enumerate(v.features_regular[t]):
-                            if v.cylinder_groups_regular[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
-                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+            if ctrl_wdg.kf_method == "Regular" and len(v.cylinder_groups_regular) > 0:
+                if len(v.cylinder_groups_regular[t]) > 0:
+                    for i, fc in enumerate(v.features_regular[t]):
+                        if v.cylinder_groups_regular[t][i] != -1:
+                            painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
+                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
                     
-                elif ctrl_wdg.kf_method == "Network":
-                    if len(v.cylinder_groups_network[t]) > 0:
-                        for i, fc in enumerate(v.features_network[t]):
-                            if v.cylinder_groups_network[t][i] != -1:
-                                painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
-                                painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
-                                painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
+            elif ctrl_wdg.kf_method == "Network" and len(v.cylinder_groups_network) > 0:
+                if len(v.cylinder_groups_network[t]) > 0:
+                    for i, fc in enumerate(v.features_network[t]):
+                        if v.cylinder_groups_network[t][i] != -1:
+                            painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc , fc.x_loc + self.ft_dist/2, fc.y_loc))
+                            painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
+                            painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
 
 
                             
             # #### Painting for Curve
             
-            if len(v.curve_groups_regular) > 0 or len(v.curve_groups_network) > 0:
-                # print(v.curve_groups_regular[t])
-                # print(v.bPaint_regular[t])
-                if ctrl_wdg.kf_method == "Regular":
-                    data_val = self.parent_viewer.obj.curve_obj.data_val_regular
-                    original_list = v.curve_groups_regular[t]
-                    bool_temp = v.bPaint_regular[t]
+            if ctrl_wdg.kf_method == "Regular" and len(v.curve_groups_regular) > 0:
+                data_val = self.parent_viewer.obj.curve_obj.data_val_regular
+                original_list = v.curve_groups_regular[t]
+                bool_temp = v.bPaint_regular[t]
+                
+                if len(data_val) > 0:
+                    painter.drawLine(QLineF(data_val[-1][0], data_val[-1][1] ,  self.current_pos[0], self.current_pos[1]))
 
-                elif ctrl_wdg.kf_method == "Network":
-                    data_val = self.parent_viewer.obj.curve_obj.data_val_network
-                    original_list = v.curve_groups_network[t]
-                    bool_temp = v.bPaint_network[t]
+                for i, p in enumerate(data_val):
+                    if len(p) > 0:
+                        painter.drawEllipse(p[0]-3, p[1]-3, 6, 6)
+                
+                for j in range(len(data_val) - 1):
+                    if len(data_val[j+1]) > 0:
+                        painter.drawLine(QLineF(data_val[j][0], data_val[j][1] ,  data_val[j+1][0], data_val[j+1][1]))
+                
+                if len(original_list) > 0 and not bool_temp:
+                    data_val = original_list[-1]
+                    for i, p in enumerate(data_val):
+                        # print(p)
+                        if len(p) > 0 :
+                            painter.drawEllipse(p[0] - 3, p[1] - 3, 6, 6)
+
+                    for j in range(len(data_val) - 1):
+                        if len(data_val[j + 1]) > 0:
+                            painter.drawLine(QLineF(data_val[j][0], data_val[j][1], data_val[j + 1][0], data_val[j + 1][1]))
+                
+                
+
+            elif ctrl_wdg.kf_method == "Network" and len(v.curve_groups_network) > 0:
+                data_val = self.parent_viewer.obj.curve_obj.data_val_network
+                original_list = v.curve_groups_network[t]
+                bool_temp = v.bPaint_network[t]
 
                 if len(data_val) > 0:
                     painter.drawLine(QLineF(data_val[-1][0], data_val[-1][1] ,  self.current_pos[0], self.current_pos[1]))
@@ -771,10 +831,11 @@ class Util_viewer(QWidget):
                         # print(p)
                         if len(p) > 0 :
                             painter.drawEllipse(p[0] - 3, p[1] - 3, 6, 6)
-    
+
                     for j in range(len(data_val) - 1):
                         if len(data_val[j + 1]) > 0:
                             painter.drawLine(QLineF(data_val[j][0], data_val[j][1], data_val[j + 1][0], data_val[j + 1][1]))
+
  
             painter.end()
             
@@ -895,7 +956,21 @@ class Util_viewer(QWidget):
                             self.calibration_factor = measured_dist/dist
                             # self.calibration_factors.append(measured_dist/dist)
                             
-            
+                            print("Calibration factor : "+str(self.calibration_factor))
+                            arr = self.parent_viewer.obj.camera_poses[-1]
+                            d_01 = self.calibration_factor * distance.euclidean(arr[0,:], arr[1,:])
+                            d_04 = self.calibration_factor * distance.euclidean(arr[0,:], arr[4,:])
+                            d_45 = self.calibration_factor * distance.euclidean(arr[4,:], arr[5,:])
+                            d_56 = self.calibration_factor * distance.euclidean(arr[5,:], arr[6,:])
+                            d_12 = self.calibration_factor * distance.euclidean(arr[1,:], arr[2,:])
+                            d_23 = self.calibration_factor * distance.euclidean(arr[2,:], arr[3,:])
+                            
+                            print("Distance between camera 0 and 1 : "+str(d_01))
+                            print("Distance between camera 1 and 2 : "+str(d_12))
+                            print("Distance between camera 2 and 3 : "+str(d_23))
+                            print("Distance between camera 0 and 4 : "+str(d_04))
+                            print("Distance between camera 4 and 5 : "+str(d_45))
+                            print("Distance between camera 5 and 6 : "+str(d_56))
 
                             # print("calibration factor : "+str(self.calibration_factor))
                             self.set_distance(measured_dist)
@@ -1129,47 +1204,61 @@ class Util_viewer(QWidget):
 
 
     def translate_x_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along x-axis by a single key press")
         self.translate_along_axis(0.5, 0, 0, True)
 
     def translate_y_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along y-axis by a single key press")
         self.translate_along_axis(0, 0.5, 0, True)
 
     def translate_z_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along z-axis by a single key press")
         self.translate_along_axis(0, 0, 0.5, True)                    
 
     def translate_negative_x_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along axis opposite to the x-axis by a single key press")
         self.translate_along_axis(-0.5, 0, 0, True)
 
     def translate_negative_y_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along axis opposite to the y-axis by a single key press")
         self.translate_along_axis(0, -0.5, 0, True)
 
     def translate_negative_z_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along axis opposite to the z-axis by a single key press")
         self.translate_along_axis(0, 0, -0.5, True) 
 
                 
     def rotate_x_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate clockwise around x-axis by a single key press")
         self.rotate_along_axis(3, 0, 0)
 
     def rotate_y_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate clockwise around y-axis by a single key press")
         self.rotate_along_axis(0, 3, 0)
 
     def rotate_z_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate clockwise around z-axis by a single key press")
         self.rotate_along_axis(0, 0, 3)
         
     def rotate_x_opposite_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate anti-clockwise around x-axis by a single key press")
         self.rotate_along_axis(-3, 0, 0)
 
     def rotate_y_opposite_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate anti-clockwise around y-axis by a single key press")
         self.rotate_along_axis(0, -3, 0)
 
     def rotate_z_opposite_axis(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate anti-clockwise around z-axis by a single key press")
         self.rotate_along_axis(0, 0, -3)
 
 
     def scale_up(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Scale Up by a single mouse press")
         self.scale_primitive(1.05, True)
 
     def scale_down(self):
+        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Scale Down by a single mouse press")
         self.scale_primitive(0.95, True)
 
     def create_translate_panel(self):
@@ -1272,7 +1361,7 @@ class Util_viewer(QWidget):
             tx = float(self.tx.text())
             ty = float(self.ty.text())
             tz = float(self.tz.text())
-            
+            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along x-axis by "+str(tx)+", y-axis by "+str(ty)+" and z-axis by "+str(tz)+" ....")
             self.translate_along_axis(tx, ty, tz, check_box.isChecked())
             
       
@@ -1403,7 +1492,7 @@ class Util_viewer(QWidget):
             rx = float(self.rx.text())
             ry = float(self.ry.text())
             rz = float(self.rz.text())
-            # print(rx, ry, rz)
+            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate around x-axis by "+str(tx)+", y-axis by "+str(ty)+" and z-axis by "+str(tz)+" ....")
             self.rotate_along_axis(rx, ry, rz)
             
             
@@ -1492,6 +1581,7 @@ class Util_viewer(QWidget):
         
         if self.scale_dialog.exec():
             s_up = float(self.rx.text())
+            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Scale the primitive by "+str(s_up)+" ....")
             self.scale_primitive(s_up)
             
             

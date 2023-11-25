@@ -8,17 +8,25 @@ import sys, os, json
 from util.util import *
 import pymeshlab
 
+# LOGGING
+import logging
+
 
 class Window(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)    # call the init for the parent class
         self.setWindowTitle('MoReLab')
         self.showMaximized()
+
+        self.log_filename = "info.log"
+        logging.basicConfig(level=logging.DEBUG, filemode='w', filename=self.log_filename, format = '%(asctime)s %(levelname)-8s %(message)s')
+        self.logfile = logging.getLogger("tool-logger")
+        self.logfile.info("MoReLab started ....")
+
         self.widget = Widget(self)
         self.create_statusbar()
-        self.widget.ui.create_menu()
+        self.create_menu()
         self.create_toolbar()
-        self.bLoad = False
         
 
         
@@ -38,8 +46,6 @@ class Window(QMainWindow):
         self.vboxLayout3.addWidget(self.widget.gl_viewer.obj.feature_panel)
         self.vboxLayout3.addWidget(self.widget.gl_viewer.util_.dist_label)
         self.vboxLayout3.addWidget(self.widget.gl_viewer.obj.btn_sfm)
-        self.vboxLayout3.addWidget(self.widget.gl_viewer.obj.cb_lc)
-        self.vboxLayout3.addWidget(self.widget.gl_viewer.obj.btn_lc)
 
         self.hboxLayout = QHBoxLayout()
 
@@ -49,22 +55,21 @@ class Window(QMainWindow):
 
         self.widget.setLayout(self.hboxLayout)
         self.setCentralWidget(self.widget)
-
+        
+        self.logfile.info("Graphic Layout created ....")
         
         
         
     def implement_new_project(self):
         b = confirm_new()
         if b:
-            last_wdg = self.widget
-            self.widget = Widget(self)
             self.setCentralWidget(QWidget())
             self.create_statusbar()
             self.removeToolBar(self.toolbar2)
             self.removeToolBar(self.toolbar)
-            if (not self.bLoad) and len(last_wdg.mv_panel.movie_paths) > 0:
-                self.widget.ui.create_menu()
             self.create_toolbar()
+            self.logfile.info("New Project created ....")
+            
             
         
     
@@ -78,7 +83,8 @@ class Window(QMainWindow):
             filter=file_types
         )
         if response[0] != '':
-            movie_path = os.path.relpath(response[0], os.getcwd())
+            # movie_path = os.path.relpath(response[0], os.getcwd())
+            movie_path = response[0]
             if movie_path in self.widget.mv_panel.movie_paths:
                 movie_dialogue()
             else:
@@ -86,9 +92,13 @@ class Window(QMainWindow):
                 display_msg = "Opened "+movie_name
                 self.statusBar.showMessage(display_msg, 2000)
                 v = self.widget.mv_panel.add_movie(movie_path)
-                
+                # self.bLoad = True
+                self.logfile.info("Opened a video named "+movie_name+" ....")
                 if len(self.widget.mv_panel.movie_paths) == 1:
                     self.create_layout()
+        else:
+            self.logfile.info("Video not opened ....")
+                        
                                      
 
     def save_as_project(self):
@@ -101,6 +111,8 @@ class Window(QMainWindow):
         )
         if save_as_response[0] != '':
             self.implement_save(save_as_response[0])  
+        else:
+            self.logfile.info("Project not saved as ....")
 
 
     def save_project(self):
@@ -113,19 +125,24 @@ class Window(QMainWindow):
                 filter=file_types
             )
         if self.save_response[0] != '':
-            name_project = os.path.relpath(self.save_response[0], os.getcwd())
-            disp_name_project = split_path(name_project)
+            # name_project = os.path.relpath(self.save_response[0], os.getcwd())
+            name_project = self.save_response[0]
+            disp_name_project = name_project.split('/')[-1]
             self.project_name_label.setText(disp_name_project)
             self.implement_save(self.save_response[0])
+        else:
+            self.logfile.info("Project not saved ....")
 
 
     def implement_save(self, p):
-
+        self.logfile.info("Saving the project ....")
         w = Dialog()
         w.show()
         
-        name_project = os.path.relpath(p, os.getcwd())
-        disp_name_project = split_path(name_project)
+        # name_project = os.path.relpath(p, os.getcwd())
+        name_project = p
+        disp_name_project = name_project.split('/')[-1]
+
         display_msg = "Saving "+disp_name_project
         self.statusBar.showMessage(display_msg, 2000)
         self.widget.doc.save_directory(name_project)
@@ -142,12 +159,13 @@ class Window(QMainWindow):
             
             
         w.done(0)
+        self.logfile.info("project named "+name_project+" has been saved ....")
         
         save_dialogue()
         
         
     def implement_open_folder(self):
-        # print("Open the folder containing images")
+        self.logfile.info("Opening the folder ....")
         folderpath = QFileDialog.getExistingDirectory(self, 'Select Folder')
         supported_image_types = ('.png', 'jpg', 'jpeg', '.PNG', '.JPG', '.JPEG')
 
@@ -155,9 +173,9 @@ class Window(QMainWindow):
             file_paths = []
             for f in os.listdir(folderpath):
                 if f.endswith(supported_image_types):
-                    if os.path.isfile(os.path.join(folderpath, f)):
-                        file_paths.append(os.path.join(folderpath, f))
-            # print(file_paths)
+                    if os.path.isfile(folderpath + '/' + f):
+                        file_paths.append(folderpath + '/' + f)
+
             if len(file_paths) > 0:
                 num_frames = len(file_paths)
                 img_0 = cv2.imread(file_paths[0])
@@ -168,6 +186,7 @@ class Window(QMainWindow):
                 v.init_features_regular(len(v.key_frames_regular))
                 v.init_3D_regular(len(v.key_frames_regular))
                 self.widget.kf_method = "Regular"
+                self.logfile.info("Opened a folder named "+folderpath+" containing "+str(len(file_paths))+" images ....")
 
                 if len(self.widget.mv_panel.movie_paths) == 1:
                     self.create_layout()
@@ -175,7 +194,62 @@ class Window(QMainWindow):
                 self.widget.populate_scrollbar()
                 
 
+    def create_menu(self):
+        # menuBar = self.ctrl_wdg.main_file.menuBar()
+        menuBar = QMenuBar(self)
+        fileMenu = QMenu("&File", self)
+        menuBar.addMenu(fileMenu)
+        # menuBar.addMenu("&File")
 
+        self.logfile.info("Creating menu bar ....")
+        self.new_pr = QAction(QIcon("./icons/new_project.png"), "&New", self)
+        fileMenu.addAction(self.new_pr)
+        self.new_pr.triggered.connect(self.implement_new_project)
+        self.new_pr.setShortcut("ctrl+n")
+
+
+        self.open_pr = QAction(QIcon("./icons/open_project.png"), "&Open", self)
+        fileMenu.addAction(self.open_pr)
+        self.open_pr.triggered.connect(self.open_project)
+        self.open_pr.setShortcut("ctrl+o")
+        
+        
+        self.open_mov = QAction(QIcon("./icons/open_movie.png"), "&Import Movie", self)
+        fileMenu.addAction(self.open_mov)
+        self.open_mov.triggered.connect(self.implement_open_movie)
+        self.open_mov.setShortcut("ctrl+shift+o")
+        
+
+        self.open_fold = QAction(QIcon("./icons/open-folder.png"), "&Import Folder", self)
+        fileMenu.addAction(self.open_fold)
+        self.open_fold.triggered.connect(self.implement_open_folder)
+        self.open_fold.setShortcut("ctrl+f")
+
+        
+        self.save_pr = QAction(QIcon("./icons/save_project.png"), "&Save", self)
+        fileMenu.addAction(self.save_pr)
+        self.save_pr.triggered.connect(self.save_project)
+        self.save_pr.setShortcut("ctrl+s")
+
+        
+        self.save_as = QAction(QIcon("./icons/save_as.png"), "&Save as", self)
+        fileMenu.addAction(self.save_as)
+        self.save_as.triggered.connect(self.save_as_project)
+        self.save_as.setShortcut("ctrl+shift+s")
+        
+        
+        self.exp_ply = QAction(QIcon("./icons/3d_printer.png"), "&Export PLY", self)
+        fileMenu.addAction(self.exp_ply)
+        self.exp_ply.triggered.connect(self.export_ply_data)
+        self.exp_ply.setShortcut("ctrl+e")
+        
+        
+        self.exit_pr = QAction(QIcon("./icons/exit_project.png"), "&Exit", self)
+        fileMenu.addAction(self.exit_pr)
+        self.exit_pr.triggered.connect(self.implement_exit_project)
+        self.exit_pr.setShortcut("ctrl+q")
+        
+        self.setMenuBar(menuBar)
             
             
     def open_project(self):
@@ -190,9 +264,8 @@ class Window(QMainWindow):
             
             w = Dialog()
             w.show()
-            
+            self.logfile.info("Opening a project named "+response[0]+" ....")
             self.save_response = response
-            
             self.widget = Widget(self)
             self.setCentralWidget(QWidget())
             self.create_statusbar()
@@ -209,16 +282,18 @@ class Window(QMainWindow):
 
             self.widget.doc.load_data(project_path)
             
-            
+            self.logfile.info("Project has been created successfully ....")
             w.done(0)
             
         
     def implement_exit_project(self):
         if confirm_exit():
+            self.logfile.info("Project has been terminated ....")
             self.close()
 
 
     def create_toolbar(self):
+        self.logfile.info("Creating toolbar ....")
         self.toolbar = QToolBar("&ToolBar", self)
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
         self.toolbar.addWidget(self.widget.ui.np_tool)
@@ -229,10 +304,9 @@ class Window(QMainWindow):
         self.toolbar.addWidget(self.widget.ui.sp_as_tool)
         self.toolbar.addWidget(self.widget.ui.ep_tool)
         self.toolbar.addWidget(self.widget.ui.mv_tool)
+        self.toolbar.addWidget(self.widget.ui.selection_tool)
         self.toolbar.addWidget(self.widget.ui.ft_tool)
         self.toolbar.addWidget(self.widget.ui.ft_plus_tool)
-        self.toolbar.addWidget(self.widget.ui.constraint_tool)
-        self.toolbar.addWidget(self.widget.ui.rect_tool)
         self.toolbar.addWidget(self.widget.ui.quad_tool)
         self.toolbar.addWidget(self.widget.ui.cyl_tool)
         self.toolbar.addWidget(self.widget.ui.new_cyl_tool)
@@ -262,6 +336,7 @@ class Window(QMainWindow):
 
     def export_ply_data(self):
         if len(self.widget.gl_viewer.obj.ply_pts) > 0:
+            
             bundle_adjustment_ply_data = self.widget.gl_viewer.obj.all_ply_pts[-1]
             col_bundle = np.zeros(bundle_adjustment_ply_data.shape).astype(np.uint8)
             col_bundle[:, 1] = 255
@@ -270,7 +345,7 @@ class Window(QMainWindow):
             col_cam = np.ones(cam_data.shape).astype(np.uint8)*255
 
             write_vertices_ply('vertex_data.ply', np.concatenate((bundle_adjustment_ply_data, cam_data), axis=0), np.concatenate((col_bundle, col_cam), axis=0))
-            
+            self.logfile.info("Exported vertex data  ....")
             ###### PLY Date for General curved cylinder
             curve_data_list = []
             num_bases_list = []
@@ -520,6 +595,7 @@ class Window(QMainWindow):
                 
                 # save the current mesh
                 ms.save_current_mesh("mesh.ply")
+                self.logfile.info("Exported mesh data  ....")
                 export_ply_dialogue()
             else:
                 export_ply_dialogue()
