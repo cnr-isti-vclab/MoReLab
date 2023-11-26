@@ -955,23 +955,7 @@ class Util_viewer(QWidget):
                             
                             self.calibration_factor = measured_dist/dist
                             # self.calibration_factors.append(measured_dist/dist)
-                            
-                            print("Calibration factor : "+str(self.calibration_factor))
-                            arr = self.parent_viewer.obj.camera_poses[-1]
-                            d_01 = self.calibration_factor * distance.euclidean(arr[0,:], arr[1,:])
-                            d_04 = self.calibration_factor * distance.euclidean(arr[0,:], arr[4,:])
-                            d_45 = self.calibration_factor * distance.euclidean(arr[4,:], arr[5,:])
-                            d_56 = self.calibration_factor * distance.euclidean(arr[5,:], arr[6,:])
-                            d_12 = self.calibration_factor * distance.euclidean(arr[1,:], arr[2,:])
-                            d_23 = self.calibration_factor * distance.euclidean(arr[2,:], arr[3,:])
-                            
-                            print("Distance between camera 0 and 1 : "+str(d_01))
-                            print("Distance between camera 1 and 2 : "+str(d_12))
-                            print("Distance between camera 2 and 3 : "+str(d_23))
-                            print("Distance between camera 0 and 4 : "+str(d_04))
-                            print("Distance between camera 4 and 5 : "+str(d_45))
-                            print("Distance between camera 5 and 6 : "+str(d_56))
-
+                            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Measurement Calibration factor : "+str(self.calibration_factor)+" ....")
                             # print("calibration factor : "+str(self.calibration_factor))
                             self.set_distance(measured_dist)
                             if ctrl_wdg.kf_method == "Regular":
@@ -982,13 +966,6 @@ class Util_viewer(QWidget):
                             
                                                         
                         self.clicked_once = not self.clicked_once
-                        # self.bCalibrate = True
-                        
-                        # if len(self.calibration_factors) == 3:
-                        #     # print("Take average")
-                        #     self.bCalibrate = False
-                        #     self.calibration_factor = (1/3)*(self.calibration_factors[0] + self.calibration_factors[1] + self.calibration_factors[2])        
-
 
     
 
@@ -1000,7 +977,6 @@ class Util_viewer(QWidget):
                             v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
                         elif ctrl_wdg.kf_method == "Network":
                             v.measured_pos_network[t].append((self.x_zoomed, self.y_zoomed))                        
-                
                     
                              
                 else:
@@ -1009,6 +985,8 @@ class Util_viewer(QWidget):
                         self.dist = self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
                         # print("Calculated distance : "+str(self.dist))
                         self.set_distance(self.dist)
+                        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Measured distance : "+str(self.dist)+" ....")
+
                         if ctrl_wdg.kf_method == "Regular":
                             v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
                             v.measured_distances_regular[t].append(self.dist)

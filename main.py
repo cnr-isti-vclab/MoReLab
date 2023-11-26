@@ -307,6 +307,7 @@ class Window(QMainWindow):
         self.toolbar.addWidget(self.widget.ui.selection_tool)
         self.toolbar.addWidget(self.widget.ui.ft_tool)
         self.toolbar.addWidget(self.widget.ui.ft_plus_tool)
+        self.toolbar.addWidget(self.widget.ui.rect_tool)
         self.toolbar.addWidget(self.widget.ui.quad_tool)
         self.toolbar.addWidget(self.widget.ui.cyl_tool)
         self.toolbar.addWidget(self.widget.ui.new_cyl_tool)
