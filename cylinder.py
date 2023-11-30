@@ -185,9 +185,9 @@ class Cylinder_Tool(QObject):
         
         height = np.dot(H_vec, N)
         
-        if height < 0:
-            # print("Center : "+str(center))
-            return self.make_cylinder(center, p2, p1, p3)
+        # if height < 0:
+        #     # print("Center : "+str(center))
+        #     return self.make_cylinder(center, p2, p1, p3)
 
 
         b_vec = np.cross(t_vec, N)          # t_vec, b_vec and N form our x,y,z coordinate system
@@ -257,8 +257,8 @@ class Cylinder_Tool(QObject):
         N = N/max(0.000005, np.linalg.norm(N))
         height = np.dot(H_vec, N)
         # print(height)
-        if height > 0:
-            return self.make_new_cylinder(p3, p2, p1, p4)
+        # if height > 0:
+        #     return self.make_new_cylinder(p3, p2, p1, p4)
 
         b_vec = np.cross(t_vec, N)          # t_vec, b_vec and N form our x,y,z coordinate system
         

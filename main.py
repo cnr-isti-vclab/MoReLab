@@ -238,7 +238,7 @@ class Window(QMainWindow):
         self.save_as.setShortcut("ctrl+shift+s")
         
         
-        self.exp_ply = QAction(QIcon("./icons/3d_printer.png"), "&Export PLY", self)
+        self.exp_ply = QAction(QIcon("./icons/3d_printer.png"), "&Export 3D data", self)
         fileMenu.addAction(self.exp_ply)
         self.exp_ply.triggered.connect(self.export_ply_data)
         self.exp_ply.setShortcut("ctrl+e")
@@ -282,7 +282,7 @@ class Window(QMainWindow):
 
             self.widget.doc.load_data(project_path)
             
-            self.logfile.info("Project has been created successfully ....")
+            self.logfile.info("Project has been loaded successfully ....")
             w.done(0)
             
         

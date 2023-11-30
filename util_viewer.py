@@ -21,6 +21,7 @@ class Util_viewer(QWidget):
         self.parent_viewer = parent
         self.mv_pix, self.dist_thresh = 1, 10
         self._zoom, self.offset_x, self.offset_y = 1, 0, 0
+        self.last_offset_x, self.last_offset_y = 0, 0
         self.x, self.y = 1, 1
         self.w1, self.w2, self.h1, self.h2 = 0, 0, 0, 0
         self.x_zoomed, self.y_zoomed = 1, 1
@@ -29,6 +30,7 @@ class Util_viewer(QWidget):
         self.last_3d_pos = np.array([0.0,0.0, 0.0])
         self.calibration_factors = []
         self.bbCalibrate = True
+        
 
         self.last_pos = np.array([0.0,0.0])
         self.current_pos = np.array([0.0,0.0])
@@ -38,6 +40,8 @@ class Util_viewer(QWidget):
         self.bFirst_curve = False
         self.curve_lp = np.array([0.0,0.0])
         self.curve_cp = np.array([0.0,0.0])
+        self.press_loc = None
+        self.current_loc = None
         
         self.aspect_image = 0
         self.aspect_widget = self.parent_viewer.width()/self.parent_viewer.height()
@@ -511,6 +515,7 @@ class Util_viewer(QWidget):
         
         if event.button() == Qt.RightButton:
             self.press_loc = (a.x(), a.y())
+            self.current_loc = (a.x(), a.y())
             self.bRightClick = True
             self.pick = True
 
@@ -566,14 +571,9 @@ class Util_viewer(QWidget):
              
     
                 
-    def paint_image(self, v, t, painter, ctrl_wdg):
+    def paint_image_before_3D(self, v, t, painter, ctrl_wdg):
         if self.img_file is not None:
             painter.begin(self.parent_viewer)
-            pen = QPen(QColor(250.0, 255.0, 255.0))
-            pen.setWidth(2)
-            painter.setPen(pen)
-            painter.setFont(painter.font())
-            painter.setBrush(QBrush(Qt.blue, Qt.SolidPattern))
             
             if self._zoom >=1:
                 # Pan the scene
@@ -585,6 +585,33 @@ class Util_viewer(QWidget):
                 
             
             painter.drawImage(self.w1, self.h1, self.img_file)
+         
+            
+
+            
+            painter.end()
+            
+    def paint_image_after_3D(self, v, t, painter, ctrl_wdg):
+        if self.img_file is not None:
+            painter.begin(self.parent_viewer)
+            
+            if self._zoom >=1:
+                # Pan the scene
+                painter.translate(self.offset_x, self.offset_y)
+                # Zoom the scene
+                painter.translate(self.parent_viewer.width()/2, self.parent_viewer.height()/2)
+                painter.scale(self._zoom, self._zoom)
+                painter.translate(-self.parent_viewer.width()/2, -self.parent_viewer.height()/2)
+            
+            
+            pen = QPen(QColor(250.0, 255.0, 255.0))
+            pen.setWidth(2)
+            painter.setPen(pen)
+            painter.setFont(painter.font())
+            painter.setBrush(QBrush(Qt.blue, Qt.SolidPattern))   
+            
+            
+            
             
             if ctrl_wdg.kf_method == "Regular" and len(v.features_regular) > 0:
                 for i, fc in enumerate(v.features_regular[t]):
@@ -598,26 +625,13 @@ class Util_viewer(QWidget):
                     if not v.hide_network[t][i]:
                         painter.drawLine(QLineF(fc.x_loc - self.ft_dist/2, fc.y_loc, fc.x_loc + self.ft_dist/2, fc.y_loc))
                         painter.drawLine(QLineF(fc.x_loc , fc.y_loc - self.ft_dist/2, fc.x_loc, fc.y_loc + self.ft_dist/2))
-                        painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))
-                               
+                        painter.drawText(fc.x_loc - 4, fc.y_loc - 8, str(fc.label))  
             
             
             
             pen = QPen(QColor(255, 0, 0))
             pen.setWidth(2)
-            painter.setPen(pen)            
-            
-            
-            # Painting for constraints
-            if ctrl_wdg.kf_method == "Regular" and len(v.constrained_features_regular) > 0:                
-                for tup in v.constrained_features_regular[t]:
-                    fc1, fc2 = v.features_regular[t][tup[0]], v.features_regular[t][tup[1]]
-                    painter.drawLine(QLineF(fc1.x_loc, fc1.y_loc, fc2.x_loc, fc2.y_loc))
-                  
-            elif ctrl_wdg.kf_method == "Network" and len(v.constrained_features_network) > 0:
-                    for tup in v.constrained_features_network[t]:
-                        fc1, fc2 = v.features_network[t][tup[0]], v.features_network[t][tup[1]]
-                        painter.drawLine(QLineF(fc1.x_loc, fc1.y_loc, fc2.x_loc, fc2.y_loc))
+            painter.setPen(pen)
                         
                         
             ## Painting epipolar lines
@@ -835,10 +849,48 @@ class Util_viewer(QWidget):
                     for j in range(len(data_val) - 1):
                         if len(data_val[j + 1]) > 0:
                             painter.drawLine(QLineF(data_val[j][0], data_val[j][1], data_val[j + 1][0], data_val[j + 1][1]))
-
- 
-            painter.end()
             
+            
+            
+            
+            
+            
+            
+            pen = QPen(QColor(255, 0, 0))
+            pen.setWidth(3)
+            painter.setPen(pen)
+            painter.setFont(QFont("times",10))
+        
+                    
+
+            
+            # Draw all lines
+            measured_pos = []
+            measured_dist = []
+            
+            if ctrl_wdg.kf_method == "Regular":
+                if len(v.measured_pos_regular) > 0 and t!=-1:
+                    measured_pos = v.measured_pos_regular[t]
+                    measured_dist = v.measured_distances_regular[t]
+            elif ctrl_wdg.kf_method == "Network":
+                if len(v.measured_pos_network) > 0 and t!=-1:
+                    measured_pos = v.measured_pos_network[t]
+                    measured_dist = v.measured_distances_network[t]
+                
+            if len(measured_pos) > 1 and ctrl_wdg.ui.bMeasure:
+                for i in range(1,len(measured_pos),2):
+                    p1 = measured_pos[i-1]
+                    p2 = measured_pos[i]
+                    painter.drawLine(QLineF(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1])))
+                    idx_t = int(i/2)
+                    if len(measured_dist) > idx_t:
+                        painter.drawText(p2[0]-10, p2[1]+20, str(round(measured_dist[idx_t], 3)))
+
+            # Draw transient Measuring Line
+            if ctrl_wdg.ui.bMeasure and self.clicked_once:            
+                painter.drawLine(QLineF(self.last_pos[0], self.last_pos[1], self.current_pos[0], self.current_pos[1]))
+
+            painter.end()
                 
     def util_select_3d(self, dd, px, co, ctrl_wdg):
         v = ctrl_wdg.mv_panel.movie_caps[ctrl_wdg.mv_panel.selected_movie_idx]

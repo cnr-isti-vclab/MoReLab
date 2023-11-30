@@ -56,10 +56,13 @@ class Video:
             self.height, self.width, _ = frame_cv.shape
 
 
-    def extract_frames_regularly(self, sampling_rate):
+    def extract_frames_regularly(self, n_frames):
         self.key_frames_regular = []
         self.key_frame_indices_regular = []
         self.cap = cv2.VideoCapture(self.video_path)
+        if self.n_frames < n_frames:
+            return False
+        sampling_rate = int(self.n_frames/n_frames)
         count = 0
         while self.cap.isOpened():
             success, frame_cv = self.cap.read()
@@ -69,32 +72,30 @@ class Video:
                 self.key_frames_regular.append(frame_cv)
                 self.key_frame_indices_regular.append(str(count).zfill(6))
             count = count + 1
-   
+            if len(self.key_frame_indices_regular) == n_frames:
+                break
+
         self.init_features_regular(len(self.key_frames_regular))
         self.init_3D_regular(len(self.key_frames_regular))
         self.cap.release()
-
+        return True
     
     def init_features_regular(self, n = -1):
         self.measured_pos_regular = []
         self.measured_distances_regular = []
-        self.constrained_features_regular = []
         self.n_objects_kf_regular = []
         self.features_regular = []
         self.hide_regular = []
         self.count_deleted_regular = []
-        self.bool_superglue_regular = []
 
         if n!=-1:
             for i in range(n):
                 self.n_objects_kf_regular.append(0)
                 self.measured_pos_regular.append([])
                 self.measured_distances_regular.append([])
-                self.constrained_features_regular.append([])
                 self.features_regular.append([])
                 self.hide_regular.append([])
                 self.count_deleted_regular.append([])
-                self.bool_superglue_regular.append(False)
 
 
 
@@ -283,25 +284,20 @@ class Video:
     def init_features_network(self, n=-1):
         self.measured_pos_network = []
         self.measured_distances_network = []
-        self.constrained_features_network = []
         self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
         self.count_deleted_network = []
-        self.bool_superglue_network = []
 
 
         if n!=-1:
             for i in range(n):
                 self.n_objects_kf_network.append(0)
                 self.measured_pos_network.append([])
-                self.constrained_features_network.append([])
                 self.measured_distances_network.append([])
-                self.constrained_features_network.append([])
                 self.features_network.append([])
                 self.hide_network.append([])
                 self.count_deleted_network.append([])
-                self.bool_superglue_network.append(False)
 
 
 

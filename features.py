@@ -199,7 +199,12 @@ class Features(QWidget):
                             if not v.hide_network[img_idx][k]:
                                 if j == int(fc.label) - 1:
                                     v.mapping_2d_3d_network[img_idx].append(j)                                
-                                
+            
+            # print("mapping : ")
+            # for i, mapping in enumerate(v.mapping_2d_3d_regular):
+            #     print(mapping)
+            
+            # print(v.count_deleted_regular)
             self.img_indices = img_indices
             self.ctrl_wdg.populate_scrollbar(self.ctrl_wdg.selected_thumbnail_index)
         
@@ -247,7 +252,7 @@ class Features(QWidget):
             if label == -1:    
                 label = v.n_objects_kf_regular[img_idx]
             
-            self.ctrl_wdg.main_file.logfile.info("Adding a feature with label "+str(label)+" ....")
+            self.ctrl_wdg.main_file.logfile.info("Adding a feature with label "+str(label)+" on the image "+str(img_idx + 1)+" ....")
             fc = FeatureCrosshair(x, y, label)
             v.features_regular[img_idx].append(fc)
             v.hide_regular[img_idx].append(False)
@@ -258,7 +263,7 @@ class Features(QWidget):
             if label == -1:
                 label = v.n_objects_kf_network[img_idx]
             
-            self.ctrl_wdg.main_file.logfile.info("Adding a feature with label "+str(label)+" ....")
+            self.ctrl_wdg.main_file.logfile.info("Adding a feature with label "+str(label)+" on the image "+str(img_idx + 1)+" ....")
             fc = FeatureCrosshair(x, y, label)
             v.features_network[img_idx].append(fc)
             v.hide_network[img_idx].append(False)
@@ -293,7 +298,7 @@ class Features(QWidget):
         
         if self.ctrl_wdg.ui.cross_hair:
             if i != -1:
-                self.ctrl_wdg.main_file.logfile.info("Delete feature with index : "+str(i)+" ....")
+                self.ctrl_wdg.main_file.logfile.info("Delete feature with index : "+str(i)+" on the image "+str(t+1)+" ....")
                 if self.ctrl_wdg.kf_method == "Regular":
                     v.hide_regular[t][i] = True
                     v.count_deleted_regular[t].append(i)

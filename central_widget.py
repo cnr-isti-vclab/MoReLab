@@ -88,18 +88,20 @@ class Widget(QWidget):
                     w = Dialog()
                     w.show()
                     if self.kf_method == "Regular":
-                        rate_str = dlg.e1.text()
-                        sampling_rate = int(rate_str)
-                        v1.extract_frames_regularly(sampling_rate)
-                        self.ui.radiobutton1.setChecked(True)
-                        self.main_file.logfile.info("Key-frames extracted by regular extraction method ....")
+                        num_img = int(dlg.e1.text())
+                        bool_extracted = v1.extract_frames_regularly(num_img)
+                        if bool_extracted:
+                            self.ui.radiobutton1.setChecked(True)
+                            self.main_file.logfile.info("Frames extracted by regular extraction method ....")
+                        else:
+                            numberOfFrames_dialogue()
     
                     elif self.kf_method == "Network":
                         # print("Going to extract frames")
                         v1.cleanSequence()
                         # print(len(v1.key_frames_network))
                         self.ui.radiobutton2.setChecked(True)
-                        self.main_file.logfile.info("Key-frames extracted by Network extraction method ....")
+                        self.main_file.logfile.info("Frames extracted by Network extraction method ....")
                     
                     w.done(0)
                     self.selected_thumbnail_index = -1
@@ -108,13 +110,13 @@ class Widget(QWidget):
                 else:
                     not_extractKF_dialogue()
                     self.kf_method = old_method
-                    self.main_file.logfile.info("Not extracting frames. Key-frame extraction method is : "+self.kf_method+" ....")
+                    self.main_file.logfile.info("Not extracting frames. Frame extraction method is : "+self.kf_method+" ....")
 
             else:
                 self.kf_method = dlg.kf_met
-                self.main_file.logfile.info("Not extracting frames. Key-frame extraction method is : "+self.kf_method+" ....")
+                self.main_file.logfile.info("Not extracting frames. Frame extraction method is : "+self.kf_method+" ....")
         else:
-            self.main_file.logfile.info("Not extracting frames. Key-frame extraction method is : "+self.kf_method+" ....")
+            self.main_file.logfile.info("Not extracting frames. Frame extraction method is : "+self.kf_method+" ....")
             
     def populate_scrollbar(self, disp_idx = -1):
         widget = QWidget()                 
@@ -249,7 +251,10 @@ class Widget(QWidget):
                         new_frame = v.key_frames_regular[self.selected_thumbnail_index]
                         new_frame = cv2.cvtColor(new_frame, cv2.COLOR_BGR2GRAY)
                         new_frame = cv2.resize(new_frame, None, fx=resize_scale, fy=resize_scale, interpolation = cv2.INTER_AREA)
-
+                        
+                        w = Dialog()
+                        w.show()
+                        
                         for i, fc in enumerate(v.features_regular[t]):
                             if not v.hide_regular[t][i]:
                                 x_loc, y_loc = int(resize_scale*self.gl_viewer.obj.feature_panel.transform_x(fc.x_loc)), int(resize_scale*self.gl_viewer.obj.feature_panel.transform_y(fc.y_loc))
@@ -297,6 +302,7 @@ class Widget(QWidget):
                                 self.gl_viewer.obj.add_feature(fc.x_loc, fc.y_loc)
                                 self.gl_viewer.obj.feature_panel.selected_feature_idx = i
                                 self.gl_viewer.obj.delete_feature()
+                        w.done(0)
                     else:
                         filledImage_dialogue()
                         
@@ -311,6 +317,9 @@ class Widget(QWidget):
                         new_frame = v.key_frames_network[self.selected_thumbnail_index]
                         new_frame = cv2.cvtColor(new_frame, cv2.COLOR_BGR2GRAY)
                         new_frame = cv2.resize(new_frame, None, fx=resize_scale, fy=resize_scale, interpolation = cv2.INTER_AREA)
+
+                        w = Dialog()
+                        w.show()
 
                         for i, fc in enumerate(v.features_network[t]):
                             if not v.hide_network[t][i]:
@@ -356,34 +365,14 @@ class Widget(QWidget):
                                 self.gl_viewer.obj.add_feature(fc.x_loc, fc.y_loc)
                                 self.gl_viewer.obj.feature_panel.selected_feature_idx = i
                                 self.gl_viewer.obj.delete_feature()
+                        
+                        w.done(0)
 
                     else:
                         filledImage_dialogue()
                     
                 else:
                     switch_kf_dialogue()
-                    
-    def init_2d(self, v, idx0):
-        self.main_file.logfile.info("Initializing 2D data")
-        if self.kf_method == "Regular":
-            v.n_objects_kf_regular[idx0] = 0
-            v.measured_pos_regular[idx0] = []
-            v.measured_distances_regular[idx0] = []
-            v.constrained_features_regular[idx0] = []
-            v.features_regular[idx0] = []
-            v.hide_regular[idx0] = []
-            v.count_deleted_regular[idx0] = []
-            v.bool_superglue_regular[idx0] = True
-                        
-        elif self.kf_method == "Network":
-            v.n_objects_kf_network[idx0] = 0
-            v.measured_pos_network[idx0] = []
-            v.measured_distances_network[idx0] = []
-            v.constrained_features_network[idx0] = []
-            v.features_network[idx0] = []
-            v.hide_network[idx0] = []
-            v.count_deleted_network[idx0] = []
-            v.bool_superglue_network[idx0] = True
             
     def read_image_for_superglue(self, image_rgb, device, resize, rotation, resize_float):
         image = cv2.cvtColor(image_rgb, cv2.COLOR_BGR2GRAY)
@@ -410,137 +399,146 @@ class Widget(QWidget):
                     
     def superglue_detection(self, idx0, idx1):
         v = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
-
-        if self.kf_method == "Regular":
-            images = v.key_frames_regular
-            x1_idx0, x1_idx1 = v.select_x1_regular[idx0], v.select_x1_regular[idx1]
-            y1_idx0, y1_idx1 = v.select_y1_regular[idx0], v.select_y1_regular[idx1]
-            w_idx0, w_idx1 = v.select_w_regular[idx0], v.select_w_regular[idx1]
-            h_idx0, h_idx1 = v.select_h_regular[idx0], v.select_h_regular[idx1]
-            
-        elif self.kf_method == "Network":
-            images = v.key_frames_network
-            x1_idx0, x1_idx1 = v.select_x1_network[idx0], v.select_x1_network[idx1]
-            y1_idx0, y1_idx1 = v.select_y1_network[idx0], v.select_y1_network[idx1]
-            w_idx0, w_idx1 = v.select_w_network[idx0], v.select_w_network[idx1]
-            h_idx0, h_idx1 = v.select_h_network[idx0], v.select_h_network[idx1]
-            
-        if len(images) == 0:
-            no_keyframe_dialogue()
-        else:
-            if not os.path.exists(os.path.join(os.getcwd(), 'models')):
-                self.main_file.logfile.info("User did not place models folder inside MoReLab ....")
-                models_folder_dialogue()
+        if idx0 != idx1:
+            if self.kf_method == "Regular":
+                images = v.key_frames_regular
+                x1_idx0, x1_idx1 = v.select_x1_regular[idx0], v.select_x1_regular[idx1]
+                y1_idx0, y1_idx1 = v.select_y1_regular[idx0], v.select_y1_regular[idx1]
+                w_idx0, w_idx1 = v.select_w_regular[idx0], v.select_w_regular[idx1]
+                h_idx0, h_idx1 = v.select_h_regular[idx0], v.select_h_regular[idx1]
+                
+            elif self.kf_method == "Network":
+                images = v.key_frames_network
+                x1_idx0, x1_idx1 = v.select_x1_network[idx0], v.select_x1_network[idx1]
+                y1_idx0, y1_idx1 = v.select_y1_network[idx0], v.select_y1_network[idx1]
+                w_idx0, w_idx1 = v.select_w_network[idx0], v.select_w_network[idx1]
+                h_idx0, h_idx1 = v.select_h_network[idx0], v.select_h_network[idx1]
+                
+            if len(images) == 0:
+                no_keyframe_dialogue()
             else:
-                from models.matching import Matching
-                from models.utils import (compute_pose_error, compute_epipolar_error,
-                                          estimate_pose, make_matching_plot_fast,
-                                          error_colormap, AverageTimer, pose_auc, read_image,
-                                          rotate_intrinsics, rotate_pose_inplane,
-                                          scale_intrinsics, process_resize, frame2tensor)
-                self.main_file.logfile.info("AI-based automatic detection is starting ....")
-                w = Dialog()
-                w.show()
-            
-                image0, image1 = images[idx0], images[idx1]
-                
-                if x1_idx0 != -1:
-                    image0 = image0[self.gl_viewer.obj.feature_panel.transform_y(y1_idx0) : self.gl_viewer.obj.feature_panel.transform_y(y1_idx0+h_idx0), self.gl_viewer.obj.feature_panel.transform_x(x1_idx0) : self.gl_viewer.obj.feature_panel.transform_x(x1_idx0+w_idx0)]
-                
-                if x1_idx1 != -1:
-                    image1 = image1[self.gl_viewer.obj.feature_panel.transform_y(y1_idx1) : self.gl_viewer.obj.feature_panel.transform_y(y1_idx1+h_idx1), self.gl_viewer.obj.feature_panel.transform_x(x1_idx1) : self.gl_viewer.obj.feature_panel.transform_x(x1_idx1+w_idx1)]
-                
-                # Load the SuperPoint and SuperGlue models.
-                if torch.cuda.is_available():
-                    device = 'cuda'
+                if not os.path.exists(os.path.join(os.getcwd(), 'models')):
+                    self.main_file.logfile.info("User did not place models folder inside MoReLab ....")
+                    models_folder_dialogue()
                 else:
-                    device = 'cpu'
+                    from models.matching import Matching
+                    from models.utils import (compute_pose_error, compute_epipolar_error,
+                                              estimate_pose, make_matching_plot_fast,
+                                              error_colormap, AverageTimer, pose_auc, read_image,
+                                              rotate_intrinsics, rotate_pose_inplane,
+                                              scale_intrinsics, process_resize, frame2tensor)
+                    self.main_file.logfile.info("AI-based automatic detection is starting ....")
+                    w = Dialog()
+                    w.show()
                 
-                self.main_file.logfile.info("Detection is being done on device "+device+" ....")
-                
-                
-                config = {
-                    'superpoint': {
-                        'nms_radius': 4,
-                        'keypoint_threshold': 0.005,
-                        'max_keypoints': 1024
-                    },
-                    'superglue': {
-                        'weights': "indoor",
-                        'sinkhorn_iterations': 20,
-                        'match_threshold': 0.7,
-                    }
-                }
-                matching = Matching(config).eval().to(device)
-                
-                # Load the image pair.
-                image0, inp0, scales0 = self.read_image_for_superglue(image0, device, [-1], 0, False)
-                image1, inp1, scales1 = self.read_image_for_superglue(image1, device, [-1], 0, False)
-    
-                pred = matching({'image0': inp0, 'image1': inp1})
-                pred = {k: v[0].cpu().numpy() for k, v in pred.items()}
-                kpts0, kpts1 = pred['keypoints0'], pred['keypoints1']
-                matches, conf = pred['matches0'], pred['matching_scores0']
-    
-                # Keep the matching keypoints.
-                valid = matches > -1
-                mkpts0 = kpts0[valid]
-                mkpts1 = kpts1[matches[valid]]
-                mconf = conf[valid]
-                
-                if self.kf_method == "Regular":
-                    fc_list_idx0 = v.features_regular[idx0]
-                    fc_list_idx1 = v.features_regular[idx1]
-                    num_idx0 = v.n_objects_kf_regular[idx0]
-                    num_idx1 = v.n_objects_kf_regular[idx1]
-    
-                elif self.kf_method == "Network":
-                    fc_list_idx0 = v.features_network[idx0]
-                    fc_list_idx1 = v.features_network[idx1]
-                    num_idx0 = v.n_objects_kf_network[idx0]
-                    num_idx1 = v.n_objects_kf_network[idx1]
+                    image0, image1 = images[idx0], images[idx1]
                     
-                # print("Number of matching keypoints detected : "+str(mkpts0.shape[0]))
-                self.main_file.logfile.info("Number of matching keypoints detected : "+str(mkpts0.shape[0])+" ....")
-            
-                max_label = 0
-                if num_idx0 > 0 or num_idx1 > 1:
-                    labels_idx0, labels_idx1 = [], []
-    
-                    for fc_idx0 in fc_list_idx0:
-                        labels_idx0.append(int(fc_idx0.label))
-                    for fc_idx1 in fc_list_idx1:
-                        labels_idx1.append(int(fc_idx1.label))
-                        
-                    max_label = max(max(labels_idx0, default=0), max(labels_idx1, default=0))
-                
-                # print("Maximum label : "+str(max_label))
-                self.main_file.logfile.info("Maximum label : "+str(max_label)+" ....")
-                
-                i_idx = 0
-                for i in range(mkpts0.shape[0]):
-                    # print(mkpts0[i,:])
-                    x0, y0 = self.gl_viewer.obj.feature_panel.inv_trans_x(mkpts0[i, 0]) - self.gl_viewer.util_.w1 + x1_idx0, self.gl_viewer.obj.feature_panel.inv_trans_y(mkpts0[i, 1]) - self.gl_viewer.util_.h1 + y1_idx0
-                    x1, y1 = self.gl_viewer.obj.feature_panel.inv_trans_x(mkpts1[i, 0]) - self.gl_viewer.util_.w1 + x1_idx1, self.gl_viewer.obj.feature_panel.inv_trans_y(mkpts1[i, 1]) - self.gl_viewer.util_.h1 + y1_idx1
-                    new_label_0, x0, y0 = self.check_neighbour(x0, y0, fc_list_idx0)
-                    new_label_1, x1, y1 = self.check_neighbour(x1, y1, fc_list_idx1)
-                        
-                    if new_label_0 != -1 and new_label_1 == -1:
-                        self.gl_viewer.obj.add_feature(x0, y0, new_label_0, idx0)
-                        self.gl_viewer.obj.add_feature(x1, y1, new_label_0, idx1)
-    
-                    elif new_label_0 == -1 and new_label_1 != -1:
-                        self.gl_viewer.obj.add_feature(x0, y0, new_label_1, idx0)
-                        self.gl_viewer.obj.add_feature(x1, y1, new_label_1, idx1)
+                    if x1_idx0 != -1:
+                        image0 = image0[self.gl_viewer.obj.feature_panel.transform_y(y1_idx0) : self.gl_viewer.obj.feature_panel.transform_y(y1_idx0+h_idx0), self.gl_viewer.obj.feature_panel.transform_x(x1_idx0) : self.gl_viewer.obj.feature_panel.transform_x(x1_idx0+w_idx0)]
+                    
+                    if x1_idx1 != -1:
+                        image1 = image1[self.gl_viewer.obj.feature_panel.transform_y(y1_idx1) : self.gl_viewer.obj.feature_panel.transform_y(y1_idx1+h_idx1), self.gl_viewer.obj.feature_panel.transform_x(x1_idx1) : self.gl_viewer.obj.feature_panel.transform_x(x1_idx1+w_idx1)]
+                    
+                    # Load the SuperPoint and SuperGlue models.
+                    if torch.cuda.is_available():
+                        device = 'cuda'
                     else:
-                        self.gl_viewer.obj.add_feature(x0, y0, max_label+i_idx+1, idx0)
-                        self.gl_viewer.obj.add_feature(x1, y1, max_label+i_idx+1, idx1)
-                        i_idx += 1
+                        device = 'cpu'
+                    
+                    self.main_file.logfile.info("Detection is being done on device "+device+" ....")
+                    
+                    
+                    config = {
+                        'superpoint': {
+                            'nms_radius': 4,
+                            'keypoint_threshold': 0.010,
+                            'max_keypoints': 1024
+                        },
+                        'superglue': {
+                            'weights': "indoor",
+                            'sinkhorn_iterations': 20,
+                            'match_threshold': 0.9,
+                        }
+                    }
+                    matching = Matching(config).eval().to(device)
+                    
+                    # Load the image pair.
+                    image0, inp0, scales0 = self.read_image_for_superglue(image0, device, [-1], 0, False)
+                    image1, inp1, scales1 = self.read_image_for_superglue(image1, device, [-1], 0, False)
+        
+                    pred = matching({'image0': inp0, 'image1': inp1})
+                    pred = {k: v[0].cpu().numpy() for k, v in pred.items()}
+                    kpts0, kpts1 = pred['keypoints0'], pred['keypoints1']
+                    matches, conf = pred['matches0'], pred['matching_scores0']
+        
+                    # Keep the matching keypoints.
+                    valid = matches > -1
+                    mkpts0 = kpts0[valid]
+                    mkpts1 = kpts1[matches[valid]]
+                    mconf = conf[valid]
+                    
+                    if self.kf_method == "Regular":
+                        fc_list_idx0 = v.features_regular[idx0]
+                        fc_list_idx1 = v.features_regular[idx1]
+                        num_idx0 = v.n_objects_kf_regular[idx0]
+                        num_idx1 = v.n_objects_kf_regular[idx1]
+        
+                    elif self.kf_method == "Network":
+                        fc_list_idx0 = v.features_network[idx0]
+                        fc_list_idx1 = v.features_network[idx1]
+                        num_idx0 = v.n_objects_kf_network[idx0]
+                        num_idx1 = v.n_objects_kf_network[idx1]
                         
-                w.done(0)
-
-                self.main_file.logfile.info("AI-based automatic detection has been completed ....")
+                    # print("Number of matching keypoints detected : "+str(mkpts0.shape[0]))
+                    self.main_file.logfile.info("Number of matching keypoints detected : "+str(mkpts0.shape[0])+" ....")
                 
+                    max_label = 0
+                    if num_idx0 > 0 or num_idx1 > 1:
+                        labels_idx0, labels_idx1 = [], []
+        
+                        for fc_idx0 in fc_list_idx0:
+                            labels_idx0.append(int(fc_idx0.label))
+                        for fc_idx1 in fc_list_idx1:
+                            labels_idx1.append(int(fc_idx1.label))
+                            
+                        max_label = max(max(labels_idx0, default=0), max(labels_idx1, default=0))
+                    
+                    # print("Maximum label : "+str(max_label))
+                    self.main_file.logfile.info("Maximum label : "+str(max_label)+" ....")
+                    
+                    i_idx = 0
+                    for i in range(mkpts0.shape[0]):
+                        if x1_idx0 != -1:
+                            x0, y0 = self.gl_viewer.obj.feature_panel.inv_trans_x(mkpts0[i, 0]) - self.gl_viewer.util_.w1 + x1_idx0, self.gl_viewer.obj.feature_panel.inv_trans_y(mkpts0[i, 1]) - self.gl_viewer.util_.h1 + y1_idx0
+                        else:
+                            x0, y0 = self.gl_viewer.obj.feature_panel.inv_trans_x(mkpts0[i, 0]) + x1_idx0, self.gl_viewer.obj.feature_panel.inv_trans_y(mkpts0[i, 1]) + y1_idx0
+                        
+                        if x1_idx1 != -1:
+                            x1, y1 = self.gl_viewer.obj.feature_panel.inv_trans_x(mkpts1[i, 0]) - self.gl_viewer.util_.w1 + x1_idx1, self.gl_viewer.obj.feature_panel.inv_trans_y(mkpts1[i, 1]) - self.gl_viewer.util_.h1 + y1_idx1
+                        else:
+                            x1, y1 = self.gl_viewer.obj.feature_panel.inv_trans_x(mkpts1[i, 0]) + x1_idx1, self.gl_viewer.obj.feature_panel.inv_trans_y(mkpts1[i, 1]) + y1_idx1
+                            
+                        new_label_0, x0, y0 = self.check_neighbour(x0, y0, fc_list_idx0)
+                        new_label_1, x1, y1 = self.check_neighbour(x1, y1, fc_list_idx1)
+                            
+                        if new_label_0 != -1 and new_label_1 == -1:
+                            self.gl_viewer.obj.add_feature(x0, y0, new_label_0, idx0)
+                            self.gl_viewer.obj.add_feature(x1, y1, new_label_0, idx1)
+        
+                        elif new_label_0 == -1 and new_label_1 != -1:
+                            self.gl_viewer.obj.add_feature(x0, y0, new_label_1, idx0)
+                            self.gl_viewer.obj.add_feature(x1, y1, new_label_1, idx1)
+                        else:
+                            self.gl_viewer.obj.add_feature(x0, y0, max_label+i_idx+1, idx0)
+                            self.gl_viewer.obj.add_feature(x1, y1, max_label+i_idx+1, idx1)
+                            i_idx += 1
+                            
+                    w.done(0)
+    
+                    self.main_file.logfile.info("AI-based automatic detection has been completed ....")
+        else:
+            same_image_dialogue()
+            
     def check_neighbour(self, x, y, fc_list):
         threshold = 2
         label = -1
@@ -564,8 +562,39 @@ class Widget(QWidget):
 
     def keyPressEvent(self, event):
         if event.modifiers() & Qt.ShiftModifier :
-            # print("Pressed shift")
             self.bool_shift_pressed = True
+
+
+        if event.modifiers() & Qt.ControlModifier and event.key() == Qt.Key_R:
+            if self.selected_thumbnail_index == -1:
+                noFrameSelected_dialogue()
+            else:
+                v = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
+                idx0 = self.selected_thumbnail_index
+                
+                self.main_file.logfile.info("Resetting the frame number : "+str(idx0+1)+" ....")
+                
+                if self.kf_method == "Regular":
+                    v.n_objects_kf_regular[idx0] = 0
+                    v.measured_pos_regular[idx0] = []
+                    v.measured_distances_regular[idx0] = []
+                    v.features_regular[idx0] = []
+                    v.hide_regular[idx0] = []
+                    v.count_deleted_regular[idx0] = []
+                                
+                elif self.kf_method == "Network":
+                    v.n_objects_kf_network[idx0] = 0
+                    v.measured_pos_network[idx0] = []
+                    v.measured_distances_network[idx0] = []
+                    v.features_network[idx0] = []
+                    v.hide_network[idx0] = []
+                    v.count_deleted_network[idx0] = []
+
+                self.gl_viewer.obj.initialize_mats()
+                self.populate_scrollbar(idx0)
+                resetFrame_dialogue()
+
+            
 
         super(Widget, self).keyPressEvent(event)
             

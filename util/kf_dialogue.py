@@ -20,7 +20,7 @@ class KF_dialogue(QDialog):
         self.e1.setMaxLength(6)
         self.e1.setFont(QFont("Arial",20))
         
-        self.label = QLabel("Enter sampling rate : ")
+        self.label = QLabel("Enter number of frames you want to extract : ")
         self.h = QHBoxLayout()
         self.h.addWidget(self.label)
         self.h.addWidget(self.e1)

@@ -122,6 +122,24 @@ def no_keyframe_dialogue():
     # msgBox.buttonClicked.connect(msgButtonClick)
     returnValue = msgBox.exec()
     
+def same_image_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Detection cannot be done for the same image. Please select two different images. ")
+    msgBox.setWindowTitle("No KeyFrames")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+    returnValue = msgBox.exec()
+    
+
+def resetFrame_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Frame has been initialized. ")
+    msgBox.setWindowTitle("Reset frame")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+    returnValue = msgBox.exec()
+    
+    
 def no_feature_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("SuperGlue detection has already been done on both images")
@@ -134,6 +152,15 @@ def models_folder_dialogue():
     msgBox = QMessageBox()
     msgBox.setText("models folder not found for automatic feature detection. Please download models folder from SuperGlue Github repository and place it in the current working directory.")
     msgBox.setWindowTitle("Pretrained feature detection model missing")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+    returnValue = msgBox.exec()
+    
+    
+def numberOfFrames_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Please enter a number smaller than or equal to total number of frames of the video.")
+    msgBox.setWindowTitle("Number of Frames")
     msgBox.setStandardButtons(QMessageBox.Ok)
     # msgBox.buttonClicked.connect(msgButtonClick)
     returnValue = msgBox.exec()
@@ -289,8 +316,15 @@ def switch_movie_dialogue():
 
 def export_ply_dialogue():
     msgBox = QMessageBox()
-    msgBox.setText("The mesh has been exported successfully.")
+    msgBox.setText("3D data has been exported successfully.")
     msgBox.setWindowTitle("Export PLY")
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    returnValue = msgBox.exec()
+    
+def noFrameSelected_dialogue():
+    msgBox = QMessageBox()
+    msgBox.setText("Please click on a thumbnail first and then you can reset the selected image.")
+    msgBox.setWindowTitle("Reset frame")
     msgBox.setStandardButtons(QMessageBox.Ok)
     returnValue = msgBox.exec()
     

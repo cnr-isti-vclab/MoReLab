@@ -37,8 +37,6 @@ class GL_Widget(QOpenGLWidget):
         self.painter = QPainter()
         self.setAutoFillBackground(False)
 
-        self.x_shift = -0.5
-
         self.move_x, self.move_y = 1, 1
         self.fill_color = (0.0, 0.6252, 1.0)
         self.boundary_color = (0.0, 0.0, 0.0)
@@ -91,6 +89,9 @@ class GL_Widget(QOpenGLWidget):
         if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:
+                    
+                    glViewport(int(self.util_.offset_x), -1*int(self.util_.offset_y), int(self.width()), int(self.height()))
+                    
                     if self.obj.ctrl_wdg.kf_method == "Regular":
                         mapping = v.mapping_2d_3d_regular[tup[0]]
                     elif self.obj.ctrl_wdg.kf_method == "Network":
@@ -163,14 +164,14 @@ class GL_Widget(QOpenGLWidget):
         glDepthFunc(GL_LEQUAL)
         
 
-        self.util_.paint_image(v, t, self.painter, self.obj.ctrl_wdg)
+        self.util_.paint_image_before_3D(v, t, self.painter, self.obj.ctrl_wdg)
         
         
         glEnable(GL_CULL_FACE)
         glCullFace(GL_BACK) 
         glFrontFace(GL_CCW)
+        glDepthMask(GL_FALSE)
         
-
         # if self.util_.bool_shift_pressed:
         #     print("shift")
         
@@ -189,10 +190,9 @@ class GL_Widget(QOpenGLWidget):
                     glMatrixMode(GL_MODELVIEW)
                     glLoadIdentity()
                     load_mat = self.util_.opengl_extrinsics
-                    
                     glLoadMatrixf(load_mat)
                     
-                    self.render_points(mapping)
+                    # self.render_points(mapping)
 
                     # if self.obj.ctrl_wdg.ui.bRect or self.obj.ctrl_wdg.ui.bPick :
                     self.render_rect(False)
@@ -223,52 +223,32 @@ class GL_Widget(QOpenGLWidget):
                         self.render_general_cylinder(False, False)
                         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
 
-
+        glDepthMask(GL_TRUE)
         glDisable(GL_CULL_FACE)
 
-
-        self.painter.begin(self)
-        pen = QPen(QColor(0, 255, 0))
-        pen.setWidth(3)
-        self.painter.setPen(pen)
-        self.painter.setFont(QFont("times",10))
-    
-                
-        if self.util_._zoom >=1:
-            # Pan the scene
-            self.painter.translate(self.util_.offset_x, self.util_.offset_y)
-            # Zoom the scene
-            self.painter.translate(self.width()/2, self.height()/2)
-            self.painter.scale(self.util_._zoom, self.util_._zoom)
-            self.painter.translate(-self.width()/2, -self.height()/2)
+        self.util_.paint_image_after_3D(v, t, self.painter, self.obj.ctrl_wdg)
         
-        # Draw all lines
-        measured_pos = []
-        measured_dist = []
         
-        if self.obj.ctrl_wdg.kf_method == "Regular":
-            if len(v.measured_pos_regular) > 0 and t!=-1:
-                measured_pos = v.measured_pos_regular[t]
-                measured_dist = v.measured_distances_regular[t]
-        elif self.obj.ctrl_wdg.kf_method == "Network":
-            if len(v.measured_pos_network) > 0 and t!=-1:
-                measured_pos = v.measured_pos_network[t]
-                measured_dist = v.measured_distances_network[t]
-            
-        if len(measured_pos) > 1 and self.obj.ctrl_wdg.ui.bMeasure:
-            for i in range(1,len(measured_pos),2):
-                p1 = measured_pos[i-1]
-                p2 = measured_pos[i]
-                self.painter.drawLine(QLineF(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1])))
-                idx_t = int(i/2)
-                if len(measured_dist) > idx_t:
-                    self.painter.drawText(p2[0]-10, p2[1]+20, str(round(measured_dist[idx_t], 3)))
+        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
+            for j, tup in enumerate(self.obj.camera_projection_mat):
+                if tup[0] == t: 
+                    glViewport(int(self.util_.offset_x), -1*int(self.util_.offset_y), int(self.width()), int(self.height()))
 
-        # Draw transient Measuring Line
-        if self.obj.ctrl_wdg.ui.bMeasure and self.util_.clicked_once:            
-            self.painter.drawLine(QLineF(self.util_.last_pos[0], self.util_.last_pos[1], self.util_.current_pos[0], self.util_.current_pos[1]))
-
-        self.painter.end()
+                    self.util_.computeOpenGL_fromCV(self.obj.K, self.obj.camera_projection_mat[j][1])
+                    glMatrixMode(GL_PROJECTION)
+                    glLoadIdentity()
+                    load_mat = self.util_.opengl_intrinsics
+                    glLoadMatrixf(load_mat)
+                    
+                    glMatrixMode(GL_MODELVIEW)
+                    glLoadIdentity()
+                    load_mat = self.util_.opengl_extrinsics
+                    glLoadMatrixf(load_mat)
+                    
+                    self.render_points(mapping)
+        
+        
+        # self.painter.end()
 
 
     def mouseDoubleClickEvent(self, event):
@@ -320,8 +300,8 @@ class GL_Widget(QOpenGLWidget):
             # print(self.width()/2)
             if self.util_._zoom < 1:
                 self.util_._zoom = 1
-                self.util_.offset_x = 0
-                self.util_.offset_y = 0
+                self.util_.offset_x, self.util_.last_offset_x = 0, 0
+                self.util_.offset_y, self.util_.last_offset_y = 0, 0
                 self.util_.set_default_view_param()
                 
 
@@ -330,57 +310,68 @@ class GL_Widget(QOpenGLWidget):
     # overriding the mousePressEvent method
     def mousePressEvent(self, event):
         self.util_.util_mouse_press(event, self.obj.ctrl_wdg)
+        
+        # super(GL_Widget, self).mousePressEvent(event)
 
 
     def mouseMoveEvent(self, event):
-        a = event.pos()
+        a = event.pos()                
         x = int((a.x()-self.width()/2 - self.util_.offset_x)/self.util_._zoom + self.width()/2) 
         y = int((a.y()-self.height()/2 - self.util_.offset_y)/self.util_._zoom + self.height()/2)
         v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
-        if (self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bBezier) and len(self.obj.ply_pts) > 0:    
-            self.util_.current_pos = np.array([x, y])
-    
-        if len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0:
-            self.move_x = a.x()
-            self.move_y = a.y()
-            self.util_.move_pick = True
-            if self.util_.selection_press_loc is not None:
-                if self.move_x < self.util_.selection_press_loc[0]:
-                    self.util_.selection_x1 = self.move_x
-                else:
-                    self.util_.selection_x1 = self.util_.selection_press_loc[0]
+        
+        if self.util_.press_loc is not None:
+            # print("Moving after right click")
+            current_loc = (a.x(), a.y())
+            if self.util_._zoom >= 1:
+                self.util_.offset_x = (current_loc[0] - self.util_.current_loc[0]) + self.util_.last_offset_x
+                self.util_.offset_y = (current_loc[1] - self.util_.current_loc[1]) + self.util_.last_offset_y
+                # print(self.util_.offset_x)
+                # self.util_.current_loc = (a.x(), a.y())
+        
+        else:
+
+            if (self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bBezier) and len(self.obj.ply_pts) > 0:    
+                self.util_.current_pos = np.array([x, y])
+        
+            if len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0:
+                self.move_x = a.x()
+                self.move_y = a.y()
+                self.util_.move_pick = True
+                if self.util_.selection_press_loc is not None:
+                    if self.move_x < self.util_.selection_press_loc[0]:
+                        self.util_.selection_x1 = self.move_x
+                    else:
+                        self.util_.selection_x1 = self.util_.selection_press_loc[0]
+                        
+                    if self.move_y < self.util_.selection_press_loc[1]:
+                        self.util_.selection_y1 = self.move_y
+                    else:
+                        self.util_.selection_y1 = self.util_.selection_press_loc[1]
                     
-                if self.move_y < self.util_.selection_press_loc[1]:
-                    self.util_.selection_y1 = self.move_y
-                else:
-                    self.util_.selection_y1 = self.util_.selection_press_loc[1]
+                    
+                    self.util_.selection_w = abs(self.util_.selection_press_loc[0] - self.move_x)
+                    self.util_.selection_h = abs(self.util_.selection_press_loc[1] - self.move_y)
                 
-                
-                self.util_.selection_w = abs(self.util_.selection_press_loc[0] - self.move_x)
-                self.util_.selection_h = abs(self.util_.selection_press_loc[1] - self.move_y)
-                # print("Selection rectangle width : "+str(self.move_x - self.util_.selection_press_loc[0]))
-                # print("Selection rectangle height : "+str(self.move_y - self.util_.selection_press_loc[1]))
-            
-        if self.obj.ctrl_wdg.ui.cross_hair:
-            if self.obj.ctrl_wdg.kf_method == "Regular":
-                if len(v.features_regular) > 0 and self.util_.move_feature_bool:
-                    self.obj.move_feature(x, y, v.features_regular[self.obj.ctrl_wdg.selected_thumbnail_index][self.obj.feature_panel.selected_feature_idx])
-               
-            elif self.obj.ctrl_wdg.kf_method == "Network":
-                if len(v.features_network) > 0 and self.util_.move_feature_bool:
-                    self.obj.move_feature(x, y, v.features_network[self.obj.ctrl_wdg.selected_thumbnail_index][self.obj.feature_panel.selected_feature_idx])
-
-
+            if self.obj.ctrl_wdg.ui.cross_hair:
+                if self.obj.ctrl_wdg.kf_method == "Regular":
+                    if len(v.features_regular) > 0 and self.util_.move_feature_bool:
+                        self.obj.move_feature(x, y, v.features_regular[self.obj.ctrl_wdg.selected_thumbnail_index][self.obj.feature_panel.selected_feature_idx])
+                   
+                elif self.obj.ctrl_wdg.kf_method == "Network":
+                    if len(v.features_network) > 0 and self.util_.move_feature_bool:
+                        self.obj.move_feature(x, y, v.features_network[self.obj.ctrl_wdg.selected_thumbnail_index][self.obj.feature_panel.selected_feature_idx])
+    
+        # super(GL_Widget, self).mouseMoveEvent(event)
 
                 
     def mouseReleaseEvent(self, event):
         a = event.pos()
         
         if event.button() == Qt.RightButton:
-            self.release_loc = (a.x(), a.y())
-            if self.util_._zoom >= 1:
-                self.util_.offset_x += (self.release_loc[0] - self.util_.press_loc[0])
-                self.util_.offset_y += (self.release_loc[1] - self.util_.press_loc[1])
+            self.util_.last_offset_x = self.util_.offset_x
+            self.util_.last_offset_y = self.util_.offset_y
+            self.util_.press_loc = None
 
         elif event.button() == Qt.LeftButton:
             v = self.obj.ctrl_wdg.mv_panel.movie_caps[self.obj.ctrl_wdg.mv_panel.selected_movie_idx]
@@ -404,7 +395,7 @@ class GL_Widget(QOpenGLWidget):
                 self.util_.selection_x1, self.util_.selection_y1 = -1, -1
                 self.util_.selection_w, self.util_.selection_h = -1, -1
                 
-
+        # super(GL_Widget, self).mouseReleaseEvent(event)
                     
 
     def select_color(self, i, offscreen_bool = False, fill_flag = True):
@@ -522,7 +513,7 @@ class GL_Widget(QOpenGLWidget):
 
 
     def render_points(self, indices_to_display):
-        data = self.obj.ply_pts[-1]
+        data = self.obj.all_ply_pts[-1]
         
         # # print(bezier_points)
         
@@ -627,7 +618,7 @@ class GL_Widget(QOpenGLWidget):
             
     def render_bezier(self, v, t):
         
-        glColor3f(0.0, 0.0, 0.0)
+        glColor3f(255, 255, 255)
         pts = []
         if self.obj.ctrl_wdg.kf_method == "Regular":
             all_pts = v.curve_pts_regular[t]

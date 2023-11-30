@@ -119,7 +119,7 @@ class BA_class():
         
         opt_cameras = res.x[:self.n_cameras * 6].reshape((self.n_cameras, 6)) # rotation and translation
         all_points = res.x[self.n_cameras * 6 : self.n_cameras * 6 + n_3d_points*3].reshape((n_3d_points, 3))  # 3d points
-        
+        # print(all_points.shape)
         # Remove deleted feature points
         final_points = []
         for i in range(all_points.shape[0]):
@@ -127,6 +127,6 @@ class BA_class():
                 final_points.append(all_points[i,:])
         
         final_points = np.asarray(final_points)
-
+        # print(final_points.shape)
         return opt_cameras,  all_points, final_points
     
