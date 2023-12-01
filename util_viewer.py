@@ -161,7 +161,7 @@ class Util_viewer(QWidget):
         buttonBox = QDialogButtonBox(QBtn)
         buttonBox.accepted.connect(self.cal_dialog.accept)
         
-        label = QLabel("Enter the distance in inches : ")
+        label = QLabel("Enter the distance in centi-meters : ")
         
         self.e1 = QLineEdit("1")
         self.e1.setValidator(QDoubleValidator())
@@ -548,7 +548,7 @@ class Util_viewer(QWidget):
                                     self.move_feature_bool = True
             
             selected_feature = False
-            if (ctrl_wdg.ui.bRect or ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bBezier or ctrl_wdg.ui.bAnchor) and len(self.parent_viewer.obj.ply_pts) > 0:
+            if (ctrl_wdg.ui.bRect or ctrl_wdg.ui.bQuad or ctrl_wdg.ui.bCylinder or ctrl_wdg.ui.bnCylinder or ctrl_wdg.ui.bMeasure or ctrl_wdg.ui.bPick or ctrl_wdg.ui.bBezier or ctrl_wdg.ui.bAnchor) and len(self.parent_viewer.obj.all_ply_pts) > 0:
                 if ctrl_wdg.ui.bRect:
                     selected_feature = ctrl_wdg.rect_obj.select_feature(x, y)
                 if ctrl_wdg.ui.bQuad:

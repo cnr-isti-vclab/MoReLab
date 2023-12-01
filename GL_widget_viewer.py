@@ -86,7 +86,7 @@ class GL_Widget(QOpenGLWidget):
         glDepthFunc(GL_LEQUAL)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
-        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
+        if len(self.obj.all_ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t:
                     
@@ -176,7 +176,7 @@ class GL_Widget(QOpenGLWidget):
         #     print("shift")
         
         
-        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
+        if len(self.obj.all_ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t: 
                     glViewport(int(self.util_.offset_x), -1*int(self.util_.offset_y), int(self.width()), int(self.height()))
@@ -229,7 +229,7 @@ class GL_Widget(QOpenGLWidget):
         self.util_.paint_image_after_3D(v, t, self.painter, self.obj.ctrl_wdg)
         
         
-        if len(self.obj.ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
+        if len(self.obj.all_ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
             for j, tup in enumerate(self.obj.camera_projection_mat):
                 if tup[0] == t: 
                     glViewport(int(self.util_.offset_x), -1*int(self.util_.offset_y), int(self.width()), int(self.height()))
@@ -331,7 +331,7 @@ class GL_Widget(QOpenGLWidget):
         
         else:
 
-            if (self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bBezier) and len(self.obj.ply_pts) > 0:    
+            if (self.obj.ctrl_wdg.ui.bMeasure or self.obj.ctrl_wdg.ui.bBezier) and len(self.obj.all_ply_pts) > 0:    
                 self.util_.current_pos = np.array([x, y])
         
             if len(v.rect_groups_regular) > 0 or len(v.rect_groups_network) > 0:

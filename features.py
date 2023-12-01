@@ -31,8 +31,6 @@ class Features(QWidget):
         
         self.img_indices = []
         self.all_ply_pts = []
-        self.ply_pts = []
-        self.planar_pts = []
         self.camera_poses = []
         self.camera_projection_mat = []
         self.global_indices = []
@@ -52,7 +50,6 @@ class Features(QWidget):
         
     def initialize_mats(self):
         self.img_indices = []
-        self.ply_pts = []
         self.all_ply_pts = []
         self.camera_poses = []
         self.camera_projection_mat = []
@@ -104,16 +101,14 @@ class Features(QWidget):
                         tmp2.append(i)
                         tmp3.append(int(fc.label))
 
-
-
         if len(tmp2) > 0:         
-            final_img_indices_set =set(tmp2)
-            final_img_indices = sorted(final_img_indices_set)
+            all_img_indices_set =set(tmp2)
+            all_img_indices = sorted(all_img_indices_set)
             
-            all_labels_set = set(tmp3)            
+            all_labels_set = set(tmp3)
             all_labels = sorted(all_labels_set)
             
-            for i, img_idx in enumerate(final_img_indices):
+            for i, img_idx in enumerate(all_img_indices):
                 cnt_labels = 0
                 tmp6, tmp7 = [], []  
                 for j, label in enumerate(all_labels):
@@ -129,7 +124,8 @@ class Features(QWidget):
                         
                         cnt_labels += 1
                         
-                if cnt_labels > 7:                
+                if cnt_labels > 7:  
+                    final_img_indices.append(img_idx)
                     num_labels_on_images.append(cnt_labels)
                     
                     a = np.asarray(tmp6)
@@ -171,13 +167,12 @@ class Features(QWidget):
             w = Dialog()
             w.show()
             
-            opt_cameras, all_points, opt_points = self.BA_obj.bundle_adjustment(all_pts, visible_labels, img_indices, self.K)
+            opt_cameras, all_points = self.BA_obj.bundle_adjustment(all_pts, visible_labels, img_indices, self.K)
 
             w.done(0)
             self.ctrl_wdg.main_file.logfile.info("bundle adjustment has been computed ....")
 
             self.all_ply_pts.append(all_points)
-            self.ply_pts.append(opt_points)                 
 
             if self.ctrl_wdg.kf_method == "Regular":
                 self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][0] = True

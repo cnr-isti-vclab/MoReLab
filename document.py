@@ -97,7 +97,7 @@ class Document(QWidget):
             mapping_list = v.mapping_2d_3d_network
 
         
-        if len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0 and disp_bool:
+        if len(self.ctrl_wdg.gl_viewer.obj.all_ply_pts) > 0 and disp_bool:
             b3D = True
             for i, map_ in enumerate(mapping_list):
                 mapping.append([str(x) for x in map_])
@@ -189,7 +189,7 @@ class Document(QWidget):
         elif self.ctrl_wdg.kf_method == "Network":
             disp_bool = self.ctrl_wdg.mv_panel.global_display_bool[self.ctrl_wdg.mv_panel.selected_movie_idx][1]
 
-        if len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0 and disp_bool:
+        if len(self.ctrl_wdg.gl_viewer.obj.all_ply_pts) > 0 and disp_bool:
 
             out_dir = os.path.join(name_project.split('.')[0], '3D_data')
             b_out = os.path.join(out_dir, 'camera_parameters')
@@ -197,17 +197,15 @@ class Document(QWidget):
                 os.makedirs(out_dir)
                 os.makedirs(b_out)
 
-            if len(self.ctrl_wdg.gl_viewer.obj.ply_pts) > 0:
+            if len(self.ctrl_wdg.gl_viewer.obj.all_ply_pts) > 0:
                 self.ctrl_wdg.main_file.logfile.info("Saving sparse 3D points data ....")
                 
                 ply_data_all = self.ctrl_wdg.gl_viewer.obj.all_ply_pts[-1]
-                ply_data = self.ctrl_wdg.gl_viewer.obj.ply_pts[-1]
                 camera_pose = self.ctrl_wdg.gl_viewer.obj.camera_poses[-1]
                 projections = self.ctrl_wdg.gl_viewer.obj.camera_projection_mat
                 
                 v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
 
-                np.savetxt(os.path.join(out_dir, 'ply.csv'), ply_data, delimiter=',')
                 np.savetxt(os.path.join(out_dir, 'all_ply.csv'), ply_data_all, delimiter=',')
                 np.savetxt(os.path.join(out_dir, 'cam_poses.csv'), camera_pose, delimiter=',')
 
@@ -520,8 +518,7 @@ class Document(QWidget):
                 self.ctrl_wdg.gl_viewer.obj.K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
     
                 a = os.path.join(project_path.split('.')[0], '3D_data')
-                ply = np.loadtxt(os.path.join(a, 'ply.csv'), delimiter=',').astype(float)
-                all_ply = ply = np.loadtxt(os.path.join(a, 'all_ply.csv'), delimiter=',').astype(float)
+                all_ply = np.loadtxt(os.path.join(a, 'all_ply.csv'), delimiter=',').astype(float)
                 cam_poses = np.loadtxt(os.path.join(a, 'cam_poses.csv'), delimiter=',').astype(float)
                 mapping = []
                 for i, map_ in enumerate(data["mapping"]):
@@ -533,7 +530,6 @@ class Document(QWidget):
                 elif self.ctrl_wdg.kf_method == "Network":
                     v.mapping_2d_3d_network = mapping
     
-                self.ctrl_wdg.gl_viewer.obj.ply_pts.append(ply)
                 self.ctrl_wdg.gl_viewer.obj.all_ply_pts.append(all_ply)
                 self.ctrl_wdg.gl_viewer.obj.camera_poses.append(cam_poses)
                     

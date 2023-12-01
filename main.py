@@ -336,7 +336,7 @@ class Window(QMainWindow):
 
 
     def export_ply_data(self):
-        if len(self.widget.gl_viewer.obj.ply_pts) > 0:
+        if len(self.widget.gl_viewer.obj.all_ply_pts) > 0:
             
             bundle_adjustment_ply_data = self.widget.gl_viewer.obj.all_ply_pts[-1]
             col_bundle = np.zeros(bundle_adjustment_ply_data.shape).astype(np.uint8)
