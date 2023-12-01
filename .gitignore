@@ -1,6 +1,7 @@
 # Files and folders to be ignored.
 
 extra_past_results/
+models/
 user_study_videos/
 __pycache__/
 util/__pycache__/
