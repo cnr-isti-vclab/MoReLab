@@ -50,6 +50,9 @@ class Features(QWidget):
         
     def initialize_mats(self):
         self.img_indices = []
+        self.ctrl_wdg.gl_viewer.util_.bCalibrate, self.ctrl_wdg.gl_viewer.util_.measured_distances = True, []
+        self.ctrl_wdg.gl_viewer.util_.last_pos = self.ctrl_wdg.gl_viewer.util_.current_pos = np.array([0.0, 0.0])
+        self.ctrl_wdg.gl_viewer.util_.calibration_factor, self.ctrl_wdg.gl_viewer.util_.dist = 1, 0
         self.all_ply_pts = []
         self.camera_poses = []
         self.camera_projection_mat = []
@@ -58,9 +61,14 @@ class Features(QWidget):
         self.curve_obj.reset(self.ctrl_wdg)
         self.ctrl_wdg.rect_obj.reset(self.ctrl_wdg)
         self.ctrl_wdg.quad_obj.reset(self.ctrl_wdg)
+        
 
         t = self.ctrl_wdg.selected_thumbnail_index
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
+        
+        for i in range(len(self.ctrl_wdg.mv_panel.movie_caps)):
+            self.ctrl_wdg.mv_panel.global_display_bool[i][0] = False
+            self.ctrl_wdg.mv_panel.global_display_bool[i][1] = False
         
         if self.ctrl_wdg.kf_method == "Regular":
             v.init_3D_regular(len(v.key_frames_regular))

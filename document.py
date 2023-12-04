@@ -544,7 +544,7 @@ class Document(QWidget):
                 if len(ext_paths) > 0:
                     for i, p in enumerate(ext_paths):
                         idx = int(p.split('.')[0].split('_')[-1])
-                        self.ctrl_wdg.gl_viewer.obj.img_indices.append(idx)
+                        # self.ctrl_wdg.gl_viewer.obj.img_indices.append(idx)
                         self.ctrl_wdg.gl_viewer.obj.camera_projection_mat.append((idx, np.loadtxt(p, delimiter=',').astype(float)))
     
     

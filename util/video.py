@@ -81,8 +81,6 @@ class Video:
         return True
     
     def init_features_regular(self, n = -1):
-        self.measured_pos_regular = []
-        self.measured_distances_regular = []
         self.n_objects_kf_regular = []
         self.features_regular = []
         self.hide_regular = []
@@ -91,8 +89,6 @@ class Video:
         if n!=-1:
             for i in range(n):
                 self.n_objects_kf_regular.append(0)
-                self.measured_pos_regular.append([])
-                self.measured_distances_regular.append([])
                 self.features_regular.append([])
                 self.hide_regular.append([])
                 self.count_deleted_regular.append([])
@@ -114,6 +110,8 @@ class Video:
         self.select_y1_regular = []
         self.select_w_regular = []
         self.select_h_regular = []
+        self.measured_pos_regular = []
+        self.measured_distances_regular = []
 
         if n!=-1:
             for i in range(n):
@@ -131,6 +129,8 @@ class Video:
                 self.select_y1_regular.append(-1)
                 self.select_w_regular.append(-1)
                 self.select_h_regular.append(-1)
+                self.measured_distances_regular.append([])
+                self.measured_pos_regular.append([])
 
     
     
@@ -282,8 +282,6 @@ class Video:
     
     
     def init_features_network(self, n=-1):
-        self.measured_pos_network = []
-        self.measured_distances_network = []
         self.n_objects_kf_network = []
         self.features_network = []
         self.hide_network = []
@@ -293,8 +291,6 @@ class Video:
         if n!=-1:
             for i in range(n):
                 self.n_objects_kf_network.append(0)
-                self.measured_pos_network.append([])
-                self.measured_distances_network.append([])
                 self.features_network.append([])
                 self.hide_network.append([])
                 self.count_deleted_network.append([])
@@ -316,6 +312,8 @@ class Video:
         self.select_y1_network = []
         self.select_w_network = []
         self.select_h_network = []
+        self.measured_pos_network = []
+        self.measured_distances_network = []
 
         if n!=-1:
             for i in range(n):
@@ -334,3 +332,5 @@ class Video:
                 self.select_y1_network.append(-1)
                 self.select_w_network.append(-1)
                 self.select_h_network.append(-1)
+                self.measured_pos_network.append([])
+                self.measured_distances_network.append([])
