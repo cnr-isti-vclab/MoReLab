@@ -856,7 +856,7 @@ class Util_viewer(QWidget):
             
             
             
-            pen = QPen(QColor(255, 0, 0))
+            pen = QPen(QColor(255, 255, 0))
             pen.setWidth(3)
             painter.setPen(pen)
             painter.setFont(QFont("times",10))
@@ -877,7 +877,7 @@ class Util_viewer(QWidget):
                     measured_pos = v.measured_pos_network[t]
                     measured_dist = v.measured_distances_network[t]
                 
-            if len(measured_pos) > 1 and ctrl_wdg.ui.bMeasure:
+            if len(measured_pos) > 1:
                 for i in range(1,len(measured_pos),2):
                     p1 = measured_pos[i-1]
                     p2 = measured_pos[i]
