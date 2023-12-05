@@ -402,14 +402,6 @@ class Util_viewer(QWidget):
 
                     self.parent_viewer.obj.move_feature(x, y, v.features_network[t][f])
 
-        ######################## Copy and Pase features  ########################
-
-        if ctrl_wdg.ui.cross_hair and event.modifiers() & Qt.ControlModifier:
-            self.parent_viewer.obj.feature_panel.selected_feature_idx = -1
-            if event.key() == Qt.Key_C:
-                ctrl_wdg.copy_features()
-            elif event.key() == Qt.Key_V:
-                ctrl_wdg.paste_features()
 
         ######################## Move all features on a frame ########################
 

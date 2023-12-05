@@ -561,6 +561,19 @@ class Widget(QWidget):
 
 
     def keyPressEvent(self, event):
+        
+        ######################## Copy and Pase features  ########################
+
+        if self.ui.cross_hair and event.modifiers() & Qt.ControlModifier:
+            self.gl_viewer.obj.feature_panel.selected_feature_idx = -1
+            if event.key() == Qt.Key_C:
+                self.copy_features()
+            elif event.key() == Qt.Key_V:
+                self.paste_features()
+        
+        ######################## SuperGlue Detection using Shift Key  ########################
+        
+        
         if event.modifiers() & Qt.ShiftModifier :
             self.bool_shift_pressed = True
 
