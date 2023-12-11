@@ -404,7 +404,7 @@ class Util_viewer(QWidget):
 
 
         ######################## Move all features on a frame ########################
-
+        if event.modifiers() & Qt.ControlModifier:
             if ctrl_wdg.kf_method == "Regular":
                 if event.key() == Qt.Key_Left:
                     for i,fc in enumerate(v.features_regular[t]):
