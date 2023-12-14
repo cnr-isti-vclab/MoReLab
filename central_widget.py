@@ -36,13 +36,14 @@ class Widget(QWidget):
 
         self.thumbnail_height = 96
         self.thumbnail_width = 120
+        self.copied_data = {}
         self.selected_thumbnail_index = -1
         self.monitor_width = pyautogui.size()[0]
         self.monitor_height = pyautogui.size()[1]
         self.main_file = parent   
         self.gl_viewer = GL_Widget(self)
         self.doc = Document(self)
-
+        
         self.ui = UserInterface(self)
         self.mv_panel = MoviePanel(self)
         self.rect_obj = Rectangle_Tool(self)

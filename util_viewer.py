@@ -603,8 +603,6 @@ class Util_viewer(QWidget):
             painter.setBrush(QBrush(Qt.blue, Qt.SolidPattern))   
             
             
-            
-            
             if ctrl_wdg.kf_method == "Regular" and len(v.features_regular) > 0:
                 for i, fc in enumerate(v.features_regular[t]):
                     if not v.hide_regular[t][i]:
@@ -785,67 +783,63 @@ class Util_viewer(QWidget):
 
                             
             # #### Painting for Curve
-            
-            if ctrl_wdg.kf_method == "Regular" and len(v.curve_groups_regular) > 0:
-                data_val = self.parent_viewer.obj.curve_obj.data_val_regular
-                original_list = v.curve_groups_regular[t]
-                bool_temp = v.bPaint_regular[t]
-                
-                if len(data_val) > 0:
-                    painter.drawLine(QLineF(data_val[-1][0], data_val[-1][1] ,  self.current_pos[0], self.current_pos[1]))
-
-                for i, p in enumerate(data_val):
-                    if len(p) > 0:
-                        painter.drawEllipse(p[0]-3, p[1]-3, 6, 6)
-                
-                for j in range(len(data_val) - 1):
-                    if len(data_val[j+1]) > 0:
-                        painter.drawLine(QLineF(data_val[j][0], data_val[j][1] ,  data_val[j+1][0], data_val[j+1][1]))
-                
-                if len(original_list) > 0 and not bool_temp:
-                    data_val = original_list[-1]
+            if ctrl_wdg.ui.bBezier:
+                if ctrl_wdg.kf_method == "Regular" and len(v.curve_groups_regular) > 0:
+                    data_val = self.parent_viewer.obj.curve_obj.data_val_regular
+                    original_list = v.curve_groups_regular[t]
+                    bool_temp = v.bPaint_regular[t]
+                    
+                    if len(data_val) > 0:
+                        painter.drawLine(QLineF(data_val[-1][0], data_val[-1][1] ,  self.current_pos[0], self.current_pos[1]))
+    
                     for i, p in enumerate(data_val):
-                        # print(p)
-                        if len(p) > 0 :
-                            painter.drawEllipse(p[0] - 3, p[1] - 3, 6, 6)
-
+                        if len(p) > 0:
+                            painter.drawEllipse(p[0]-3, p[1]-3, 6, 6)
+                    
                     for j in range(len(data_val) - 1):
-                        if len(data_val[j + 1]) > 0:
-                            painter.drawLine(QLineF(data_val[j][0], data_val[j][1], data_val[j + 1][0], data_val[j + 1][1]))
-                
-                
-
-            elif ctrl_wdg.kf_method == "Network" and len(v.curve_groups_network) > 0:
-                data_val = self.parent_viewer.obj.curve_obj.data_val_network
-                original_list = v.curve_groups_network[t]
-                bool_temp = v.bPaint_network[t]
-
-                if len(data_val) > 0:
-                    painter.drawLine(QLineF(data_val[-1][0], data_val[-1][1] ,  self.current_pos[0], self.current_pos[1]))
-
-                for i, p in enumerate(data_val):
-                    if len(p) > 0:
-                        painter.drawEllipse(p[0]-3, p[1]-3, 6, 6)
-                
-                for j in range(len(data_val) - 1):
-                    if len(data_val[j+1]) > 0:
-                        painter.drawLine(QLineF(data_val[j][0], data_val[j][1] ,  data_val[j+1][0], data_val[j+1][1]))
-                
-                if len(original_list) > 0 and not bool_temp:
-                    data_val = original_list[-1]
+                        if len(data_val[j+1]) > 0:
+                            painter.drawLine(QLineF(data_val[j][0], data_val[j][1] ,  data_val[j+1][0], data_val[j+1][1]))
+                    
+                    if len(original_list) > 0 and not bool_temp:
+                        data_val = original_list[-1]
+                        for i, p in enumerate(data_val):
+                            # print(p)
+                            if len(p) > 0 :
+                                painter.drawEllipse(p[0] - 3, p[1] - 3, 6, 6)
+    
+                        for j in range(len(data_val) - 1):
+                            if len(data_val[j + 1]) > 0:
+                                painter.drawLine(QLineF(data_val[j][0], data_val[j][1], data_val[j + 1][0], data_val[j + 1][1]))
+                    
+                    
+    
+                elif ctrl_wdg.kf_method == "Network" and len(v.curve_groups_network) > 0:
+                    data_val = self.parent_viewer.obj.curve_obj.data_val_network
+                    original_list = v.curve_groups_network[t]
+                    bool_temp = v.bPaint_network[t]
+    
+                    if len(data_val) > 0:
+                        painter.drawLine(QLineF(data_val[-1][0], data_val[-1][1] ,  self.current_pos[0], self.current_pos[1]))
+    
                     for i, p in enumerate(data_val):
-                        # print(p)
-                        if len(p) > 0 :
-                            painter.drawEllipse(p[0] - 3, p[1] - 3, 6, 6)
-
+                        if len(p) > 0:
+                            painter.drawEllipse(p[0]-3, p[1]-3, 6, 6)
+                    
                     for j in range(len(data_val) - 1):
-                        if len(data_val[j + 1]) > 0:
-                            painter.drawLine(QLineF(data_val[j][0], data_val[j][1], data_val[j + 1][0], data_val[j + 1][1]))
-            
-            
-            
-            
-            
+                        if len(data_val[j+1]) > 0:
+                            painter.drawLine(QLineF(data_val[j][0], data_val[j][1] ,  data_val[j+1][0], data_val[j+1][1]))
+                    
+                    if len(original_list) > 0 and not bool_temp:
+                        data_val = original_list[-1]
+                        for i, p in enumerate(data_val):
+                            # print(p)
+                            if len(p) > 0 :
+                                painter.drawEllipse(p[0] - 3, p[1] - 3, 6, 6)
+    
+                        for j in range(len(data_val) - 1):
+                            if len(data_val[j + 1]) > 0:
+                                painter.drawLine(QLineF(data_val[j][0], data_val[j][1], data_val[j + 1][0], data_val[j + 1][1]))
+                
             
             
             pen = QPen(QColor(255, 255, 0))
