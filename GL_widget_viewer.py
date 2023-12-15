@@ -41,6 +41,7 @@ class GL_Widget(QOpenGLWidget):
         self.fill_color = (0.0, 0.6252, 1.0)
         self.boundary_color = (0.0, 0.0, 0.0)
         self.selected_color = (0.38, 0.85, 0.211)
+        self.opacity_primitives = 0.3
 
         self.flag_g = False
         
@@ -174,7 +175,9 @@ class GL_Widget(QOpenGLWidget):
         
         # if self.util_.bool_shift_pressed:
         #     print("shift")
-        
+        glEnable(GL_BLEND);
+        # glBlendFunc(GL_SRC_ALPHA,GL_ONE)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         
         if len(self.obj.all_ply_pts) > 0 and len(self.obj.camera_projection_mat) > 0 and self.is_display():
             for j, tup in enumerate(self.obj.camera_projection_mat):
@@ -420,7 +423,7 @@ class GL_Widget(QOpenGLWidget):
             if -1 not in base_center:
                 top_vertices = self.obj.cylinder_obj.top_vertices[i]
                 color = self.select_color(i, offscreen_bool, fill_flag)
-                glColor4f(color[0], color[1], color[2], 0.1)
+                glColor4f(color[0], color[1], color[2], 0.3)
                 glBegin(GL_TRIANGLE_STRIP)
                 for k in range(0,len(vertices), 1):
                     glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
@@ -539,9 +542,9 @@ class GL_Widget(QOpenGLWidget):
                     glColor3f(co[0]/255, co[1]/255, co[2]/255)
                 else:
                     if i==self.obj.ctrl_wdg.rect_obj.selected_rect_idx and self.obj.ctrl_wdg.ui.bPick:
-                        glColor3f(0.38, 0.85, 0.211)
+                        glColor4f(0.38, 0.85, 0.211, self.opacity_primitives)
                     else:
-                        glColor3f(0, 0.6352, 1)                
+                        glColor4f(0, 0.6352, 1, self.opacity_primitives)                
                 glBegin(GL_TRIANGLES)      
                 glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
                 glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
@@ -583,9 +586,9 @@ class GL_Widget(QOpenGLWidget):
                     glColor3f(co[0]/255, co[1]/255, co[2]/255)
                 else:
                     if i==self.obj.ctrl_wdg.quad_obj.selected_quad_idx and self.obj.ctrl_wdg.ui.bPick:
-                        glColor3f(0.38, 0.85, 0.211)
+                        glColor4f(0.38, 0.85, 0.211, self.opacity_primitives)
                     else:
-                        glColor3f(0, 0.6352, 1)                
+                        glColor4f(0, 0.6352, 1, self.opacity_primitives)                
                 glBegin(GL_TRIANGLES)      
                 glVertex3f(pt_tup[0][0], pt_tup[0][1], pt_tup[0][2])
                 glVertex3f(pt_tup[3][0], pt_tup[3][1], pt_tup[3][2])
@@ -683,7 +686,7 @@ class GL_Widget(QOpenGLWidget):
                         color = self.boundary_color 
                         
                 # print(self.obj.curve_obj.selected_curve_idx)
-                glColor3f(color[0], color[1], color[2])
+                glColor4f(color[0], color[1], color[2], self.opacity_primitives)
                 
                 vertices = cylinder_bases[0]
                 base_center = self.obj.curve_obj.final_base_centers[i][0]
@@ -701,7 +704,7 @@ class GL_Widget(QOpenGLWidget):
                     base_2 = cylinder_bases[j]
                     
                     # print(len(base_1))
-                    glColor3f(color[0], color[1], color[2])
+                    glColor4f(color[0], color[1], color[2], self.opacity_primitives)
                     glBegin(GL_TRIANGLE_STRIP)
                     sectorCount = self.obj.cylinder_obj.sectorCount
                     for k, vertex in enumerate(base_1):
@@ -718,7 +721,7 @@ class GL_Widget(QOpenGLWidget):
                 #### Draw last cylinder between base and top
                 vertices = cylinder_bases[-1]
                 top_vertices = self.obj.curve_obj.final_cylinder_tops[i][-1]
-                glColor3f(color[0], color[1], color[2])
+                glColor4f(color[0], color[1], color[2], self.opacity_primitives)
                 glBegin(GL_TRIANGLE_STRIP)
                 for k in range(0,len(vertices), 1):
                     glVertex3f(vertices[k][0], vertices[k][1], vertices[k][2])
