@@ -218,13 +218,15 @@ class Document(QWidget):
 
                 rect_pts = self.ctrl_wdg.rect_obj.new_points
                 rect_path = os.path.join(out_dir, 'rectangles')
+                cnt = 0
                 for i, rect_ in enumerate(rect_pts):
                     if not self.ctrl_wdg.rect_obj.deleted[i]:
                         if not os.path.exists(rect_path):
                             os.makedirs(rect_path)
 
                         d = np.asarray(rect_)
-                        np.savetxt(os.path.join(rect_path, 'rect_'+str(i)+'.csv'), d, delimiter=',')
+                        np.savetxt(os.path.join(rect_path, 'rect_'+str(cnt)+'.csv'), d, delimiter=',')
+                        cnt = cnt + 1
                         self.ctrl_wdg.main_file.logfile.info("Saving Rectangle points data ....")
 
                 ##### PLY Data for Quads
@@ -232,13 +234,15 @@ class Document(QWidget):
                 quad_pts = self.ctrl_wdg.quad_obj.all_pts
                 quad_path = os.path.join(out_dir, 'quads')
                 occ = []
+                cnt = 0
                 for i, quad_ in enumerate(quad_pts):
                     if not self.ctrl_wdg.quad_obj.deleted[i]:
                         if not os.path.exists(quad_path):
                             os.makedirs(quad_path)
 
                         d = np.asarray(quad_)
-                        np.savetxt(os.path.join(quad_path, 'quad_' + str(i) + '.csv'), d, delimiter=',')
+                        np.savetxt(os.path.join(quad_path, 'quad_' + str(cnt) + '.csv'), d, delimiter=',')
+                        cnt = cnt + 1
                         occ.append(np.asarray(self.ctrl_wdg.quad_obj.occurence_groups[i]))
                         
                 if len(occ) > 0:
@@ -314,6 +318,7 @@ class Document(QWidget):
                     b_vec_temp = []
                     N_vec_temp = []
                     radius_temp = []
+                    cnt = 0
                     
                     for i, cylinder_bases in enumerate(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases):
                         if not self.ctrl_wdg.gl_viewer.obj.curve_obj.deleted[i]:
@@ -329,8 +334,8 @@ class Document(QWidget):
 
                             num_bases = base_centers.shape[0]
                             general_cylinder = np.concatenate((base_centers, np.vstack(general_bases), top_centers, np.vstack(general_tops)))
-                            np.savetxt(os.path.join(ccyl_path, 'curved_cyl_'+str(i)+'.csv'), general_cylinder, delimiter=',')
-                            
+                            np.savetxt(os.path.join(ccyl_path, 'curved_cyl_'+str(cnt)+'.csv'), general_cylinder, delimiter=',')
+                            cnt = cnt + 1
                             radius_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.radii[i])
                             t_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.t_vecs[i])
                             b_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.b_vecs[i])
