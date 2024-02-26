@@ -322,6 +322,8 @@ class Features(QWidget):
         if self.ctrl_wdg.ui.cross_hair and f != -1:                               
             fc.x_loc = updated_cursor_x
             fc.y_loc = updated_cursor_y
+            self.ctrl_wdg.main_file.logfile.info("Moved feature with label : "+str(fc.label)+" on the image "+str(t+1)+" ....")
+
             self.feature_panel.display_data()
 
     def rename_feature(self, x, y):

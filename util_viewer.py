@@ -364,6 +364,7 @@ class Util_viewer(QWidget):
             ######################## Move Features  ########################
 
             elif event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
+                self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Key press to move the feature on the frame : " +str(t + 1)+ " ....")
                 if ctrl_wdg.kf_method == "Regular":
                     if event.key() == Qt.Key_Left:
                         x = v.features_regular[t][f].x_loc-self.mv_pix
@@ -405,6 +406,8 @@ class Util_viewer(QWidget):
 
         ######################## Move all features on a frame ########################
         if event.modifiers() & Qt.ControlModifier:
+            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Move all features at once on the frame : " +str(t + 1)+ " ....")
+
             if ctrl_wdg.kf_method == "Regular":
                 if event.key() == Qt.Key_Left:
                     for i,fc in enumerate(v.features_regular[t]):
@@ -513,7 +516,7 @@ class Util_viewer(QWidget):
 
         
         elif event.button() == Qt.LeftButton:
-            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Clicked a left mouse button ....")
+            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Clicked a left mouse button on the image : "+str(t+1)+" ....")
             if ctrl_wdg.ui.bSelect:
                 self.selection_press_loc = (self.x, self.y)
                 

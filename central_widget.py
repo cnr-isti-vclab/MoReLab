@@ -219,7 +219,7 @@ class Widget(QWidget):
                                 "old_kf_method" : self.kf_method,
                                 "old_movie_idx" : self.mv_panel.selected_movie_idx}
             copy_dialogue()
-            self.main_file.logfile.info("Copied feature data on the frame "+str(t+1)+" ....")
+            self.main_file.logfile.info("-------------------- Copied feature data on the frame "+str(t+1)+" ---------------------------------- ....")
         else:
             noImage_dialogue()
         
@@ -227,7 +227,7 @@ class Widget(QWidget):
         if len(self.copied_data)==0:
             copy_features_dialogue()
         else:
-            self.main_file.logfile.info("Pasting feature data on the frame "+str(self.selected_thumbnail_index+1)+" ....")
+            self.main_file.logfile.info("--------------------- Pasting feature data on the frame "+str(self.selected_thumbnail_index+1)+" --------------------------- ....")
             v = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
             t = self.copied_data["img_index"]
             old_kf = self.copied_data["old_kf_method"]
@@ -586,7 +586,7 @@ class Widget(QWidget):
                 v = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
                 idx0 = self.selected_thumbnail_index
                 
-                self.main_file.logfile.info("Resetting the frame number : "+str(idx0+1)+" ....")
+                self.main_file.logfile.info("--------------- Resetting the frame number : "+str(idx0+1)+" --------------------- ....")
                 
                 if self.kf_method == "Regular":
                     v.n_objects_kf_regular[idx0] = 0

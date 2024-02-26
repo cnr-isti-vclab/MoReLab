@@ -346,7 +346,7 @@ class Window(QMainWindow):
             col_cam = np.ones(cam_data.shape).astype(np.uint8)*255
 
             write_vertices_ply('vertex_data.ply', np.concatenate((bundle_adjustment_ply_data, cam_data), axis=0), np.concatenate((col_bundle, col_cam), axis=0))
-            self.logfile.info("Exported vertex data  ....")
+            self.logfile.info("------------------ Exported vertex data ---------------------  ....")
             ###### PLY Date for General curved cylinder
             curve_data_list = []
             num_bases_list = []
