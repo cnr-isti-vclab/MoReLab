@@ -2,6 +2,8 @@
 
 extra_past_results/
 vid1_images/
+vid2_images/
+tutorial_vid_images/
 models/
 user_study_videos/
 __pycache__/

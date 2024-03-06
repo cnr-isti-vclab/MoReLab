@@ -176,7 +176,7 @@ class Features(QWidget):
             w.show()
             
             opt_cameras, all_points = self.BA_obj.bundle_adjustment(all_pts, visible_labels, img_indices, self.K)
-
+            self.ctrl_wdg.main_file.logfile.info("There are "+str(all_points.shape[0])+" points for SfM ....")
             w.done(0)
             self.ctrl_wdg.main_file.logfile.info("bundle adjustment has been computed ....")
 
