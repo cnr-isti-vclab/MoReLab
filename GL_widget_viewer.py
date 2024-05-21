@@ -41,7 +41,7 @@ class GL_Widget(QOpenGLWidget):
         self.fill_color = (0.0, 0.6252, 1.0)
         self.boundary_color = (0.0, 0.0, 0.0)
         self.selected_color = (0.38, 0.85, 0.211)
-        self.opacity_primitives = 0.3
+        self.opacity_primitives = 1
 
         self.flag_g = False
         
