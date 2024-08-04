@@ -56,7 +56,7 @@ class Curve_Tool(QObject):
             t = self.ctrl_wdg.selected_thumbnail_index
             if self.ctrl_wdg.kf_method == "Regular":
                 self.data_val_regular.append([x,y])
-                self.ctrl_wdg.main_file.logfile.info("Marked a point to make a curve ....")
+                # self.ctrl_wdg.main_file.logfile.info("Marked a point to make a curve ....")
                 if len(self.data_val_regular) == 4:
                     v.curve_groups_regular[t].append(copy.deepcopy(self.data_val_regular))
                     self.data_val_regular = []
@@ -65,7 +65,7 @@ class Curve_Tool(QObject):
 
             elif self.ctrl_wdg.kf_method == "Network":
                 self.data_val_network.append([x, y])
-                self.ctrl_wdg.main_file.logfile.info("Marked a point to make a curve ....")
+                # self.ctrl_wdg.main_file.logfile.info("Marked a point to make a curve ....")
                 if len(self.data_val_network) == 4:
                     v.curve_groups_network[t].append(copy.deepcopy(self.data_val_network))
                     self.data_val_network = []
@@ -168,7 +168,7 @@ class Curve_Tool(QObject):
                 v.temp_pts_network[t].append(copy.deepcopy(v.curve_3d_point_network[t]))
                 v.curve_3d_point_network[t] = []
                 
-            self.ctrl_wdg.main_file.logfile.info("Plane assigned and 3D curve computed ....")
+            # self.ctrl_wdg.main_file.logfile.info("Plane assigned and 3D curve computed ....")
 
 
 
@@ -251,7 +251,7 @@ class Curve_Tool(QObject):
 
 
             self.ctrl_wdg.gl_viewer.util_.bRadius = True
-            self.ctrl_wdg.main_file.logfile.info("Final curve estimated ....")
+            # self.ctrl_wdg.main_file.logfile.info("Final curve estimated ....")
 
 
     def make_general_cylinder(self):
@@ -307,7 +307,7 @@ class Curve_Tool(QObject):
             self.colors.append(c)
             self.ctrl_wdg.rect_obj.primitive_count += 1
             self.deleted.append(False)
-            self.ctrl_wdg.main_file.logfile.info("A curved tube number "+str(len(self.curve_count))+" has been created while total primitives are "+str(self.ctrl_wdg.rect_obj.primitive_count)+" ....")
+            # self.ctrl_wdg.main_file.logfile.info("A curved tube number "+str(len(self.curve_count))+" has been created while total primitives are "+str(self.ctrl_wdg.rect_obj.primitive_count)+" ....")
             
 
     

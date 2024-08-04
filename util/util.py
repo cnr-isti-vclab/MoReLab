@@ -4,7 +4,6 @@ from PyQt5.QtGui import *
 import platform, struct
 import numpy as np
 from scipy.spatial import distance
-# from plyfile import PlyData, PlyElement
 import cv2
 
 

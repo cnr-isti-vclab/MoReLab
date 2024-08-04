@@ -15,7 +15,7 @@ class Document(QWidget):
         self.ctrl_wdg = ctrl_wdg
         
     def get_data(self):
-        self.ctrl_wdg.main_file.logfile.info("Going to create json data ....")
+        # self.ctrl_wdg.main_file.logfile.info("Going to create json data ....")
         data_movies = []
         h1_list = []
         w1_list = []
@@ -149,7 +149,7 @@ class Document(QWidget):
             base_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_base_centers[0])
             n_curved_cyl = base_centers.shape[0]
 
-        self.ctrl_wdg.main_file.logfile.info("json data has been returned ....")
+        # self.ctrl_wdg.main_file.logfile.info("json data has been returned ....")
         data = {
             "movies" : self.ctrl_wdg.mv_panel.movie_paths,
             "fps" : movies_fps,
@@ -198,7 +198,7 @@ class Document(QWidget):
                 os.makedirs(b_out)
 
             if len(self.ctrl_wdg.gl_viewer.obj.all_ply_pts) > 0:
-                self.ctrl_wdg.main_file.logfile.info("Saving sparse 3D points data ....")
+                # self.ctrl_wdg.main_file.logfile.info("Saving sparse 3D points data ....")
                 
                 ply_data_all = self.ctrl_wdg.gl_viewer.obj.all_ply_pts[-1]
                 camera_pose = self.ctrl_wdg.gl_viewer.obj.camera_poses[-1]
@@ -227,7 +227,7 @@ class Document(QWidget):
                         d = np.asarray(rect_)
                         np.savetxt(os.path.join(rect_path, 'rect_'+str(cnt)+'.csv'), d, delimiter=',')
                         cnt = cnt + 1
-                        self.ctrl_wdg.main_file.logfile.info("Saving Rectangle points data ....")
+                        # self.ctrl_wdg.main_file.logfile.info("Saving Rectangle points data ....")
 
                 ##### PLY Data for Quads
 
@@ -247,7 +247,7 @@ class Document(QWidget):
                         
                 if len(occ) > 0:
                     np.savetxt(os.path.join(quad_path, 'occ.csv'), np.asarray(occ), delimiter=',')
-                    self.ctrl_wdg.main_file.logfile.info("Saving Quadrilateral points data ....")
+                    # self.ctrl_wdg.main_file.logfile.info("Saving Quadrilateral points data ....")
 
 
                 ##### PLY Data for Cylinders
@@ -303,7 +303,7 @@ class Document(QWidget):
                     np.savetxt(os.path.join(cyl_path, 'heights.csv'), height_data, delimiter=',')
                     np.savetxt(os.path.join(cyl_path, 'radii.csv'), radius_data, delimiter=',')
                     
-                    self.ctrl_wdg.main_file.logfile.info("Saving Cylinder points data ....")
+                    # self.ctrl_wdg.main_file.logfile.info("Saving Cylinder points data ....")
 
                 ##### PLY Data for curved cylinder
 
@@ -352,7 +352,7 @@ class Document(QWidget):
                         np.savetxt(os.path.join(ccyl_path, 'N.csv'), N_data, delimiter=',')
                         np.savetxt(os.path.join(ccyl_path, 'radii.csv'), radius_data, delimiter=',')
                         
-                        self.ctrl_wdg.main_file.logfile.info("Saving curved tube points data ....")
+                        # self.ctrl_wdg.main_file.logfile.info("Saving curved tube points data ....")
             
             
             
@@ -409,7 +409,7 @@ class Document(QWidget):
         a = project_path.split('.')[0] + '/extracted_frames'
 
         if os.path.exists(a):
-            self.ctrl_wdg.main_file.logfile.info("Loading data ....")
+            # self.ctrl_wdg.main_file.logfile.info("Loading data ....")
             movie_dirs = os.listdir(a)
 
             for i,p in enumerate(mv_paths):
@@ -511,11 +511,11 @@ class Document(QWidget):
             v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
             self.ctrl_wdg.kf_method = data["selected_kf_method"]
             
-            self.ctrl_wdg.main_file.logfile.info("2D data has been loaded ....")
+            # self.ctrl_wdg.main_file.logfile.info("2D data has been loaded ....")
             if data["bool_3D"]:
                 ############### Load 3D data points ###############
                 
-                self.ctrl_wdg.main_file.logfile.info("Loading 3D data ....")
+                # self.ctrl_wdg.main_file.logfile.info("Loading 3D data ....")
                 self.ctrl_wdg.gl_viewer.obj.initialize_mats()
                 self.ctrl_wdg.gl_viewer.obj.img_indices = [int(x) for x in data["img_indices"]]
                 self.ctrl_wdg.mv_panel.global_display_bool = data["bool_display_list"]

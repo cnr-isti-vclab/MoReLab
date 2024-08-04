@@ -62,14 +62,14 @@ class Cylinder_Tool(QObject):
                                     if self.ctrl_wdg.ui.bnCylinder:
                                         bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                         if len(bases) > 0:
-                                            self.ctrl_wdg.main_file.logfile.info("Make a BASE CYLINDER primitive ....")
+                                            # self.ctrl_wdg.main_file.logfile.info("Make a BASE CYLINDER primitive ....")
                                             self.bool_cylinder_type.append(False)
                                             self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
                                         else:
                                             straight_line_dialogue()
                                             del self.data_val[-1]
                                     else:
-                                        self.ctrl_wdg.main_file.logfile.info("Make a CENTER CYLINDER primitive ....")
+                                        # self.ctrl_wdg.main_file.logfile.info("Make a CENTER CYLINDER primitive ....")
                                         bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                         self.bool_cylinder_type.append(True)
                                         self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
@@ -85,20 +85,20 @@ class Cylinder_Tool(QObject):
                                 v.cylinder_groups_network[t][i] = self.group_num
                                 self.order.append(i)
                                 feature_selected = True
-                                self.ctrl_wdg.main_file.logfile.info("Clicked on a feature for CYLINDER primitive ....")
+                                # self.ctrl_wdg.main_file.logfile.info("Clicked on a feature for CYLINDER primitive ....")
                                 
                                 if len(self.data_val) == 4:
                                     if self.ctrl_wdg.ui.bnCylinder:
                                         bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_new_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                         if len(bases) > 0:
-                                            self.ctrl_wdg.main_file.logfile.info("Make a BASE CYLINDER primitive ....")
+                                            # self.ctrl_wdg.main_file.logfile.info("Make a BASE CYLINDER primitive ....")
                                             self.bool_cylinder_type.append(False)
                                             self.refresh_cylinder_data(bases, tops, center, top_c, height, radius, b_vec, t_vec, N)
                                         else:
                                             straight_line_dialogue()
                                             del self.data_val[-1]
                                     else:
-                                        self.ctrl_wdg.main_file.logfile.info("Make a CENTER CYLINDER primitive ....")
+                                        # self.ctrl_wdg.main_file.logfile.info("Make a CENTER CYLINDER primitive ....")
 
                                         bases, tops, center, top_c, height, radius, b_vec, t_vec, N = self.make_cylinder(self.data_val[0], self.data_val[1], self.data_val[2], self.data_val[3])
                                         self.bool_cylinder_type.append(True)
@@ -137,7 +137,7 @@ class Cylinder_Tool(QObject):
         self.order = []
         self.group_num += 1
         self.ctrl_wdg.rect_obj.primitive_count += 1
-        self.ctrl_wdg.main_file.logfile.info("A Cylinder number "+str(len(self.cylinder_count))+" has been made while total primitives are "+str(self.ctrl_wdg.rect_obj.primitive_count)+" ....")
+        # self.ctrl_wdg.main_file.logfile.info("A Cylinder number "+str(len(self.cylinder_count))+" has been made while total primitives are "+str(self.ctrl_wdg.rect_obj.primitive_count)+" ....")
 
 
             
@@ -208,7 +208,7 @@ class Cylinder_Tool(QObject):
     
     def delete_cylinder(self, idx):
         if idx != -1:
-            self.ctrl_wdg.main_file.logfile.info("Delete the cylinder number "+str(idx)+" ....")
+            # self.ctrl_wdg.main_file.logfile.info("Delete the cylinder number "+str(idx)+" ....")
             self.centers[idx] = np.array([-1, -1, -1])
             self.selected_cylinder_idx = -1
                 

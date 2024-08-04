@@ -216,7 +216,7 @@ class Util_viewer(QWidget):
                 self.parent_viewer.obj.curve_obj.selected_curve_idx = len(self.parent_viewer.obj.curve_obj.final_base_centers) - 1
                 self.parent_viewer.obj.curve_obj.deleted.append(False)
                 
-                self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected curved pipe number : "+ str(idx+1) +" ....")
+                # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected curved pipe number : "+ str(idx+1) +" ....")
                 
                 
             elif self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx != -1:
@@ -239,7 +239,7 @@ class Util_viewer(QWidget):
                 ctrl_wdg.rect_obj.primitive_count += 1
                 self.parent_viewer.obj.cylinder_obj.selected_cylinder_idx = len(self.parent_viewer.obj.cylinder_obj.vertices_cylinder) - 1
                 
-                self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected cylinder number : " +str(idx + 1)+ " ....")
+                # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected cylinder number : " +str(idx + 1)+ " ....")
                 
             elif ctrl_wdg.rect_obj.selected_rect_idx != -1:
                 idx = ctrl_wdg.rect_obj.selected_rect_idx
@@ -262,7 +262,7 @@ class Util_viewer(QWidget):
                 ctrl_wdg.rect_obj.deleted.append(False)
                 ctrl_wdg.rect_obj.group_num += 1
                 
-                self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected Rectangle : " +str(idx + 1)+ " ....")
+                # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected Rectangle : " +str(idx + 1)+ " ....")
 
                 
             elif ctrl_wdg.quad_obj.selected_quad_idx != -1:
@@ -281,7 +281,7 @@ class Util_viewer(QWidget):
                 ctrl_wdg.quad_obj.deleted.append(False)
                 ctrl_wdg.quad_obj.group_num += 1
                 
-                self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected quadrilateral number : " +str(idx + 1)+ " ....")
+                # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Made a duplicate copy of the selected quadrilateral number : " +str(idx + 1)+ " ....")
 
                 
             else:
@@ -364,7 +364,7 @@ class Util_viewer(QWidget):
             ######################## Move Features  ########################
 
             elif event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
-                self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Key press to move the feature on the frame : " +str(t + 1)+ " ....")
+                # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Key press to move the feature on the frame : " +str(t + 1)+ " ....")
                 if ctrl_wdg.kf_method == "Regular":
                     if event.key() == Qt.Key_Left:
                         x = v.features_regular[t][f].x_loc-self.mv_pix
@@ -406,7 +406,7 @@ class Util_viewer(QWidget):
 
         ######################## Move all features on a frame ########################
         if event.modifiers() & Qt.ControlModifier:
-            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Move all features at once on the frame : " +str(t + 1)+ " ....")
+            # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Move all features at once on the frame : " +str(t + 1)+ " ....")
 
             if ctrl_wdg.kf_method == "Regular":
                 if event.key() == Qt.Key_Left:
@@ -516,7 +516,7 @@ class Util_viewer(QWidget):
 
         
         elif event.button() == Qt.LeftButton:
-            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Clicked a left mouse button on the image : "+str(t+1)+" ....")
+            # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Clicked a left mouse button on the image : "+str(t+1)+" ....")
             if ctrl_wdg.ui.bSelect:
                 self.selection_press_loc = (self.x, self.y)
                 
@@ -996,7 +996,7 @@ class Util_viewer(QWidget):
                             
                             self.calibration_factor = measured_dist/dist
                             # self.calibration_factors.append(measured_dist/dist)
-                            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Measurement Calibration factor : "+str(self.calibration_factor)+" ....")
+                            # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Measurement Calibration factor : "+str(self.calibration_factor)+" ....")
                             # print("calibration factor : "+str(self.calibration_factor))
                             self.set_distance(measured_dist)
                             if ctrl_wdg.kf_method == "Regular":
@@ -1026,7 +1026,7 @@ class Util_viewer(QWidget):
                         self.dist = self.calibration_factor * np.sqrt(np.sum(np.square(np.array(px)-self.last_3d_pos)))
                         # print("Calculated distance : "+str(self.dist))
                         self.set_distance(self.dist)
-                        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Measured distance : "+str(self.dist)+" ....")
+                        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Measured distance : "+str(self.dist)+" ....")
 
                         if ctrl_wdg.kf_method == "Regular":
                             v.measured_pos_regular[t].append((self.x_zoomed, self.y_zoomed))
@@ -1223,61 +1223,61 @@ class Util_viewer(QWidget):
 
 
     def translate_x_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along x-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along x-axis by a single key press")
         self.translate_along_axis(0.5, 0, 0, True)
 
     def translate_y_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along y-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along y-axis by a single key press")
         self.translate_along_axis(0, 0.5, 0, True)
 
     def translate_z_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along z-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along z-axis by a single key press")
         self.translate_along_axis(0, 0, 0.5, True)                    
 
     def translate_negative_x_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along axis opposite to the x-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along axis opposite to the x-axis by a single key press")
         self.translate_along_axis(-0.5, 0, 0, True)
 
     def translate_negative_y_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along axis opposite to the y-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along axis opposite to the y-axis by a single key press")
         self.translate_along_axis(0, -0.5, 0, True)
 
     def translate_negative_z_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along axis opposite to the z-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along axis opposite to the z-axis by a single key press")
         self.translate_along_axis(0, 0, -0.5, True) 
 
                 
     def rotate_x_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate clockwise around x-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate clockwise around x-axis by a single key press")
         self.rotate_along_axis(3, 0, 0)
 
     def rotate_y_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate clockwise around y-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate clockwise around y-axis by a single key press")
         self.rotate_along_axis(0, 3, 0)
 
     def rotate_z_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate clockwise around z-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate clockwise around z-axis by a single key press")
         self.rotate_along_axis(0, 0, 3)
         
     def rotate_x_opposite_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate anti-clockwise around x-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate anti-clockwise around x-axis by a single key press")
         self.rotate_along_axis(-3, 0, 0)
 
     def rotate_y_opposite_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate anti-clockwise around y-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate anti-clockwise around y-axis by a single key press")
         self.rotate_along_axis(0, -3, 0)
 
     def rotate_z_opposite_axis(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate anti-clockwise around z-axis by a single key press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate anti-clockwise around z-axis by a single key press")
         self.rotate_along_axis(0, 0, -3)
 
 
     def scale_up(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Scale Up by a single mouse press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Scale Up by a single mouse press")
         self.scale_primitive(1.05, True)
 
     def scale_down(self):
-        self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Scale Down by a single mouse press")
+        # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Scale Down by a single mouse press")
         self.scale_primitive(0.95, True)
 
     def create_translate_panel(self):
@@ -1380,7 +1380,7 @@ class Util_viewer(QWidget):
             tx = float(self.tx.text())
             ty = float(self.ty.text())
             tz = float(self.tz.text())
-            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along x-axis by "+str(tx)+", y-axis by "+str(ty)+" and z-axis by "+str(tz)+" ....")
+            # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Translate along x-axis by "+str(tx)+", y-axis by "+str(ty)+" and z-axis by "+str(tz)+" ....")
             self.translate_along_axis(tx, ty, tz, check_box.isChecked())
             
       
@@ -1511,7 +1511,7 @@ class Util_viewer(QWidget):
             rx = float(self.rx.text())
             ry = float(self.ry.text())
             rz = float(self.rz.text())
-            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate around x-axis by "+str(tx)+", y-axis by "+str(ty)+" and z-axis by "+str(tz)+" ....")
+            # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Rotate around x-axis by "+str(tx)+", y-axis by "+str(ty)+" and z-axis by "+str(tz)+" ....")
             self.rotate_along_axis(rx, ry, rz)
             
             
@@ -1600,7 +1600,7 @@ class Util_viewer(QWidget):
         
         if self.scale_dialog.exec():
             s_up = float(self.rx.text())
-            self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Scale the primitive by "+str(s_up)+" ....")
+            # self.parent_viewer.obj.ctrl_wdg.main_file.logfile.info("Scale the primitive by "+str(s_up)+" ....")
             self.scale_primitive(s_up)
             
             

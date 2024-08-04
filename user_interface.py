@@ -215,7 +215,7 @@ class UserInterface(QWidget):
 
     def implement_move_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Move Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Move Tool ---------------- ...")
             self.set_styles(self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(True, False, False, False, False, False, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
@@ -223,7 +223,7 @@ class UserInterface(QWidget):
             
     def implement_feature_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected New Feature Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected New Feature Tool ---------------- ...")
             self.set_styles(self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(False, True, False, False, False, False, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
@@ -231,7 +231,7 @@ class UserInterface(QWidget):
             
     def implement_feature_plus_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Latest Feature Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Latest Feature Tool ---------------- ...")
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(False, False, True, False, False, False, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.CrossCursor))
@@ -239,7 +239,7 @@ class UserInterface(QWidget):
             
     def implement_rect_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Rectangle Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Rectangle Tool ---------------- ...")
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(False, False, False, True, False, False, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
@@ -247,56 +247,56 @@ class UserInterface(QWidget):
             
     def implement_cylinder_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Center Cylinder Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Center Cylinder Tool ---------------- ...")
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(False, False, False, False, True, False, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             
     def implement_new_cylinder_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Base Cylinder Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Base Cylinder Tool ---------------- ...")
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(False, False, False, False, False, True, False, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
                      
     def implement_bezier_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Bezier Curve Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Bezier Curve Tool ---------------- ...")
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(False, False, False, False, False, False, True, False, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             
     def implement_measure_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Measure Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Measure Tool ---------------- ...")
             self.set_styles(self.tool_btn_style, self.tool_btn_style,self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(False, False, False, False, False, False, False, True, False, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))            
             
     def implement_picking_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Picking Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Picking Tool ---------------- ...")
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(False, False, False, False, False, False, False, False, True, False, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.ArrowCursor))
             
     def implement_quad_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Quad Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Quad Tool ---------------- ...")
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style, self.tool_btn_style)
             self.set_flags(False, False, False, False, False, False, False, False, False, True, False, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             
     def implement_anchor_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Anchor Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Anchor Tool ---------------- ...")
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style, self.tool_btn_style)
             self.set_flags(False, False, False, False, False, False, False, False, False, False, True, False)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
             
     def implement_selection_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Selection Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Selection Tool ---------------- ...")
             self.set_styles(self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.tool_btn_style, self.selected_btn_style)
             self.set_flags(False, False, False, False, False, False, False, False, False, False, False, True)
             self.ctrl_wdg.gl_viewer.setCursor(QCursor(Qt.PointingHandCursor))
@@ -305,7 +305,7 @@ class UserInterface(QWidget):
 
     def implement_epipolar_tool(self):
         if len(self.ctrl_wdg.mv_panel.movie_paths) > 0:
-            self.ctrl_wdg.main_file.logfile.info("------------------ Selected Epipolar Line Tool ---------------- ...")
+            # self.ctrl_wdg.main_file.logfile.info("------------------ Selected Epipolar Line Tool ---------------- ...")
             if self.bEpipolar:
                 self.bEpipolar = False
                 self.epipolar_tool.setStyleSheet(self.tool_btn_style)

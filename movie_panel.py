@@ -20,7 +20,7 @@ class MoviePanel(QTreeWidget):
         self.itemClicked.connect(self.select_movie_child)
         
     def add_movie(self, movie_path, fps=0, n_frames=0, duration=0, width=0, height=0):
-        self.ctrl_wdg.main_file.logfile.info("Adding a new movie "+movie_path)
+        # self.ctrl_wdg.main_file.logfile.info("Adding a new movie "+movie_path)
         self.movie_paths.append(movie_path)
         v = Video(movie_path)
         self.movie_caps.append(v)
@@ -56,7 +56,7 @@ class MoviePanel(QTreeWidget):
         if selection in self.items:
             temp_idx = self.items.index(selection)
             if temp_idx != self.selected_movie_idx:
-                self.ctrl_wdg.main_file.logfile.info("Selected the movie number "+str(temp_idx+1)+" ....")
+                # self.ctrl_wdg.main_file.logfile.info("Selected the movie number "+str(temp_idx+1)+" ....")
                 self.selected_movie_idx = temp_idx
                 self.ctrl_wdg.selected_thumbnail_index = -1
                 self.select_movie()

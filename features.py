@@ -162,7 +162,7 @@ class Features(QWidget):
         v = self.ctrl_wdg.mv_panel.movie_caps[self.ctrl_wdg.mv_panel.selected_movie_idx]
         t = self.ctrl_wdg.selected_thumbnail_index
         
-        self.ctrl_wdg.main_file.logfile.info("Obtaining correspondences ....")
+        # self.ctrl_wdg.main_file.logfile.info("Obtaining correspondences ....")
         all_pts, img_indices, visible_labels, num_labels = self.get_correspondent_pts(v)
 
         self.K = estimateKMatrix(v.width, v.height, 30, 23.7, 15.6)
@@ -170,15 +170,15 @@ class Features(QWidget):
         if len(img_indices) > 0:
             
             self.initialize_mats()
-            self.ctrl_wdg.main_file.logfile.info("Performing bundle adjustment ....")
+            # self.ctrl_wdg.main_file.logfile.info("Performing bundle adjustment ....")
 
             w = Dialog()
             w.show()
             
             opt_cameras, all_points = self.BA_obj.bundle_adjustment(all_pts, visible_labels, img_indices, self.K)
-            self.ctrl_wdg.main_file.logfile.info("There are "+str(all_points.shape[0])+" points for SfM ....")
+            # self.ctrl_wdg.main_file.logfile.info("There are "+str(all_points.shape[0])+" points for SfM ....")
             w.done(0)
-            self.ctrl_wdg.main_file.logfile.info("bundle adjustment has been computed ....")
+            # self.ctrl_wdg.main_file.logfile.info("bundle adjustment has been computed ....")
 
             self.all_ply_pts.append(all_points)
 
@@ -255,7 +255,7 @@ class Features(QWidget):
             if label == -1:    
                 label = v.n_objects_kf_regular[img_idx]
             
-            self.ctrl_wdg.main_file.logfile.info("Adding a feature with label "+str(label)+" on the image "+str(img_idx + 1)+" ....")
+            # self.ctrl_wdg.main_file.logfile.info("Adding a feature with label "+str(label)+" on the image "+str(img_idx + 1)+" ....")
             fc = FeatureCrosshair(x, y, label)
             v.features_regular[img_idx].append(fc)
             v.hide_regular[img_idx].append(False)
@@ -266,7 +266,7 @@ class Features(QWidget):
             if label == -1:
                 label = v.n_objects_kf_network[img_idx]
             
-            self.ctrl_wdg.main_file.logfile.info("Adding a feature with label "+str(label)+" on the image "+str(img_idx + 1)+" ....")
+            # self.ctrl_wdg.main_file.logfile.info("Adding a feature with label "+str(label)+" on the image "+str(img_idx + 1)+" ....")
             fc = FeatureCrosshair(x, y, label)
             v.features_network[img_idx].append(fc)
             v.hide_network[img_idx].append(False)
@@ -301,7 +301,7 @@ class Features(QWidget):
         
         if self.ctrl_wdg.ui.cross_hair:
             if i != -1:
-                self.ctrl_wdg.main_file.logfile.info("Delete feature with index : "+str(i)+" on the image "+str(t+1)+" ....")
+                # self.ctrl_wdg.main_file.logfile.info("Delete feature with index : "+str(i)+" on the image "+str(t+1)+" ....")
                 if self.ctrl_wdg.kf_method == "Regular":
                     v.hide_regular[t][i] = True
                     v.count_deleted_regular[t].append(i)
@@ -322,7 +322,7 @@ class Features(QWidget):
         if self.ctrl_wdg.ui.cross_hair and f != -1:                               
             fc.x_loc = updated_cursor_x
             fc.y_loc = updated_cursor_y
-            self.ctrl_wdg.main_file.logfile.info("Moved feature with label : "+str(fc.label)+" on the image "+str(t+1)+" ....")
+            # self.ctrl_wdg.main_file.logfile.info("Moved feature with label : "+str(fc.label)+" on the image "+str(t+1)+" ....")
 
             self.feature_panel.display_data()
 
@@ -345,7 +345,7 @@ class Features(QWidget):
                                 duplicate_dialogue()
                             else:
                                 fc.label = str(new_label)
-                                self.ctrl_wdg.main_file.logfile.info("Renaming the feature to new label : "+str(new_label)+" ....")
+                                # self.ctrl_wdg.main_file.logfile.info("Renaming the feature to new label : "+str(new_label)+" ....")
                             bExit = True
 
 
@@ -362,7 +362,7 @@ class Features(QWidget):
                                 duplicate_dialogue()
                             else:
                                 fc.label = str(new_label)
-                                self.ctrl_wdg.main_file.logfile.info("Renaming the feature to new label : "+str(new_label)+" ....")
+                                # self.ctrl_wdg.main_file.logfile.info("Renaming the feature to new label : "+str(new_label)+" ....")
                             bExit = True
                                 
         self.feature_panel.display_data()
@@ -397,7 +397,7 @@ class Features(QWidget):
         current_pts, last_pts, found_labels = [], [], []
         all_labels = []
         temp_last_idx = -1
-        self.ctrl_wdg.main_file.logfile.info("Getting correspondences for epipolar line ....")
+        # self.ctrl_wdg.main_file.logfile.info("Getting correspondences for epipolar line ....")
         if self.ctrl_wdg.kf_method == "Regular" and len(v.hide_regular) > 0 :            
             for i in range(t-1, -1, -1):
                 if len(v.hide_regular[i]) > 0 and temp_last_idx == -1:
@@ -449,7 +449,7 @@ class Features(QWidget):
         last_pts, current_pts = self.get_epipolar_correspondences(v, t)
         self.fundamental_mat = None
         if len(last_pts) > 0 and len(current_pts) > 0:
-            self.ctrl_wdg.main_file.logfile.info("Computing fundamental matrix ....")
+            # self.ctrl_wdg.main_file.logfile.info("Computing fundamental matrix ....")
             self.epipolar_current = []
             last_pts_array = np.array(last_pts)
             current_pts_array = np.array(current_pts)

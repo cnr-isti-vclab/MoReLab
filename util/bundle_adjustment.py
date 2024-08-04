@@ -1,6 +1,5 @@
 import numpy as np
 import cv2, time, os, math
-# from tkinter import *
 from scipy.optimize import least_squares, minimize
 from scipy.sparse import lil_matrix
 from scipy.spatial import distance
@@ -11,10 +10,6 @@ from util.sfm import *
 import matplotlib
 matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
-
-# from sklearn.linear_model import RANSACRegressor
-# import pybobyqa
-# from pdfo import pdfo
 
 
 

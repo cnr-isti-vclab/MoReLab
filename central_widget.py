@@ -93,7 +93,7 @@ class Widget(QWidget):
                         bool_extracted = v1.extract_frames_regularly(num_img)
                         if bool_extracted:
                             self.ui.radiobutton1.setChecked(True)
-                            self.main_file.logfile.info("Frames extracted by regular extraction method ....")
+                            # self.main_file.logfile.info("Frames extracted by regular extraction method ....")
                         else:
                             numberOfFrames_dialogue()
     
@@ -102,7 +102,7 @@ class Widget(QWidget):
                         v1.cleanSequence()
                         # print(len(v1.key_frames_network))
                         self.ui.radiobutton2.setChecked(True)
-                        self.main_file.logfile.info("Frames extracted by Network extraction method ....")
+                        # self.main_file.logfile.info("Frames extracted by Network extraction method ....")
                     
                     w.done(0)
                     self.selected_thumbnail_index = -1
@@ -111,13 +111,13 @@ class Widget(QWidget):
                 else:
                     not_extractKF_dialogue()
                     self.kf_method = old_method
-                    self.main_file.logfile.info("Not extracting frames. Frame extraction method is : "+self.kf_method+" ....")
+                    # self.main_file.logfile.info("Not extracting frames. Frame extraction method is : "+self.kf_method+" ....")
 
             else:
                 self.kf_method = dlg.kf_met
-                self.main_file.logfile.info("Not extracting frames. Frame extraction method is : "+self.kf_method+" ....")
-        else:
-            self.main_file.logfile.info("Not extracting frames. Frame extraction method is : "+self.kf_method+" ....")
+                # self.main_file.logfile.info("Not extracting frames. Frame extraction method is : "+self.kf_method+" ....")
+        # else:
+        #     self.main_file.logfile.info("Not extracting frames. Frame extraction method is : "+self.kf_method+" ....")
             
     def populate_scrollbar(self, disp_idx = -1):
         widget = QWidget()                 
@@ -125,7 +125,7 @@ class Widget(QWidget):
         row_in_grid_layout = 0
         kfs = self.find_kfs()
         if len(kfs) > 0:
-            self.main_file.logfile.info("Populating scrolbar ....")
+            # self.main_file.logfile.info("Populating scrolbar ....")
             for i, img in enumerate(kfs):
                 img_label = QLabel("")
                 img_label.setAlignment(Qt.AlignCenter)
@@ -165,7 +165,7 @@ class Widget(QWidget):
     
         
     def displayThumbnail(self, index):
-        self.main_file.logfile.info("Display image number : "+str(index+1)+" ....")
+        # self.main_file.logfile.info("Display image number : "+str(index+1)+" ....")
         self.selected_thumbnail_index = index
         # print(self.old_thumbnail_index, self.selected_thumbnail_index)
         # print(self.gl_viewer.util_.bool_shift_pressed)
@@ -219,7 +219,7 @@ class Widget(QWidget):
                                 "old_kf_method" : self.kf_method,
                                 "old_movie_idx" : self.mv_panel.selected_movie_idx}
             copy_dialogue()
-            self.main_file.logfile.info("-------------------- Copied feature data on the frame "+str(t+1)+" ---------------------------------- ....")
+            # self.main_file.logfile.info("-------------------- Copied feature data on the frame "+str(t+1)+" ---------------------------------- ....")
         else:
             noImage_dialogue()
         
@@ -227,7 +227,7 @@ class Widget(QWidget):
         if len(self.copied_data)==0:
             copy_features_dialogue()
         else:
-            self.main_file.logfile.info("--------------------- Pasting feature data on the frame "+str(self.selected_thumbnail_index+1)+" --------------------------- ....")
+            # self.main_file.logfile.info("--------------------- Pasting feature data on the frame "+str(self.selected_thumbnail_index+1)+" --------------------------- ....")
             v = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
             t = self.copied_data["img_index"]
             old_kf = self.copied_data["old_kf_method"]
@@ -419,7 +419,7 @@ class Widget(QWidget):
                 no_keyframe_dialogue()
             else:
                 if not os.path.exists(os.path.join(os.getcwd(), 'models')):
-                    self.main_file.logfile.info("User did not place models folder inside MoReLab ....")
+                    # self.main_file.logfile.info("User did not place models folder inside MoReLab ....")
                     models_folder_dialogue()
                 else:
                     from models.matching import Matching
@@ -428,7 +428,7 @@ class Widget(QWidget):
                                               error_colormap, AverageTimer, pose_auc, read_image,
                                               rotate_intrinsics, rotate_pose_inplane,
                                               scale_intrinsics, process_resize, frame2tensor)
-                    self.main_file.logfile.info("AI-based automatic detection is starting ....")
+                    # self.main_file.logfile.info("AI-based automatic detection is starting ....")
                     w = Dialog()
                     w.show()
                 
@@ -446,19 +446,19 @@ class Widget(QWidget):
                     else:
                         device = 'cpu'
                     
-                    self.main_file.logfile.info("Detection is being done on device "+device+" ....")
+                    # self.main_file.logfile.info("Detection is being done on device "+device+" ....")
                     
                     
                     config = {
                         'superpoint': {
                             'nms_radius': 4,
-                            'keypoint_threshold': 0.010,
+                            'keypoint_threshold': 0.005,
                             'max_keypoints': 1024
                         },
                         'superglue': {
                             'weights': "indoor",
                             'sinkhorn_iterations': 20,
-                            'match_threshold': 0.9,
+                            'match_threshold': 0.2,
                         }
                     }
                     matching = Matching(config).eval().to(device)
@@ -491,7 +491,7 @@ class Widget(QWidget):
                         num_idx1 = v.n_objects_kf_network[idx1]
                         
                     # print("Number of matching keypoints detected : "+str(mkpts0.shape[0]))
-                    self.main_file.logfile.info("Number of matching keypoints detected : "+str(mkpts0.shape[0])+" ....")
+                    # self.main_file.logfile.info("Number of matching keypoints detected : "+str(mkpts0.shape[0])+" ....")
                 
                     max_label = 0
                     if num_idx0 > 0 or num_idx1 > 1:
@@ -505,7 +505,7 @@ class Widget(QWidget):
                         max_label = max(max(labels_idx0, default=0), max(labels_idx1, default=0))
                     
                     # print("Maximum label : "+str(max_label))
-                    self.main_file.logfile.info("Maximum label : "+str(max_label)+" ....")
+                    # self.main_file.logfile.info("Maximum label : "+str(max_label)+" ....")
                     
                     i_idx = 0
                     for i in range(mkpts0.shape[0]):
@@ -536,7 +536,7 @@ class Widget(QWidget):
                             
                     w.done(0)
     
-                    self.main_file.logfile.info("AI-based automatic detection has been completed ....")
+                    # self.main_file.logfile.info("AI-based automatic detection has been completed ....")
         else:
             same_image_dialogue()
             
@@ -586,7 +586,7 @@ class Widget(QWidget):
                 v = self.mv_panel.movie_caps[self.mv_panel.selected_movie_idx]
                 idx0 = self.selected_thumbnail_index
                 
-                self.main_file.logfile.info("--------------- Resetting the frame number : "+str(idx0+1)+" --------------------- ....")
+                # self.main_file.logfile.info("--------------- Resetting the frame number : "+str(idx0+1)+" --------------------- ....")
                 
                 if self.kf_method == "Regular":
                     v.n_objects_kf_regular[idx0] = 0
