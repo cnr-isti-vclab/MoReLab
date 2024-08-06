@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from PIL import Image
-from PIL.ImageQt import ImageQt
+# from PIL import Image
+# from PIL.ImageQt import ImageQt
 import cv2, copy
 import numpy as np
 from scipy.spatial import distance
@@ -80,16 +80,19 @@ class Util_viewer(QWidget):
             # print(w,h)
     
             image = cv2.resize(image, (w, h), interpolation = cv2.INTER_AREA)
-            # print("Image size after resizing: Width: "+str(image.shape[1])+ " , Height: "+str(image.shape[0]))
-            PIL_image = self.toImgPIL(image).convert('RGB')
-            self.img_file = ImageQt(PIL_image)
+            # # print("Image size after resizing: Width: "+str(image.shape[1])+ " , Height: "+str(image.shape[0]))
+            # PIL_image = self.toImgPIL(image).convert('RGB')
+            # self.img_file = ImageQt(PIL_image)
+            height, width, channel = image.shape
+            bytesPerLine = 3 * width
+            self.img_file = QImage(image.tobytes(), width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
     
 
-    def toImgPIL(self, imgOpenCV=None):
-        if imgOpenCV is None:
-            return imgOpenCV
-        else:
-            return Image.fromarray(cv2.cvtColor(imgOpenCV, cv2.COLOR_BGR2RGB))
+    # def toImgPIL(self, imgOpenCV=None):
+    #     if imgOpenCV is None:
+    #         return imgOpenCV
+    #     else:
+    #         return Image.fromarray(cv2.cvtColor(imgOpenCV, cv2.COLOR_BGR2RGB))
         
         
         

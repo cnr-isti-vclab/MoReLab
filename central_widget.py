@@ -458,7 +458,7 @@ class Widget(QWidget):
                         'superglue': {
                             'weights': "indoor",
                             'sinkhorn_iterations': 20,
-                            'match_threshold': 0.2,
+                            'match_threshold': 0.5,
                         }
                     }
                     matching = Matching(config).eval().to(device)

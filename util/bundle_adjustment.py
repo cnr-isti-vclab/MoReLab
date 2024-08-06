@@ -1,5 +1,6 @@
 import numpy as np
 import cv2, time, os, math
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 from scipy.optimize import least_squares, minimize
 from scipy.sparse import lil_matrix
 from scipy.spatial import distance
