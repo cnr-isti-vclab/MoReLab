@@ -1,5 +1,5 @@
 # Installation instructions
-This software is being developed in Python 3.8.
+This software has been developed in Python 3.8 and PyQt5.
 
 ## Guideline for Windows and Linux
 
@@ -76,7 +76,14 @@ cd MoReLab
 pip install -r requirements.txt
 ~~~
 
-- If previous command installs all libraries, then run the following command to run software:
+- Install pytorch 1.12.1 with cuda 13. This can be done by using the following conda command:
+~~~
+conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
+~~~
+Please refer to [PyTorch website](https://pytorch.org/get-started/previous-versions/) for more information.
+
+
+- Finally run the main file to run software using the following command:
 ~~~
 python main.py
 ~~~
