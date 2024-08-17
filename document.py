@@ -144,7 +144,7 @@ class Document(QWidget):
 
         bCurvedCyl = False
         n_curved_cyl = 0
-        if len(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases) > 0:
+        if number_curved_cylinders > 0:
             bCurvedCyl = True
             base_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_base_centers[0])
             n_curved_cyl = base_centers.shape[0]
@@ -309,52 +309,53 @@ class Document(QWidget):
 
                 curve_data_list = []
 
-                if len(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases) > 0:
-                    ccyl_path = os.path.join(out_dir, 'curved_cylinder')
-                    if not os.path.exists(ccyl_path):
-                        os.makedirs(ccyl_path)
                         
-                    t_vec_temp = []
-                    b_vec_temp = []
-                    N_vec_temp = []
-                    radius_temp = []
-                    cnt = 0
-                    
-                    for i, cylinder_bases in enumerate(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases):
-                        if not self.ctrl_wdg.gl_viewer.obj.curve_obj.deleted[i]:
-                            general_bases = []
-                            base_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_base_centers[i])
-                            for j, bases in enumerate(cylinder_bases):
-                                general_bases.append(np.vstack(bases))
-                                
-                            general_tops = []
-                            top_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_top_centers[i])
-                            for j, tops in enumerate(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops[i]):
-                                general_tops.append(np.vstack(tops))
+                t_vec_temp = []
+                b_vec_temp = []
+                N_vec_temp = []
+                radius_temp = []
+                cnt = 0
+                ccyl_path = os.path.join(out_dir, 'curved_cylinder')
+                
+                for i, cylinder_bases in enumerate(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_bases):
+                    if not self.ctrl_wdg.gl_viewer.obj.curve_obj.deleted[i]:           
 
-                            num_bases = base_centers.shape[0]
-                            general_cylinder = np.concatenate((base_centers, np.vstack(general_bases), top_centers, np.vstack(general_tops)))
-                            np.savetxt(os.path.join(ccyl_path, 'curved_cyl_'+str(cnt)+'.csv'), general_cylinder, delimiter=',')
-                            cnt = cnt + 1
-                            radius_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.radii[i])
-                            t_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.t_vecs[i])
-                            b_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.b_vecs[i])
-                            N_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.Ns[i])
+                        if not os.path.exists(ccyl_path):
+                            os.makedirs(ccyl_path)
+                        
+                        general_bases = []
+                        base_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_base_centers[i])
+                        for j, bases in enumerate(cylinder_bases):
+                            general_bases.append(np.vstack(bases))
                             
-                    if len(radius_temp) > 0:
-                        t_vec_data = np.vstack(t_vec_temp)
-                        b_vec_data = np.vstack(b_vec_temp)
-                        N_data = np.vstack(N_vec_temp)
-                        radius_data = np.asarray(radius_temp).reshape((len(radius_temp), self.ctrl_wdg.gl_viewer.obj.curve_obj.num_pts - 1))
+                        general_tops = []
+                        top_centers = np.vstack(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_top_centers[i])
+                        for j, tops in enumerate(self.ctrl_wdg.gl_viewer.obj.curve_obj.final_cylinder_tops[i]):
+                            general_tops.append(np.vstack(tops))
+
+                        num_bases = base_centers.shape[0]
+                        general_cylinder = np.concatenate((base_centers, np.vstack(general_bases), top_centers, np.vstack(general_tops)))
+                        np.savetxt(os.path.join(ccyl_path, 'curved_cyl_'+str(cnt)+'.csv'), general_cylinder, delimiter=',')
+                        cnt = cnt + 1
+                        radius_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.radii[i])
+                        t_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.t_vecs[i])
+                        b_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.b_vecs[i])
+                        N_vec_temp.append(self.ctrl_wdg.gl_viewer.obj.curve_obj.Ns[i])
                         
-                        np.savetxt(os.path.join(ccyl_path, 't_vec.csv'), t_vec_data, delimiter=',')
-                        np.savetxt(os.path.join(ccyl_path, 'b_vec.csv'), b_vec_data, delimiter=',')
-                        np.savetxt(os.path.join(ccyl_path, 'N.csv'), N_data, delimiter=',')
-                        np.savetxt(os.path.join(ccyl_path, 'radii.csv'), radius_data, delimiter=',')
-                        
-                        # self.ctrl_wdg.main_file.logfile.info("Saving curved tube points data ....")
-            
-            
+                if len(radius_temp) > 0:
+                    t_vec_data = np.vstack(t_vec_temp)
+                    b_vec_data = np.vstack(b_vec_temp)
+                    N_data = np.vstack(N_vec_temp)
+                    radius_data = np.asarray(radius_temp).reshape((len(radius_temp), self.ctrl_wdg.gl_viewer.obj.curve_obj.num_pts - 1))
+                    
+                    np.savetxt(os.path.join(ccyl_path, 't_vec.csv'), t_vec_data, delimiter=',')
+                    np.savetxt(os.path.join(ccyl_path, 'b_vec.csv'), b_vec_data, delimiter=',')
+                    np.savetxt(os.path.join(ccyl_path, 'N.csv'), N_data, delimiter=',')
+                    np.savetxt(os.path.join(ccyl_path, 'radii.csv'), radius_data, delimiter=',')
+                    
+                    # self.ctrl_wdg.main_file.logfile.info("Saving curved tube points data ....")
+        
+        
             
     
         
@@ -370,7 +371,7 @@ class Document(QWidget):
             video_name = p.split('/')[-1]
             video_folder = video_name.split('.')[0]
             video_folder_path = out_dir + '/' + video_folder
-            self.ctrl_wdg.main_file.logfile.info("Directory created to save images ....")
+            # self.ctrl_wdg.main_file.logfile.info("Directory created to save images ....")
 
             if len(self.ctrl_wdg.mv_panel.movie_caps[i].key_frames_regular) > 0:
                 path_regular = os.path.join(video_folder_path , 'Regular')

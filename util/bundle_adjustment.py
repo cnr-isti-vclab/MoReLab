@@ -8,9 +8,9 @@ import scipy
 from PyQt5.QtGui import *
 from util.sfm import *
 
-import matplotlib
-matplotlib.use('Qt5Agg')
-import matplotlib.pyplot as plt
+# import matplotlib
+# matplotlib.use('Qt5Agg')
+# import matplotlib.pyplot as plt
 
 
 

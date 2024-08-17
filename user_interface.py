@@ -134,7 +134,7 @@ class UserInterface(QWidget):
         self.ft_plus_tool.setIcon(QIcon("./icons/focus.png"))
         self.ft_plus_tool.setIconSize(QSize(icon_size, icon_size))
         self.ft_plus_tool.setStyleSheet(self.tool_btn_style)
-        self.ft_plus_tool.setToolTip("Latest Feature Tool")
+        self.ft_plus_tool.setToolTip("Step Feature Tool")
         self.ft_plus_tool.clicked.connect(self.implement_feature_plus_tool)
         
         
@@ -199,7 +199,7 @@ class UserInterface(QWidget):
         self.selection_tool.setIcon(QIcon("./icons/select.png"))
         self.selection_tool.setIconSize(QSize(icon_size, icon_size))
         self.selection_tool.setStyleSheet(self.tool_btn_style)
-        self.selection_tool.setToolTip("Selection Tool")
+        self.selection_tool.setToolTip("Feature Matching Tool")
         self.selection_tool.clicked.connect(self.implement_selection_tool)
 
 
@@ -207,7 +207,7 @@ class UserInterface(QWidget):
         self.epipolar_tool.setIcon(QIcon("./icons/diagonal-line.png"))
         self.epipolar_tool.setIconSize(QSize(icon_size, icon_size))
         self.epipolar_tool.setStyleSheet(self.tool_btn_style)
-        self.epipolar_tool.setToolTip("Epipolar Tool")
+        self.epipolar_tool.setToolTip("Guiding lines Tool")
         self.epipolar_tool.clicked.connect(self.implement_epipolar_tool)
         
 

@@ -413,32 +413,51 @@ class Features(QWidget):
                 fc = v.features_regular[t][j]
                 if not hide:
                     all_labels.append(int(fc.label))
-            
-            if temp_last_idx == -1:
-                epipolar_dialogue()
-                return [], []
-            else:
-                all_labels_set = set(all_labels)            
-                all_labels_unique = sorted(all_labels_set)
-                
-                for i, label in enumerate(all_labels_unique):
-                    found_current, idx_current = self.feature_panel.get_feature_index(label, t)
-                    found_last, idx_last = self.feature_panel.get_feature_index(label, temp_last_idx)
                     
-                    if found_current and found_last:
-                        found_labels.append(label)
-                        if self.ctrl_wdg.kf_method == "Regular":
-                            last_pts.append([v.features_regular[temp_last_idx][idx_last].x_loc, v.features_regular[temp_last_idx][idx_last].y_loc])
-                            current_pts.append([v.features_regular[t][idx_current].x_loc, v.features_regular[t][idx_current].y_loc])
+        elif self.ctrl_wdg.kf_method == "Network" and len(v.hide_network) > 0 :            
+            for i in range(t-1, -1, -1):
+                if len(v.hide_network[i]) > 0 and temp_last_idx == -1:
+                    temp_last_idx = i
+                    for j,hide in enumerate(v.hide_network[i]):
+                        fc = v.features_network[i][j]
+                        if not hide:
+                            all_labels.append(int(fc.label))
+                            
+                            
+            hide_list = v.hide_network[t]
+            for j,hide in enumerate(hide_list):
+                fc = v.features_network[t][j]
+                if not hide:
+                    all_labels.append(int(fc.label))
+        
+        if temp_last_idx == -1:
+            epipolar_dialogue()
+            return [], []
+        else:
+            all_labels_set = set(all_labels)            
+            all_labels_unique = sorted(all_labels_set)
+            
+            for i, label in enumerate(all_labels_unique):
+                found_current, idx_current = self.feature_panel.get_feature_index(label, t)
+                found_last, idx_last = self.feature_panel.get_feature_index(label, temp_last_idx)
+                
+                if found_current and found_last:
+                    found_labels.append(label)
+                    if self.ctrl_wdg.kf_method == "Regular":
+                        last_pts.append([v.features_regular[temp_last_idx][idx_last].x_loc, v.features_regular[temp_last_idx][idx_last].y_loc])
+                        current_pts.append([v.features_regular[t][idx_current].x_loc, v.features_regular[t][idx_current].y_loc])
+                    elif self.ctrl_wdg.kf_method == "Network":
+                        last_pts.append([v.features_network[temp_last_idx][idx_last].x_loc, v.features_network[temp_last_idx][idx_last].y_loc])
+                        current_pts.append([v.features_network[t][idx_current].x_loc, v.features_network[t][idx_current].y_loc])
 
                 
-                if len(found_labels) > 7:
-                    self.last_img_idx = temp_last_idx
-                    self.current_img_epipolar = t
-                    return last_pts, current_pts
-                else:
-                    epipolar_dialogue()
-                    return [], []
+            if len(found_labels) > 7:
+                self.last_img_idx = temp_last_idx
+                self.current_img_epipolar = t
+                return last_pts, current_pts
+            else:
+                epipolar_dialogue()
+                return [], []
 
 
         
