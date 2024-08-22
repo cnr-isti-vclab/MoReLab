@@ -635,13 +635,13 @@ class Util_viewer(QWidget):
                 epipolar_current = []
                 if self.parent_viewer.obj.ctrl_wdg.kf_method == "Regular":
                     if self.parent_viewer.obj.count_visible_features(self.parent_viewer.obj.last_img_idx) > self.parent_viewer.obj.count_visible_features(self.parent_viewer.obj.current_img_epipolar):
-                        fc = v.features_regular[self.parent_viewer.obj.last_img_idx][-1]
+                        fc = v.features_regular[self.parent_viewer.obj.last_img_idx][len(v.features_regular[self.parent_viewer.obj.current_img_epipolar])-1]
                         dbool = True
                     else:
                         dbool = False
                 elif self.parent_viewer.obj.ctrl_wdg.kf_method == "Network":
                     if self.parent_viewer.obj.count_visible_features(self.parent_viewer.obj.last_img_idx) > self.parent_viewer.obj.count_visible_features(self.parent_viewer.obj.current_img_epipolar):
-                        fc = v.features_network[self.parent_viewer.obj.last_img_idx][-1]
+                        fc = v.features_network[self.parent_viewer.obj.last_img_idx][len(v.features_network[self.parent_viewer.obj.current_img_epipolar])-1]
                         dbool = True
                     else:
                         dbool = False
