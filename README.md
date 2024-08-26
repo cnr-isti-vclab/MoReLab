@@ -1,16 +1,16 @@
-# Installation instructions
-This software has been developed in Python 3.8 and PyQt5.
+# MoReLab: A software for user-assisted 3D reconstruction
+MoRelab is an open-source software that allows the user to import a video, extract frames, specify feature correspondences in those frames, and estimate camera parameters and the 3D points corresponding to marked features simultaneously. Then, the user can calibrate and perform measurements. In addition, the user can make use of primitive tools to model surfaces such as complex and curved pipes. This is extremely important to model industrial equipment, which is the main target in our research, and to measure them. MoReLab also enables users to model shapes that are typical of industrial equipment (e.g., cylinders, curved cylinders, etc.) and measure them.
 
-## Guideline for Windows and Linux
+## Tutorial
+Please watch [MoReLab tutorial](https://youtu.be/UA_6RRJ2YoY) on YouTube to familiarize yourself with the usage of MoReLab and it's tools
 
-### Anaconda installation
-Anaconda free community edition can be downloaded from [Anaconda Website](https://www.anaconda.com/products/distribution). For Windows, please follow this [tutorial](https://www.datacamp.com/tutorial/installing-anaconda-windows) to install Anaconda and make sure to check 'Add Anaconda to my PATH environment variable' in Step 6. After following the tutorial, you should be able to search and open 'Anaconda PowerShell Prompt' and get a prompt similar to the following screenshot:
-<p align="center">
-  <img width="550" height="320" src="https://github.com/cnr-isti-vclab/MoReLab/blob/main/readme_images/prompt_screenshot.png">
-</p>
+## Papers
+Details related to MoReLab have been provided in two research papers. The [first paper](https://www.mdpi.com/1424-8220/23/14/6456) introduces MoReLab and it's tools. The [second paper](https://ieeexplore.ieee.org/abstract/document/10613405) talks about a user study conducted to evaluate MoReLab against other user-assisted tools.
 
-### Environment setup and installation of requirements
+## Installation instructions
+This software has been developed in Python 3.8 and PyQt5. The software also requires you to install PyQt with CUDA support. The software has been tested on Windows and Ubuntu. But it has not been tested on Mac.
 
+### Instructions for Windows and Linux
 - Open Anaconda Powershell prompt and create a Python 3.8 environment by entering the command:
 ~~~
 conda create --name morelab_env python=3.8
@@ -86,4 +86,34 @@ Please refer to [PyTorch website](https://pytorch.org/get-started/previous-versi
 - Finally run the main file to run software using the following command:
 ~~~
 python main.py
+~~~
+
+## Cite our work
+If you use this software or code, feel free to cite the following research works:
+
+~~~
+@Article{s23146456,
+AUTHOR = {Siddique, Arslan and Banterle, Francesco and Corsini, Massimiliano and Cignoni, Paolo and Sommerville, Daniel and Joffe, Chris},
+TITLE = {MoReLab: A Software for User-Assisted 3D Reconstruction},
+JOURNAL = {Sensors},
+VOLUME = {23},
+YEAR = {2023},
+NUMBER = {14},
+ARTICLE-NUMBER = {6456},
+URL = {https://www.mdpi.com/1424-8220/23/14/6456},
+PubMedID = {37514750},
+ISSN = {1424-8220},
+DOI = {10.3390/s23146456}
+}
+
+@ARTICLE{10613405,
+  author={Siddique, Arslan and Cignoni, Paolo and Corsini, Massimiliano and Banterle, Francesco},
+  journal={IEEE Access}, 
+  title={Evaluating Image-Based Interactive 3D Modeling Tools}, 
+  year={2024},
+  volume={12},
+  number={},
+  pages={104138-104152},
+  keywords={Three-dimensional displays;Solid modeling;Surface reconstruction;Image reconstruction;Computational modeling;Cameras;Task analysis;User-assisted 3D reconstruction;interactive 3D modeling;computer graphics;image based-3D reconstruction;structure-from-motion},
+  doi={10.1109/ACCESS.2024.3434584}}
 ~~~
