@@ -1,5 +1,8 @@
 # MoReLab: A software for user-assisted 3D reconstruction
+
 MoRelab is an open-source software that allows the user to import a video, extract frames, specify feature correspondences in those frames, and estimate camera parameters and the 3D points corresponding to marked features simultaneously. Then, the user can calibrate and perform measurements. In addition, the user can make use of primitive tools to model surfaces such as complex and curved pipes. This is extremely important to model industrial equipment, which is the main target in our research, and to measure them. MoReLab also enables users to model shapes that are typical of industrial equipment (e.g., cylinders, curved cylinders, etc.) and measure them.
+
+![image](./images/ui.png)
 
 ## Tutorial
 Please watch [MoReLab tutorial](https://youtu.be/UA_6RRJ2YoY) on YouTube to familiarize yourself with the usage of MoReLab and it's tools
@@ -33,7 +36,7 @@ git clone https://github.com/magicleap/SuperGluePretrainedNetwork.git
 
 - Copy the folder of models from SuperGlue repository to . You can do it manually or use this command:
 ~~~
-cp -r SuperGluePretrainedNetwork/models MoRelab/
+cp -r SuperGluePretrainedNetwork/models MoReLab/
 ~~~
 
 -At this point MoReLab directory should look like this:
@@ -92,7 +95,7 @@ python main.py
 If you use this software or code, feel free to cite the following research works:
 
 ~~~
-@Article{s23146456,
+@Article{siddique2023morelab,
 AUTHOR = {Siddique, Arslan and Banterle, Francesco and Corsini, Massimiliano and Cignoni, Paolo and Sommerville, Daniel and Joffe, Chris},
 TITLE = {MoReLab: A Software for User-Assisted 3D Reconstruction},
 JOURNAL = {Sensors},
@@ -106,7 +109,7 @@ ISSN = {1424-8220},
 DOI = {10.3390/s23146456}
 }
 
-@ARTICLE{10613405,
+@ARTICLE{siddique2024access,
   author={Siddique, Arslan and Cignoni, Paolo and Corsini, Massimiliano and Banterle, Francesco},
   journal={IEEE Access}, 
   title={Evaluating Image-Based Interactive 3D Modeling Tools}, 
